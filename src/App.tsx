@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { jsPDF as JsPDFDocument } from 'jspdf'
-import { ArrowLeft, ArrowRight, BriefcaseMedical, Check, Download, FileText, Settings2, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BriefcaseMedical, Check, Download, FileText, Plus, Settings2, Trash2, X } from 'lucide-react'
 import './App.css'
 
 type Answer = 'unset' | 'yes' | 'no'
@@ -10,7 +10,8 @@ type Patient = {
   phone: string; mobile: string; insurance: string; occupation: string; dni: string
   emergencyContact: string; emergencyPhone: string; antecedents: Antecedent[]
 }
-type Clinical = { usual: string; pressure: string; glucose: string; weight: string; height: string; visitDate: string; procedure: string }
+type Clinical = { usual: string; pressure: string; glucose: string; weight: string; height: string }
+type Evolution = { id: string; date: string; procedure: string }
 type Clinic = { name: string; professional: string; address: string; phone: string; email: string; license: string }
 
 const labels = ['Diabetes', 'VPP - NPP', 'Enfermedades cardíacas', 'Hipertensión', 'Hipotensión', 'Convulsiones', 'Asma', 'Alergias', 'VIH / Sida - Sífilis - Otras', 'Hepatitis', 'Tuberculosis', 'Infecciones', 'Fracturas / Esguinces', 'Luxaciones', 'Colesterol', 'Tiroides', 'Está anticoagulado', 'Otros (detallar)']
@@ -19,6 +20,10 @@ const settingsKey = 'historia-clinica-consultorio-v1'
 function today() {
   const date = new Date()
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+}
+
+function blankEvolution(): Evolution {
+  return { id: `${Date.now()}-${Math.random()}`, date: today(), procedure: '' }
 }
 
 function blankPatient(): Patient {
@@ -59,7 +64,7 @@ function box(doc: JsPDFDocument, label: string, value: string, x: number, y: num
   }
 }
 
-async function buildPdf(patient: Patient, clinical: Clinical, clinic: Clinic) {
+async function buildPdf(patient: Patient, clinical: Clinical, evolutions: Evolution[], clinic: Clinic) {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ format: 'a4', unit: 'mm' })
   const x = 13
@@ -123,51 +128,96 @@ async function buildPdf(patient: Patient, clinical: Clinical, clinic: Clinic) {
   })
   writeText(doc, 'La información de esta historia clínica es confidencial.', x, 286, 6)
 
-  doc.addPage()
-  writeText(doc, clinic.name || 'Consultorio', x, 15, 9, true)
-  writeText(doc, 'FICHA DE EVOLUCIÓN', x, 25, 10, true)
-  writeText(doc, 'Hoja: 1', right, 25, 7, true)
-  const infoY = 36
-  doc.rect(x, infoY, width, 39)
-  writeText(doc, 'Paciente:', x + 2, infoY + 5, 6, true)
-  writeText(doc, patient.fullName, x + 20, infoY + 5, 7)
-  writeText(doc, 'Nro. de Historia Clínica:', x + 112, infoY + 5, 6, true)
-  writeText(doc, patient.historyNumber, x + 151, infoY + 5, 7)
-  doc.line(x, infoY + 8, right, infoY + 8)
-  writeText(doc, 'Observaciones / valores habituales:', x + 2, infoY + 13, 6, true)
-  writeText(doc, clinical.usual, x + 53, infoY + 13, 7)
-  writeText(doc, 'T.A.:', x + 2, infoY + 22, 6, true)
-  writeText(doc, clinical.pressure, x + 14, infoY + 22, 7)
-  writeText(doc, 'Peso:', x + 93, infoY + 22, 6, true)
-  writeText(doc, clinical.weight ? `${clinical.weight} kg` : '', x + 106, infoY + 22, 7)
-  writeText(doc, 'Glucemia:', x + 2, infoY + 32, 6, true)
-  writeText(doc, clinical.glucose, x + 20, infoY + 32, 7)
-  writeText(doc, 'Talla:', x + 93, infoY + 32, 6, true)
-  writeText(doc, clinical.height ? `${clinical.height} cm` : '', x + 106, infoY + 32, 7)
-  const meters = Number(clinical.height) / 100
-  const bmi = Number(clinical.weight) > 0 && meters > 0 ? (Number(clinical.weight) / meters ** 2).toFixed(1) : ''
-  writeText(doc, 'IMC:', x + 145, infoY + 32, 6, true)
-  writeText(doc, bmi, x + 157, infoY + 32, 7)
-  const tableY = infoY + 46
-  const tableHeight = 177
-  const dateWidth = 24
+  const dateWidth = 25
   const signatureWidth = 42
   const procedureWidth = width - dateWidth - signatureWidth
-  doc.rect(x, tableY, width, tableHeight)
-  doc.line(x + dateWidth, tableY, x + dateWidth, tableY + tableHeight)
-  doc.line(x + dateWidth + procedureWidth, tableY, x + dateWidth + procedureWidth, tableY + tableHeight)
-  doc.line(x, tableY + 8, right, tableY + 8)
-  writeText(doc, 'Fecha', x + 2, tableY + 5.2, 6, true)
-  writeText(doc, 'Procedimiento', x + dateWidth + 2, tableY + 5.2, 6, true)
-  writeText(doc, 'Firma del paciente', x + dateWidth + procedureWidth + 2, tableY + 5.2, 6, true)
-  writeText(doc, clinical.visitDate, x + 2, tableY + 14, 7)
-  if (clinical.procedure) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.text(doc.splitTextToSize(clinical.procedure, procedureWidth - 5), x + dateWidth + 2, tableY + 14)
+  let pageNumber = 1
+  let evolutionY = 0
+
+  const drawTableHeader = (headerY: number) => {
+    doc.setFillColor(231, 238, 235)
+    doc.rect(x, headerY, width, 8, 'F')
+    doc.rect(x, headerY, width, 8)
+    doc.line(x + dateWidth, headerY, x + dateWidth, headerY + 8)
+    doc.line(x + dateWidth + procedureWidth, headerY, x + dateWidth + procedureWidth, headerY + 8)
+    writeText(doc, 'Fecha', x + 2, headerY + 5.2, 6, true)
+    writeText(doc, 'Procedimiento / evolución', x + dateWidth + 2, headerY + 5.2, 6, true)
+    writeText(doc, 'Firma del paciente', x + dateWidth + procedureWidth + 2, headerY + 5.2, 6, true)
+    return headerY + 8
   }
-  doc.line(x + dateWidth + procedureWidth + 5, tableY + tableHeight - 12, right - 5, tableY + tableHeight - 12)
-  writeText(doc, 'Aclaración', x + dateWidth + procedureWidth + 2, tableY + tableHeight - 5, 5.5)
+
+  const drawPatientSummary = (infoY: number) => {
+    doc.rect(x, infoY, width, 39)
+    writeText(doc, 'Paciente:', x + 2, infoY + 5, 6, true)
+    writeText(doc, patient.fullName, x + 20, infoY + 5, 7)
+    writeText(doc, 'Nro. de Historia Clínica:', x + 112, infoY + 5, 6, true)
+    writeText(doc, patient.historyNumber, x + 151, infoY + 5, 7)
+    doc.line(x, infoY + 8, right, infoY + 8)
+    writeText(doc, 'Observaciones / valores habituales:', x + 2, infoY + 13, 6, true)
+    writeText(doc, clinical.usual, x + 53, infoY + 13, 7)
+    writeText(doc, 'T.A.:', x + 2, infoY + 22, 6, true)
+    writeText(doc, clinical.pressure, x + 14, infoY + 22, 7)
+    writeText(doc, 'Peso:', x + 93, infoY + 22, 6, true)
+    writeText(doc, clinical.weight ? `${clinical.weight} kg` : '', x + 106, infoY + 22, 7)
+    writeText(doc, 'Glucemia:', x + 2, infoY + 32, 6, true)
+    writeText(doc, clinical.glucose, x + 20, infoY + 32, 7)
+    writeText(doc, 'Talla:', x + 93, infoY + 32, 6, true)
+    writeText(doc, clinical.height ? `${clinical.height} cm` : '', x + 106, infoY + 32, 7)
+    const meters = Number(clinical.height) / 100
+    const bmi = Number(clinical.weight) > 0 && meters > 0 ? (Number(clinical.weight) / meters ** 2).toFixed(1) : ''
+    writeText(doc, 'IMC:', x + 145, infoY + 32, 6, true)
+    writeText(doc, bmi, x + 157, infoY + 32, 7)
+    return infoY + 46
+  }
+
+  const drawFirstEvolutionPage = () => {
+    doc.addPage()
+    writeText(doc, clinic.name || 'Consultorio', x, 15, 9, true)
+    writeText(doc, 'FICHA DE EVOLUCIÓN', x, 25, 10, true)
+    writeText(doc, 'Hoja: 1', right, 25, 7, true)
+    return drawTableHeader(drawPatientSummary(36))
+  }
+
+  const drawContinuationPage = () => {
+    writeText(doc, 'La información de esta ficha es confidencial.', x, 289, 6)
+    doc.addPage()
+    pageNumber += 1
+    writeText(doc, clinic.name || 'Consultorio', x, 15, 9, true)
+    writeText(doc, 'FICHA DE EVOLUCIÓN · CONTINUACIÓN', x, 25, 9, true)
+    writeText(doc, `Hoja: ${pageNumber}`, right, 25, 7, true)
+    return drawTableHeader(drawPatientSummary(36))
+  }
+
+  evolutionY = drawFirstEvolutionPage()
+  evolutions.forEach((evolution) => {
+    const lines = evolution.procedure.trim()
+      ? doc.splitTextToSize(evolution.procedure, procedureWidth - 5) as string[]
+      : ['']
+    const chunks: string[][] = []
+    for (let index = 0; index < lines.length; index += 32) chunks.push(lines.slice(index, index + 32))
+    chunks.forEach((chunk, index) => {
+      const isLastChunk = index === chunks.length - 1
+      const rowHeight = Math.max(30, chunk.length * 3.8 + 18)
+      if (evolutionY + rowHeight > 278) evolutionY = drawContinuationPage()
+      const rowY = evolutionY
+      doc.rect(x, rowY, width, rowHeight)
+      doc.line(x + dateWidth, rowY, x + dateWidth, rowY + rowHeight)
+      doc.line(x + dateWidth + procedureWidth, rowY, x + dateWidth + procedureWidth, rowY + rowHeight)
+      writeText(doc, index === 0 ? evolution.date : 'Continúa', x + 2, rowY + 6, 6)
+      if (chunk.some(Boolean)) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7)
+        doc.text(chunk, x + dateWidth + 2, rowY + 6)
+      }
+      if (isLastChunk) {
+        doc.line(x + dateWidth + procedureWidth + 5, rowY + rowHeight - 10, right - 5, rowY + rowHeight - 10)
+        writeText(doc, 'Firma del paciente', x + dateWidth + procedureWidth + 2, rowY + rowHeight - 4, 5)
+      } else {
+        writeText(doc, 'Continúa en la hoja siguiente', x + dateWidth + procedureWidth + 2, rowY + 7, 5)
+      }
+      evolutionY += rowHeight + 3
+    })
+  })
   if (clinic.license) writeText(doc, `Matrícula: ${clinic.license}`, x, 284, 6)
   writeText(doc, 'La información de esta ficha es confidencial.', x, 289, 6)
   return doc
@@ -175,36 +225,49 @@ async function buildPdf(patient: Patient, clinical: Clinical, clinic: Clinic) {
 
 function App() {
   const [patient, setPatient] = useState(blankPatient)
-  const [clinical, setClinical] = useState<Clinical>({ usual: '', pressure: '', glucose: '', weight: '', height: '', visitDate: today(), procedure: '' })
+  const [clinical, setClinical] = useState<Clinical>({ usual: '', pressure: '', glucose: '', weight: '', height: '' })
+  const [evolutions, setEvolutions] = useState<Evolution[]>([blankEvolution()])
   const [clinic, setClinic] = useState(loadClinic)
   const [page, setPage] = useState<1 | 2>(1)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [clinicRequired, setClinicRequired] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
   const updatePatient = (key: Exclude<keyof Patient, 'antecedents'>, value: string) => setPatient((current) => ({ ...current, [key]: value }))
   const updateClinical = (key: keyof Clinical, value: string) => setClinical((current) => ({ ...current, [key]: value }))
+  const updateEvolution = (id: string, patch: Partial<Evolution>) => setEvolutions((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item))
+  const addEvolution = () => setEvolutions((current) => [...current, blankEvolution()])
+  const removeEvolution = (id: string) => setEvolutions((current) => current.length > 1 ? current.filter((item) => item.id !== id) : current)
   const updateAntecedent = (id: string, patch: Partial<Antecedent>) => setPatient((current) => ({ ...current, antecedents: current.antecedents.map((item) => item.id === id ? { ...item, ...patch } : item) }))
   const saveClinic = (value: Clinic) => {
     setClinic(value)
     try { localStorage.setItem(settingsKey, JSON.stringify(value)) } catch { }
+    setClinicRequired(false)
     setSettingsOpen(false)
   }
   const download = async () => {
+    if (!clinicConfigured) {
+      setClinicRequired(true)
+      setSettingsOpen(true)
+      return
+    }
     const slug = patient.fullName.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const doc = await buildPdf(patient, clinical, clinic)
+    const doc = await buildPdf(patient, clinical, evolutions, clinic)
     doc.save(`historia-clinica${slug ? `-${slug}` : ''}.pdf`)
     setDownloaded(true)
     window.setTimeout(() => setDownloaded(false), 2500)
   }
   const meters = Number(clinical.height) / 100
   const bmi = Number(clinical.weight) > 0 && meters > 0 ? (Number(clinical.weight) / meters ** 2).toFixed(1) : ''
-  const clinicConfigured = Object.values(clinic).some((value) => value.trim().length > 0)
+  const clinicHasDetails = Object.values(clinic).some((value) => value.trim().length > 0)
+  const clinicConfigured = Boolean(clinic.name.trim() || clinic.professional.trim())
+  const clinicStatus = clinicConfigured ? 'Datos cargados' : clinicHasDetails ? 'Falta identificar' : 'Sin configurar'
 
   return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#inicio" aria-label="Historia clínica, inicio"><span className="brand-mark"><BriefcaseMedical size={19} /></span><span>{clinic.name || 'Historia clínica'}</span></a><div className="topbar-actions"><span className="privacy-label"><span className="privacy-dot" /> Datos clínicos solo en esta sesión</span><span className={`clinic-status ${clinicConfigured ? 'is-loaded' : 'is-empty'}`} role="status" aria-live="polite" title={clinicConfigured ? 'Datos del consultorio guardados en este navegador' : 'Todavía no hay datos del consultorio guardados'}><span className="clinic-status-icon" aria-hidden="true">{clinicConfigured && <Check size={12} />}</span><span>{clinicConfigured ? 'Datos cargados' : 'Sin configurar'}</span></span><button className="icon-button settings-button" type="button" aria-label="Datos del consultorio" onClick={() => setSettingsOpen(true)}><Settings2 size={17} /><span>Consultorio</span></button></div></header>
+    <header className="topbar"><a className="brand" href="#inicio" aria-label="Historia clínica, inicio"><span className="brand-mark"><BriefcaseMedical size={19} /></span><span>{clinic.name || 'Historia clínica'}</span></a><div className="topbar-actions"><span className="privacy-label"><span className="privacy-dot" /> Datos clínicos solo en esta sesión</span><span className={`clinic-status ${clinicConfigured ? 'is-loaded' : clinicHasDetails ? 'is-incomplete' : 'is-empty'}`} role="status" aria-live="polite" title={clinicStatus}><span className="clinic-status-icon" aria-hidden="true">{clinicConfigured && <Check size={12} />}</span><span>{clinicStatus}</span></span><button className="icon-button settings-button" type="button" aria-label="Datos del consultorio" onClick={() => { setClinicRequired(false); setSettingsOpen(true) }}><Settings2 size={17} /><span>Consultorio</span></button></div></header>
     <main id="inicio" className="workspace">
-      <div className="page-heading"><div><p className="eyebrow">REGISTRO · NUEVA HISTORIA</p><h1>Historia clínica</h1></div><button className="download-button" type="button" onClick={download}>{downloaded ? <Check size={17} /> : <Download size={17} />}<span>{downloaded ? 'PDF descargado' : 'Descargar PDF'}</span></button></div>
+      <div className="page-heading"><div><p className="eyebrow">REGISTRO · NUEVA HISTORIA</p><h1>Historia clínica</h1></div></div>
       <div className="editor-layout">
-        <nav className="sheet-navigation" aria-label="Hojas de historia clínica"><p className="nav-label">FORMULARIO</p><button className={`sheet-tab ${page === 1 ? 'active' : ''}`} type="button" onClick={() => setPage(1)} aria-current={page === 1 ? 'step' : undefined}><span className="sheet-number">01</span><span className="sheet-tab-copy"><strong>Datos y antecedentes</strong><small>Identificación · salud</small></span>{page === 1 && <span className="active-indicator" />}</button><button className={`sheet-tab ${page === 2 ? 'active' : ''}`} type="button" onClick={() => setPage(2)} aria-current={page === 2 ? 'step' : undefined}><span className="sheet-number">02</span><span className="sheet-tab-copy"><strong>Ficha de evolución</strong><small>Valores · procedimiento</small></span>{page === 2 && <span className="active-indicator" />}</button><div className="nav-footer"><FileText size={16} /><span>PDF de 2 hojas</span></div></nav>
+        <nav className="sheet-navigation" aria-label="Hojas de historia clínica"><p className="nav-label">FORMULARIO</p><button className={`sheet-tab ${page === 1 ? 'active' : ''}`} type="button" onClick={() => setPage(1)} aria-current={page === 1 ? 'step' : undefined}><span className="sheet-number">01</span><span className="sheet-tab-copy"><strong>Datos y antecedentes</strong><small>Identificación · salud</small></span>{page === 1 && <span className="active-indicator" />}</button><button className={`sheet-tab ${page === 2 ? 'active' : ''}`} type="button" onClick={() => setPage(2)} aria-current={page === 2 ? 'step' : undefined}><span className="sheet-number">02</span><span className="sheet-tab-copy"><strong>Ficha de evolución</strong><small>Valores · procedimiento</small></span>{page === 2 && <span className="active-indicator" />}</button><div className="nav-footer"><FileText size={16} /><span>Historia + historial</span></div></nav>
         <section className="form-sheet" aria-labelledby="sheet-title">
           <div className="sheet-heading"><div className="sheet-heading-number">0{page}<span>/ 02</span></div><div><p className="eyebrow">{page === 1 ? 'IDENTIFICACIÓN DEL PACIENTE' : 'REGISTRO DE ATENCIÓN'}</p><h2 id="sheet-title">{page === 1 ? 'Datos y antecedentes' : 'Ficha de evolución'}</h2></div><span className="sheet-meta">HOJA {page}</span></div>
           {page === 1 ? <>
@@ -219,23 +282,40 @@ function App() {
             <section className="form-section antecedents-section"><div className="section-title-row"><div><h3>Antecedentes de salud</h3><p className="section-subtitle">Indicá sí o no y agregá observaciones cuando haga falta.</p></div><span>02 — 04</span></div><div className="antecedent-table" role="table" aria-label="Antecedentes de salud"><div className="antecedent-header" role="row"><span role="columnheader">Antecedente</span><span role="columnheader" className="answer-heading">Respuesta</span><span role="columnheader">Observaciones</span></div>{patient.antecedents.map((item) => <div className="antecedent-row" role="row" key={item.id}><span className="antecedent-name" role="rowheader">{item.label}</span><div className="status-control" role="group" aria-label={`${item.label}: respuesta`}><button type="button" className={item.answer === 'yes' ? 'selected' : ''} aria-pressed={item.answer === 'yes'} onClick={() => updateAntecedent(item.id, { answer: item.answer === 'yes' ? 'unset' : 'yes' })}>Sí</button><button type="button" className={item.answer === 'no' ? 'selected' : ''} aria-pressed={item.answer === 'no'} onClick={() => updateAntecedent(item.id, { answer: item.answer === 'no' ? 'unset' : 'no' })}>No</button></div><input className="notes-input" aria-label={`Observaciones: ${item.label}`} value={item.notes} onChange={(event) => updateAntecedent(item.id, { notes: event.target.value })} /></div>)}</div></section>
           </> : <>
             <section className="form-section"><div className="section-title-row"><h3>Valores habituales</h3><span>03 — 04</span></div><div className="field-grid clinical-grid"><div className="patient-summary-field"><span>Paciente</span><strong>{patient.fullName || 'Sin completar'}</strong></div><div className="patient-summary-field"><span>N.º de historia clínica</span><strong>{patient.historyNumber || '—'}</strong></div><Field label="Observaciones / valores habituales" value={clinical.usual} onChange={(v) => updateClinical('usual', v)} /><Field label="T.A." value={clinical.pressure} onChange={(v) => updateClinical('pressure', v)} placeholder="Ej. 120/80" /><Field label="Glucemia" value={clinical.glucose} onChange={(v) => updateClinical('glucose', v)} /><Field label="Peso (kg)" value={clinical.weight} onChange={(v) => updateClinical('weight', v)} /><Field label="Talla (cm)" value={clinical.height} onChange={(v) => updateClinical('height', v)} /><div className="patient-summary-field bmi-field"><span>IMC</span><strong>{bmi || '—'}</strong></div></div></section>
-            <section className="form-section evolution-section"><div className="section-title-row"><div><h3>Evolución</h3><p className="section-subtitle">Una ficha por atención en esta descarga.</p></div><span>04 — 04</span></div><div className="field-grid evolution-grid"><Field label="Fecha" type="date" value={clinical.visitDate} onChange={(v) => updateClinical('visitDate', v)} /><label className="field procedure-field"><span>Procedimiento / evolución</span><textarea value={clinical.procedure} onChange={(event) => updateClinical('procedure', event.target.value)} rows={8} /></label><div className="signature-note"><span>Firma del paciente</span><div className="signature-line" /><small>Espacio reservado en el PDF para firma manuscrita.</small></div></div></section>
+            <section className="form-section evolution-section">
+              <div className="section-title-row evolution-title">
+                <div><h3>Historial de evolución</h3><p className="section-subtitle">Agregá una ficha por consulta. El PDF conserva este orden.</p></div>
+                <span>{evolutions.length} {evolutions.length === 1 ? 'ficha' : 'fichas'}</span>
+              </div>
+              <div className="evolution-list">
+                {evolutions.map((evolution, index) => (
+                  <article className="evolution-card" key={evolution.id}>
+                    <div className="evolution-card-heading"><div><span className="evolution-number">{String(index + 1).padStart(2, '0')}</span><strong>Ficha de evolución</strong></div><button className="remove-evolution-button" type="button" aria-label={`Eliminar ficha ${index + 1}`} title="Eliminar ficha" disabled={evolutions.length === 1} onClick={() => removeEvolution(evolution.id)}><Trash2 size={15} /></button></div>
+                    <div className="field-grid evolution-grid"><Field label="Fecha" type="date" value={evolution.date} onChange={(value) => updateEvolution(evolution.id, { date: value })} /><label className="field"><span>Procedimiento / evaluación</span><textarea value={evolution.procedure} onChange={(event) => updateEvolution(evolution.id, { procedure: event.target.value })} rows={5} /></label></div>
+                  </article>
+                ))}
+              </div>
+              <div className="add-evolution-row"><button className="add-evolution-button" type="button" onClick={addEvolution}><Plus size={16} /> Agregar ficha</button></div>
+            </section>
           </>}
           <div className="sheet-actions"><span className="edit-state"><span className="edit-dot" /> Edición en curso</span><div className="pager-actions"><button className="secondary-button" type="button" onClick={() => setPage(1)} disabled={page === 1}><ArrowLeft size={16} /> Anterior</button><button className="primary-button" type="button" onClick={() => setPage(2)} disabled={page === 2}>Siguiente <ArrowRight size={16} /></button></div></div>
+          <div className="download-row"><button className="download-button" type="button" onClick={download}>{downloaded ? <Check size={17} /> : <Download size={17} />}<span>{downloaded ? 'PDF descargado' : 'Descargar PDF'}</span></button></div>
         </section>
       </div>
     </main>
-    {settingsOpen && <SettingsDialog initial={clinic} onClose={() => setSettingsOpen(false)} onSave={saveClinic} />}
+    {settingsOpen && <SettingsDialog initial={clinic} requireIdentity={clinicRequired} onClose={() => setSettingsOpen(false)} onSave={saveClinic} />}
   </div>
 }
 
-function SettingsDialog({ initial, onClose, onSave }: { initial: Clinic; onClose: () => void; onSave: (settings: Clinic) => void }) {
+function SettingsDialog({ initial, requireIdentity, onClose, onSave }: { initial: Clinic; requireIdentity: boolean; onClose: () => void; onSave: (settings: Clinic) => void }) {
   const [draft, setDraft] = useState(initial)
   const update = (key: keyof Clinic, value: string) => setDraft((current) => ({ ...current, [key]: value }))
+  const hasIdentity = Boolean(draft.name.trim() || draft.professional.trim())
   return <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div className="dialog-heading"><div className="dialog-icon"><Settings2 size={18} /></div><div><p className="eyebrow">PREFERENCIAS</p><h2 id="settings-title">Datos del consultorio</h2></div><button className="close-button" type="button" onClick={onClose} aria-label="Cerrar configuración"><X size={18} /></button></div>
     <div className="settings-fields"><Field label="Nombre del consultorio" value={draft.name} onChange={(v) => update('name', v)} placeholder="Se puede definir más adelante" /><Field label="Profesional" value={draft.professional} onChange={(v) => update('professional', v)} /><Field label="Dirección" value={draft.address} onChange={(v) => update('address', v)} /><div className="field-grid settings-contact-grid"><Field label="Teléfono" value={draft.phone} onChange={(v) => update('phone', v)} /><Field label="Correo electrónico" type="email" value={draft.email} onChange={(v) => update('email', v)} /></div><Field label="Matrícula profesional" value={draft.license} onChange={(v) => update('license', v)} /></div>
-    <p className="settings-footnote">Estos datos se guardan solo en este navegador y se imprimen en el PDF. Los datos de pacientes no se guardan.</p><div className="dialog-actions"><button className="secondary-button" type="button" onClick={onClose}>Cancelar</button><button className="primary-button" type="button" onClick={() => onSave(draft)}>Guardar datos</button></div>
+    {requireIdentity && !hasIdentity && <p className="settings-validation" role="alert">Para descargar el PDF, completá el nombre del consultorio o del profesional.</p>}
+    <p className="settings-footnote">Estos datos se guardan solo en este navegador y se imprimen en el PDF. Los datos de pacientes no se guardan.</p><div className="dialog-actions"><button className="secondary-button" type="button" onClick={onClose}>Cancelar</button><button className="primary-button" type="button" disabled={requireIdentity && !hasIdentity} onClick={() => onSave(draft)}>Guardar datos</button></div>
   </section></div>
 }
 

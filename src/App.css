@@ -17,6 +17,8 @@
 .page-heading h1 { margin: 0; color: #193a38; font-family: var(--serif); font-size: 34px; font-weight: 500; line-height: 1.1; }
 .download-button, .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 42px; padding: 0 16px; color: #fff; border-radius: 4px; background: #246f5c; font-size: 13px; font-weight: 650; transition: background .18s ease, transform .18s ease; }
 .download-button:hover, .primary-button:hover:not(:disabled) { background: #185944; transform: translateY(-1px); }
+.download-row { display: flex; justify-content: flex-end; padding: 15px 0 18px; border-top: 1px solid #e6eeea; }
+.download-row .download-button { min-width: 180px; }
 .editor-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); align-items: start; gap: 22px; }
 .sheet-navigation { position: sticky; top: 20px; padding-top: 13px; }
 .nav-label { margin: 0 0 12px 12px; color: #788d88; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
@@ -74,10 +76,20 @@
 .bmi-field { border-color: #d5e5dd; background: #eff6f1; }
 .bmi-field strong { color: #1c6a58; font-family: var(--serif); font-size: 18px; }
 .evolution-grid { grid-template-columns: minmax(145px, .6fr) minmax(0, 1.8fr); align-items: start; }
-.procedure-field { grid-column: 1 / -1; }
-.signature-note { grid-column: 1 / -1; max-width: 360px; display: grid; gap: 12px; margin-top: 7px; color: #617a73; font-size: 10px; }
-.signature-line { height: 1px; margin-top: 15px; background: #9caea7; }
-.signature-note small { color: #8c9b96; font-size: 10px; }
+.evolution-title { align-items: center; }
+.evolution-title > span { color: #60766e; font-size: 10px; font-weight: 650; white-space: nowrap; }
+.add-evolution-button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 0 0 auto; padding: 0 11px; color: #185944; border: 1px solid #9abdaf; border-radius: 4px; background: #f4f8f5; font-size: 11px; font-weight: 650; cursor: pointer; }
+.add-evolution-button:hover { border-color: #5e9b84; background: #eaf3ed; }
+.evolution-list { display: grid; gap: 13px; }
+.add-evolution-row { display: flex; justify-content: flex-start; margin-top: 13px; }
+.evolution-card { padding: 15px; border: 1px solid #dce6e1; border-radius: 4px; background: #fbfcfb; }
+.evolution-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.evolution-card-heading > div { display: flex; align-items: center; gap: 9px; }
+.evolution-number { width: 25px; height: 25px; display: grid; place-items: center; color: #185944; border-radius: 3px; background: #e4eee8; font-size: 10px; font-weight: 700; }
+.evolution-card-heading strong { color: #294642; font-size: 12px; }
+.remove-evolution-button { width: 32px; height: 32px; display: grid; place-items: center; color: #78584c; border: 1px solid transparent; border-radius: 3px; background: transparent; cursor: pointer; }
+.remove-evolution-button:hover:not(:disabled) { color: #8e3d2e; border-color: #e6c9bf; background: #fcf2ee; }
+.remove-evolution-button:disabled { opacity: .35; cursor: not-allowed; }
 .sheet-actions { min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #e6eeea; }
 .edit-state { display: inline-flex; align-items: center; gap: 7px; color: #80908b; font-size: 10px; }
 .edit-dot { width: 6px; height: 6px; background: #cf875d; }
@@ -97,6 +109,7 @@
 .settings-fields { display: grid; gap: 15px; padding: 20px 0 14px; }
 .settings-contact-grid { grid-template-columns: 1fr 1.2fr; }
 .settings-footnote { margin: 0; padding: 11px 12px; color: #647a73; border-left: 2px solid #8ab5a4; background: #f3f8f4; font-size: 10px; line-height: 1.5; }
+.settings-validation { margin: 0 0 12px; padding: 10px 12px; color: #713e29; border-left: 2px solid #bd7351; background: #fbf1eb; font-size: 11px; line-height: 1.45; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 @media (max-width: 900px) {
   .workspace { width: min(calc(100% - 40px), 760px); padding-top: 30px; }
@@ -107,18 +120,19 @@
   .form-sheet { padding-inline: 26px; }
 }
 @media (max-width: 620px) {
-  .topbar { min-height: 60px; flex-wrap: wrap; padding: 10px 16px; }
+  .topbar { min-height: 96px; align-items: flex-start; flex-direction: column; gap: 10px; padding: 10px 16px; }
   .brand > span:last-child { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .topbar-actions { flex: 1; justify-content: flex-end; gap: 8px; }
+  .topbar-actions { width: 100%; flex: 0 0 auto; justify-content: space-between; gap: 8px; }
   .privacy-label { display: none; }
   .clinic-status { gap: 4px; font-size: 9px; }
   .clinic-status-icon { width: 17px; height: 17px; }
-  .icon-button { width: 36px; min-width: 36px; justify-content: center; padding: 0; }
-  .settings-button span { display: none; }
+  .settings-button { width: auto; min-width: 0; justify-content: center; padding: 0 10px; }
+  .settings-button span { display: inline; }
   .workspace { width: calc(100% - 28px); padding: 26px 0 44px; }
   .page-heading { align-items: flex-start; flex-direction: column; gap: 15px; margin-bottom: 20px; }
   .page-heading h1 { font-size: 30px; }
-  .download-button { width: 100%; }
+  .download-row { padding: 13px 0 15px; }
+  .download-row .download-button { width: 100%; }
   .sheet-tab { gap: 8px; padding: 10px 8px; }
   .sheet-number { width: 29px; height: 34px; font-size: 14px; }
   .sheet-tab-copy strong { font-size: 10px; }
@@ -139,7 +153,9 @@
   .status-control button { min-width: 34px; height: 24px; padding: 0 4px; font-size: 9px; }
   .notes-input { padding-inline: 3px; font-size: 10px; }
   .evolution-grid { grid-template-columns: 1fr; }
-  .procedure-field, .signature-note { grid-column: auto; }
+  .evolution-title { align-items: flex-start; flex-direction: column; }
+  .evolution-card { padding: 12px; }
+  .add-evolution-row .add-evolution-button { width: 100%; }
   .sheet-actions { align-items: flex-start; flex-direction: column; padding: 13px 0; }
   .pager-actions { width: 100%; justify-content: space-between; }
   .secondary-button, .pager-actions .primary-button { flex: 1; }
