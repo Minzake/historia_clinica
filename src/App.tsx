@@ -227,6 +227,7 @@ function App() {
   const [patient, setPatient] = useState(blankPatient)
   const [clinical, setClinical] = useState<Clinical>({ usual: '', pressure: '', glucose: '', weight: '', height: '' })
   const [evolutions, setEvolutions] = useState<Evolution[]>([blankEvolution()])
+  const [editingEvolutionId, setEditingEvolutionId] = useState<string | null>(null)
   const [clinic, setClinic] = useState(loadClinic)
   const [page, setPage] = useState<1 | 2>(1)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -235,8 +236,15 @@ function App() {
   const updatePatient = (key: Exclude<keyof Patient, 'antecedents'>, value: string) => setPatient((current) => ({ ...current, [key]: value }))
   const updateClinical = (key: keyof Clinical, value: string) => setClinical((current) => ({ ...current, [key]: value }))
   const updateEvolution = (id: string, patch: Partial<Evolution>) => setEvolutions((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item))
-  const addEvolution = () => setEvolutions((current) => [...current, blankEvolution()])
-  const removeEvolution = (id: string) => setEvolutions((current) => current.length > 1 ? current.filter((item) => item.id !== id) : current)
+  const addEvolution = () => {
+    const evolution = blankEvolution()
+    setEvolutions((current) => [...current, evolution])
+    setEditingEvolutionId(evolution.id)
+  }
+  const removeEvolution = (id: string) => {
+    setEvolutions((current) => current.length > 1 ? current.filter((item) => item.id !== id) : current)
+    setEditingEvolutionId((current) => current === id ? null : current)
+  }
   const updateAntecedent = (id: string, patch: Partial<Antecedent>) => setPatient((current) => ({ ...current, antecedents: current.antecedents.map((item) => item.id === id ? { ...item, ...patch } : item) }))
   const saveClinic = (value: Clinic) => {
     setClinic(value)
@@ -287,12 +295,17 @@ function App() {
                 <div><h3>Historial de evolución</h3><p className="section-subtitle">Agregá una ficha por consulta. El PDF conserva este orden.</p></div>
                 <span>{evolutions.length} {evolutions.length === 1 ? 'ficha' : 'fichas'}</span>
               </div>
-              <div className="evolution-list">
+              <div className="evolution-table" role="table" aria-label="Historial de evolución">
+                <div className="evolution-table-heading" role="row"><span role="columnheader">N°</span><span role="columnheader">Fecha</span><span role="columnheader">Procedimiento / evaluación</span></div>
                 {evolutions.map((evolution, index) => (
-                  <article className="evolution-card" key={evolution.id}>
-                    <div className="evolution-card-heading"><div><span className="evolution-number">{String(index + 1).padStart(2, '0')}</span><strong>Ficha de evolución</strong></div><button className="remove-evolution-button" type="button" aria-label={`Eliminar ficha ${index + 1}`} title="Eliminar ficha" disabled={evolutions.length === 1} onClick={() => removeEvolution(evolution.id)}><Trash2 size={15} /></button></div>
-                    <div className="field-grid evolution-grid"><Field label="Fecha" type="date" value={evolution.date} onChange={(value) => updateEvolution(evolution.id, { date: value })} /><label className="field"><span>Procedimiento / evaluación</span><textarea value={evolution.procedure} onChange={(event) => updateEvolution(evolution.id, { procedure: event.target.value })} rows={5} /></label></div>
-                  </article>
+                  <div className="evolution-table-row" role="row" key={evolution.id}>
+                    <span className="evolution-number-cell" role="cell">{String(index + 1).padStart(2, '0')}</span>
+                    <label className="evolution-date-cell" role="cell"><input type="date" aria-label={`Fecha de ficha ${index + 1}`} value={evolution.date} onChange={(event) => updateEvolution(evolution.id, { date: event.target.value })} /></label>
+                    <div className="evolution-entry-cell" role="cell">
+                      {editingEvolutionId === evolution.id ? <textarea className="procedure-editor" aria-label={`Procedimiento / evaluación, ficha ${index + 1}`} autoFocus rows={3} value={evolution.procedure} onChange={(event) => updateEvolution(evolution.id, { procedure: event.target.value })} onBlur={() => setEditingEvolutionId(null)} /> : <button className="procedure-preview" type="button" aria-label={`Editar procedimiento / evaluación, ficha ${index + 1}`} title={evolution.procedure || 'Tocar para cargar el procedimiento'} onClick={() => setEditingEvolutionId(evolution.id)}>{evolution.procedure.trim().replace(/\s+/g, ' ') || 'Tocar para cargar el procedimiento'}</button>}
+                      <button className="remove-evolution-button" type="button" aria-label={`Eliminar ficha ${index + 1}`} title="Eliminar ficha" disabled={evolutions.length === 1} onClick={() => removeEvolution(evolution.id)}><Trash2 size={15} /></button>
+                    </div>
+                  </div>
                 ))}
               </div>
               <div className="add-evolution-row"><button className="add-evolution-button" type="button" onClick={addEvolution}><Plus size={16} /> Agregar ficha</button></div>
