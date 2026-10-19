@@ -197,9 +197,10 @@ function App() {
   }
   const meters = Number(clinical.height) / 100
   const bmi = Number(clinical.weight) > 0 && meters > 0 ? (Number(clinical.weight) / meters ** 2).toFixed(1) : ''
+  const clinicConfigured = Object.values(clinic).some((value) => value.trim().length > 0)
 
   return <div className="app-shell">
-    <header className="topbar"><a className="brand" href="#inicio" aria-label="Historia clínica, inicio"><span className="brand-mark"><BriefcaseMedical size={19} /></span><span>{clinic.name || 'Historia clínica'}</span></a><div className="topbar-actions"><span className="privacy-label"><span className="privacy-dot" /> Datos clínicos solo en esta sesión</span><button className="icon-button settings-button" type="button" onClick={() => setSettingsOpen(true)}><Settings2 size={17} /><span>Consultorio</span></button></div></header>
+    <header className="topbar"><a className="brand" href="#inicio" aria-label="Historia clínica, inicio"><span className="brand-mark"><BriefcaseMedical size={19} /></span><span>{clinic.name || 'Historia clínica'}</span></a><div className="topbar-actions"><span className="privacy-label"><span className="privacy-dot" /> Datos clínicos solo en esta sesión</span><span className={`clinic-status ${clinicConfigured ? 'is-loaded' : 'is-empty'}`} role="status" aria-live="polite" title={clinicConfigured ? 'Datos del consultorio guardados en este navegador' : 'Todavía no hay datos del consultorio guardados'}><span className="clinic-status-icon" aria-hidden="true">{clinicConfigured && <Check size={12} />}</span><span>{clinicConfigured ? 'Datos cargados' : 'Sin configurar'}</span></span><button className="icon-button settings-button" type="button" aria-label="Datos del consultorio" onClick={() => setSettingsOpen(true)}><Settings2 size={17} /><span>Consultorio</span></button></div></header>
     <main id="inicio" className="workspace">
       <div className="page-heading"><div><p className="eyebrow">REGISTRO · NUEVA HISTORIA</p><h1>Historia clínica</h1></div><button className="download-button" type="button" onClick={download}>{downloaded ? <Check size={17} /> : <Download size={17} />}<span>{downloaded ? 'PDF descargado' : 'Descargar PDF'}</span></button></div>
       <div className="editor-layout">
