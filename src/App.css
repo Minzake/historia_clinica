@@ -127,7 +127,8 @@
 }
 @media (max-width: 620px) {
   .topbar { min-height: 96px; align-items: flex-start; flex-direction: column; gap: 10px; padding: 10px 16px; }
-  .brand > span:last-child { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brand { width: 100%; min-width: 0; }
+  .brand > span:last-child { min-width: 0; max-width: none; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; white-space: normal; line-height: 1.2; }
   .topbar-actions { width: 100%; flex: 0 0 auto; justify-content: space-between; gap: 8px; }
   .privacy-label { display: none; }
   .clinic-status { gap: 4px; font-size: 9px; }
