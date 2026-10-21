@@ -3,8 +3,8 @@ import type { FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { database } from '../lib/supabase'
-import { Field, Notice } from '../components/ui'
-import { normalizeDni,validateClientProfile,validEmail } from '../lib/validation'
+import { Field, Notice, Form } from '../components/ui'
+import { dniError,normalizeDni,validateClientProfile,validEmail } from '../lib/validation'
 
 export function AuthPage({ recovery = false, register = false, onRecovered }: { recovery?: boolean; register?: boolean; onRecovered?: () => void }) {
   const [forgot, setForgot] = useState(false)
@@ -59,22 +59,22 @@ export function AuthPage({ recovery = false, register = false, onRecovered }: { 
       <div><p className="eyebrow">TU CONSULTORIO, EN UN SOLO LUGAR</p><h1>Más tiempo para<br />cuidar cada paso.</h1><p>Pacientes, historias clínicas y seguimiento de tus consultas, organizados y siempre a mano.</p></div>
       <div className="auth-privacy"><ShieldCheck size={20} /><span>Turnos para pacientes · Gestión privada del consultorio.</span></div>
     </section>
-    <section className="auth-form-area"><form className="auth-form" onSubmit={submit}>
+    <section className="auth-form-area"><Form key={`${recovery}-${register}-${forgot}-${verification}`} className="auth-form" onSubmit={submit}>
       <span className="auth-lock"><LockKeyhole size={23} /></span><p className="eyebrow">BIENVENIDO/A</p>
       <h2>{recovery ? 'Nueva contraseña' : verification?'Verificá tu cuenta':forgot ? 'Recuperar acceso' : register ? 'Creá tu cuenta de paciente' : 'Ingresá a tu consultorio'}</h2>
       <p className="auth-description">{recovery ? 'Elegí una contraseña segura para tu cuenta.' : verification?'Reenviá el enlace de confirmación de tu email.':forgot ? 'Te enviaremos un enlace a tu correo.' : register ? 'Usá tu DNI y un email que puedas verificar. El celular es opcional.' : 'Ingresá con tu correo y contraseña. El acceso depende de los permisos de tu cuenta.'}</p>
-      {register&&!forgot&&!verification&&!recovery&&<><Field label="Nombre y apellido" required minLength={2} value={fullName} onChange={setFullName} autoComplete="name" disabled={busy}/><Field label="DNI" required inputMode="numeric" maxLength={16} value={dni} onChange={setDni} disabled={busy}/><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone} autoComplete="tel" disabled={busy}/></>}
+      {register&&!forgot&&!verification&&!recovery&&<><Field label="Nombre y apellido" required minLength={2} value={fullName} onChange={setFullName} autoComplete="name" disabled={busy}/><Field label="DNI" hint="De 6 a 10 dígitos; podés usar puntos." validationMessage={dniError(dni,true)} required inputMode="numeric" maxLength={16} value={dni} onChange={setDni} disabled={busy}/><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone} autoComplete="tel" disabled={busy}/></>}
       {!recovery && <Field label="Correo electrónico" type="email" autoComplete="username" required value={email} onChange={setEmail} placeholder="nombre@consultorio.com" disabled={busy} />}
-      {((!forgot&&!verification) || recovery) && <Field label="Contraseña" type="password" autoComplete={recovery||register ? 'new-password' : 'current-password'} required minLength={recovery||register ? 12 : undefined} maxLength={128} value={password} onChange={setPassword} disabled={busy} />}
-      {(recovery||(register&&!forgot&&!verification)) && <Field label="Repetí la contraseña" type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={confirmation} onChange={setConfirmation} disabled={busy} />}
+      {((!forgot&&!verification) || recovery) && <Field label="Contraseña" hint={recovery||register ? "De 12 a 128 caracteres. Podés pegar una contraseña de tu gestor." : undefined} type="password" autoComplete={recovery||register ? 'new-password' : 'current-password'} required minLength={recovery||register ? 12 : undefined} maxLength={128} value={password} onChange={setPassword} disabled={busy} />}
+      {(recovery||(register&&!forgot&&!verification)) && <Field label="Repetí la contraseña" validationMessage={confirmation && password!==confirmation ? "Verificá que ambas contraseñas coincidan." : ""} type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={confirmation} onChange={setConfirmation} disabled={busy} />}
       {error && <Notice>{error}</Notice>}{message && <Notice kind="success">{message}</Notice>}
       <button className="primary-button auth-submit" type="submit" disabled={busy}>{busy ? 'Procesando…' : recovery ? 'Guardar contraseña' : verification?'Enviar verificación':forgot ? 'Enviar enlace' : register ? 'Crear mi cuenta' : 'Iniciar sesión'}<ArrowRight size={17} /></button>
-      {!recovery && <button className="text-button" type="button" disabled={busy} onClick={() => { setForgot(verification?false:!forgot);setVerification(false); setError(''); setMessage(''); setPassword('') }}>{(forgot||verification) && <ArrowLeft size={14} />}{forgot||verification ? 'Volver al inicio de sesión' : '¿Olvidaste tu contraseña?'}</button>}
-      {!recovery&&!verification&&!forgot&&<button className="text-button" type="button" disabled={busy} onClick={()=>{setVerification(true);setError('');setMessage('');setPassword('')}}>No recibí el correo de verificación</button>}
+      {!recovery && <button className="text-button" type="button" disabled={busy} onClick={() => { setForgot(verification?false:!forgot);setVerification(false); setError(''); setMessage(''); setPassword('');setConfirmation('') }}>{(forgot||verification) && <ArrowLeft size={14} />}{forgot||verification ? 'Volver al inicio de sesión' : '¿Olvidaste tu contraseña?'}</button>}
+      {!recovery&&!verification&&!forgot&&<button className="text-button" type="button" disabled={busy} onClick={()=>{setVerification(true);setError('');setMessage('');setPassword('');setConfirmation('')}}>No recibí el correo de verificación</button>}
       {!recovery&&<div className="auth-extra-links"><Link to={register?'/':'/registro'}>{register?'Ya tengo cuenta · Ingresar':'Soy paciente · Crear cuenta'}</Link><Link to="/reservar">Ver horarios y reservar</Link></div>}
       {recovery && <button className="text-button" type="button" disabled={busy} onClick={async () => { await database().auth.signOut({ scope: 'local' }); window.location.assign('/') }}>Cancelar y volver al login</button>}
       <p className="auth-footnote">Información clínica confidencial. Si usás un dispositivo compartido, cerrá la sesión al terminar.</p>
-    </form></section>
+    </Form></section>
   </main>
 }
 

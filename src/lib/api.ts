@@ -1,5 +1,5 @@
 import { database } from './supabase'
-import { ageAt, readClinic } from './model'
+import { ageAt, readClinic, validateRecord } from './model'
 import type { Membership, PatientSummary, RecordDraft, Revision, SavedRecord, Clinic } from './model'
 import { validateClinic } from './validation'
 
@@ -43,6 +43,8 @@ export async function getRecord(id: string): Promise<SavedRecord> {
 }
 
 export async function saveRecord(clinicId: string, record: RecordDraft, id: string | null, version: number): Promise<SavedRecord> {
+  const errors = validateRecord(record)
+  if (errors.length) throw new Error(errors.join(' '))
   const normalized = structuredClone(record)
   normalized.patient.fullName = normalized.patient.fullName.trim()
   normalized.patient.dni = normalized.patient.dni.replace(/[.\s-]/g, '')

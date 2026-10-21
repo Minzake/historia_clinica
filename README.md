@@ -19,6 +19,14 @@ Aplicación privada con React + TypeScript + Vite, desplegable en Vercel. Supaba
 
 **No incluye aún** cobros, fotografías, firma electrónica, MFA en la interfaz, WhatsApp automático ni recordatorios previos a la consulta. La autorización registrada no reemplaza el consentimiento firmado. El texto del consentimiento debe revisarse para el uso y la normativa del consultorio.
 
+## Formularios y uso desde el celular
+
+Los formularios de acceso, perfil, equipo, consultorio y agenda muestran errores en español junto al campo, un resumen con enlaces y foco en el primer dato que necesita corrección. Las historias validan ambas hojas al guardar y abren la que contiene el error. Las ayudas se asocian a los controles para lectores de pantalla y las contraseñas pueden mostrarse sin modificar su contenido.
+
+Se admiten DNI con puntos y teléfonos opcionales de 6 a 20 dígitos, con prefijo `+`, espacios, guiones o paréntesis (hasta 40 caracteres). El DNI sigue siendo obligatorio para las cuentas de pacientes y para los turnos futuros sin cuenta vinculada; en la ficha clínica es opcional. Las reglas numéricas vacías no se convierten en cero, y las franjas superpuestas o los bloqueos con final anterior al inicio se señalan antes de enviar.
+
+En celular, la navegación principal muestra todas las secciones, los campos tienen controles de mayor tamaño, las historias tienen acciones de guardado visibles al desplazarse y el listado clínico presenta los datos de cada paciente en una tarjeta. Las verificaciones de servidor y base de datos siguen siendo la autoridad para permisos, conflictos y guardado; estas mejoras de interfaz no requieren una migración nueva.
+
 ## 1. Crear y configurar Supabase
 
 1. Creá un proyecto de Supabase. Elegí la región de almacenamiento adecuada antes de cargar datos reales.

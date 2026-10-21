@@ -3,11 +3,20 @@ import type { BookingSettings, OpeningHours, StaffAppointmentInput } from './boo
 
 export const normalizeDni = (value: string) => value.replace(/[.\s-]/g, '')
 export const validEmail = (value: string) => value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+export function dniError(value: string, required = false) {
+  return (!value.trim() && !required) || /^\d{6,10}$/.test(normalizeDni(value)) ? '' : 'Ingresá un DNI de 6 a 10 dígitos; podés usar puntos.'
+}
+export function phoneError(value: string) {
+  if (!value.trim()) return ''
+  const digits = value.replace(/\D/g, '')
+  return value.length <= 40 && /^\+?[\d\s().-]+$/.test(value.trim()) && digits.length >= 6 && digits.length <= 20 ? '' : 'Ingresá un teléfono de 6 a 20 dígitos; podés usar +, espacios, guiones o paréntesis.'
+}
 
 export function validateClientProfile(name: string, dni: string, phone: string) {
   if (name.trim().length < 2 || name.trim().length > 200) return 'Ingresá un nombre y apellido de 2 a 200 caracteres.'
   if (!/^\d{6,10}$/.test(normalizeDni(dni))) return 'Ingresá un DNI de 6 a 10 dígitos.'
   if (phone.trim().length > 40) return 'El celular no puede superar los 40 caracteres.'
+  if (phoneError(phone)) return phoneError(phone)
   return ''
 }
 
@@ -15,6 +24,7 @@ export function validateClinic(clinic: Clinic) {
   if (!clinic.name.trim() && !clinic.professional.trim()) return 'Completá el nombre del consultorio o del profesional.'
   if (Object.values(clinic).some(value => typeof value !== 'string' || value.length > 200)) return 'Los datos del consultorio no pueden superar los 200 caracteres por campo.'
   if (clinic.email && !validEmail(clinic.email)) return 'Ingresá un correo válido para el consultorio o dejalo vacío.'
+  if (phoneError(clinic.phone)) return phoneError(clinic.phone)
   return ''
 }
 
@@ -31,6 +41,7 @@ export function validateStaffAppointment(data: StaffAppointmentInput, now = Date
   if (data.kind === 'consultation' && data.status === 'confirmed' && start > now && !data.client_user_id && !data.dni) return 'Completá el DNI para controlar que el paciente tenga un solo turno por profesional.'
   if (data.email && !validEmail(data.email)) return 'Ingresá un correo válido o dejalo vacío.'
   if (data.phone.length > 40 || data.notes.length > 2000) return 'Revisá la longitud del celular (40) y de las observaciones (2000 caracteres).'
+  if (phoneError(data.phone)) return phoneError(data.phone)
   return ''
 }
 
@@ -43,11 +54,16 @@ export function validateBookingSettings(settings: BookingSettings, hours: Openin
   if (settings.provider_name.length > 120) return 'El nombre público no puede superar los 120 caracteres.'
   if (settings.enabled && (!settings.provider_id || !settings.provider_name.trim() || !hours.length)) return 'Antes de habilitar reservas elegí a la profesional, completá su nombre público y agregá al menos una franja horaria.'
   if (hours.length > 28) return 'Podés configurar hasta 28 franjas horarias.'
+  return Object.values(openingHourErrors(hours))[0] || ''
+}
+
+export function openingHourErrors(hours: OpeningHours[]): Record<number, string> {
+  const errors: Record<number, string> = {}
   const minute = (time: string) => /^\d{2}:\d{2}$/.test(time) && Number(time.slice(0, 2)) < 24 && Number(time.slice(3)) < 60 ? Number(time.slice(0, 2)) * 60 + Number(time.slice(3)) : Number.NaN
   for (const [index, hour] of hours.entries()) {
     const opens = minute(hour.opens), closes = minute(hour.closes)
-    if (!Number.isInteger(hour.weekday) || hour.weekday < 0 || hour.weekday > 6 || !Number.isFinite(opens) || !Number.isFinite(closes) || closes - opens < 30) return 'Cada franja debe tener un día válido y durar al menos 30 minutos, sin cruzar la medianoche.'
-    if (hours.slice(0, index).some(other => other.weekday === hour.weekday && minute(other.opens) < closes && opens < minute(other.closes))) return 'Las franjas horarias del mismo día no pueden superponerse.'
+    if (!Number.isInteger(hour.weekday) || hour.weekday < 0 || hour.weekday > 6 || !Number.isFinite(opens) || !Number.isFinite(closes) || closes - opens < 30) errors[index] = 'Cada franja debe tener un día válido y durar al menos 30 minutos, sin cruzar la medianoche.'
+    else if (hours.slice(0, index).some(other => other.weekday === hour.weekday && minute(other.opens) < closes && opens < minute(other.closes))) errors[index] = 'Las franjas horarias del mismo día no pueden superponerse.'
   }
-  return ''
+  return errors
 }

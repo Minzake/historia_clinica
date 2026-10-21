@@ -1,16 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import type { InputHTMLAttributes, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Download, LoaderCircle, X } from 'lucide-react'
 import { downloadPdf } from '../lib/pdf'
 import type { PdfKind } from '../lib/pdf'
 import type { Clinic, RecordDraft } from '../lib/model'
 
-type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> & {
-  label: string; value: string; onChange?: (value: string) => void
-}
-export function Field({ label, value, onChange, maxLength = 200, ...props }: FieldProps) {
-  return <label className="field"><span>{label}</span><input {...props} maxLength={maxLength} value={value} onChange={(event) => onChange?.(event.target.value)} /></label>
-}
+export { Field, Form, SelectField, TextAreaField } from './Form'
 
 export function Notice({ children, kind = 'error' }: { children: ReactNode; kind?: 'error' | 'success' | 'info' }) {
   return <div className={`notice notice-${kind}`} role={kind === 'error' ? 'alert' : 'status'}>{children}</div>

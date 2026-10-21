@@ -1,3 +1,4 @@
+import { dniError, phoneError } from './validation'
 export type Answer = 'unset' | 'yes' | 'no'
 export type Antecedent = { id: string; label: string; answer: Answer; notes: string }
 export type Patient = {
@@ -102,28 +103,42 @@ export function recordStructureError(value: unknown): string {
   return ''
 }
 
+export function recordFieldErrors({ patient, clinical, evolutions }: RecordDraft): Record<string, string> {
+  const errors: Record<string, string> = {}
+  if (patient.fullName.trim().length < 2) errors['patient.fullName'] = 'Completá el apellido y nombre del paciente.'
+  if (patient.fullName.length > 200) errors['patient.fullName'] = 'El nombre no puede superar los 200 caracteres.'
+  if (patient.historyNumber.length > 40) errors['patient.historyNumber'] = 'Usá hasta 40 caracteres para el número de historia.'
+  if (patient.referredBy.length > 80) errors['patient.referredBy'] = 'Usá hasta 80 caracteres para la referencia.'
+  if (!validDate(patient.date) || patient.date > today()) errors['patient.date'] = 'La fecha de la historia debe ser válida y no puede ser futura.'
+  if (patient.birthDate && (!validDate(patient.birthDate) || patient.birthDate > patient.date)) errors['patient.birthDate'] = 'La fecha de nacimiento debe ser válida y anterior o igual a la fecha de la historia.'
+  if (patient.age && (!/^\d{1,3}$/.test(patient.age) || Number(patient.age) > 125)) errors['patient.age'] = 'Revisá la edad del paciente (0 a 125 años).'
+  if (dniError(patient.dni)) errors['patient.dni'] = dniError(patient.dni)
+  for (const key of ['phone', 'mobile', 'emergencyPhone'] as const) {
+    if (phoneError(patient[key])) errors[`patient.${key}`] = phoneError(patient[key])
+  }
+  for (const [key, label, max] of [['weight', 'peso', 700], ['height', 'talla', 300]] as const) {
+    const value = clinical[key]
+    if (value && (!Number.isFinite(decimal(value)) || decimal(value) <= 0 || decimal(value) > max)) errors[`clinical.${key}`] = `Revisá el valor de ${label}; debe ser un número positivo (máximo ${max}).`
+  }
+  for (const evolution of evolutions) {
+    if (!validDate(evolution.date) || evolution.date > today() || (patient.birthDate && evolution.date < patient.birthDate)) errors[`evolutions.${evolution.id}.date`] = 'Revisá las fechas de las evoluciones: no pueden ser futuras ni anteriores al nacimiento.'
+    if (!evolution.procedure.trim()) errors[`evolutions.${evolution.id}.procedure`] = 'Completá el procedimiento de cada evolución o quitá las filas vacías.'
+  }
+  return errors
+}
+
 export function validateRecord(record: RecordDraft): string[] {
   const structure = recordStructureError(record)
   if (structure) return [structure]
-  const { patient, clinical, evolutions } = record
+  const { patient, evolutions } = record
   const errors: string[] = []
-  if (patient.fullName.trim().length < 2) errors.push('Completá el apellido y nombre del paciente.')
-  if (patient.fullName.length > 200 || patient.historyNumber.length > 40 || patient.referredBy.length > 80) errors.push('Revisá la longitud del nombre (200), número de historia (40) y referencia (80 caracteres).')
-  if (!validDate(patient.date) || patient.date > today()) errors.push('La fecha de la historia debe ser válida y no puede ser futura.')
-  if (patient.birthDate && (!validDate(patient.birthDate) || patient.birthDate > patient.date)) errors.push('La fecha de nacimiento debe ser válida y anterior o igual a la fecha de la historia.')
-  if (patient.age && (!/^\d{1,3}$/.test(patient.age) || Number(patient.age) > 125)) errors.push('Revisá la edad del paciente (0 a 125 años).')
-  if (patient.dni && !/^\d{6,10}$/.test(patient.dni.replace(/[.\s-]/g, ''))) errors.push('Ingresá un DNI de 6 a 10 dígitos o dejalo vacío.')
-  for (const [label, value, max] of [['peso', clinical.weight, 700], ['talla', clinical.height, 300]] as const) {
-    if (value && (!Number.isFinite(decimal(value)) || decimal(value) <= 0 || decimal(value) > max)) errors.push(`Revisá el valor de ${label}; debe ser un número positivo (máximo ${max}).`)
-  }
-  if (evolutions.some((e) => !validDate(e.date) || e.date > today() || (patient.birthDate && e.date < patient.birthDate))) errors.push('Revisá las fechas de las evoluciones: no pueden ser futuras ni anteriores al nacimiento.')
-  if (evolutions.some((e) => !e.procedure.trim())) errors.push('Completá el procedimiento de cada evolución o quitá las filas vacías.')
+  errors.push(...Object.values(recordFieldErrors(record)))
   if (new Set(evolutions.map(e => e.id)).size !== evolutions.length || evolutions.some(e => !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(e.id))) errors.push('Hay consultas repetidas o con identificadores inválidos. Volvé a abrir la ficha.')
   const template = blankPatient()
   for (const key of ['antecedents', 'vaccines'] as const) {
     if (patient[key].length !== template[key].length || patient[key].some((item, index) => item.id !== template[key][index]?.id || item.label !== template[key][index]?.label)) errors.push('Revisá los antecedentes y las vacunas: hay preguntas repetidas, faltantes o modificadas.')
   }
-  return errors
+  return [...new Set(errors)]
 }
 
 export function formatDate(value: string) {

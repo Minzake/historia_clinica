@@ -82,11 +82,11 @@ function Workspace({ session }: { session: Session }) {
   if (!membership&&error) return <main className="setup-page"><h1>Tu acceso al consultorio</h1><Notice>{error}</Notice><div className="button-row"><button className="primary-button" onClick={() => { setLoading(true); setError(''); setAttempt(attempt + 1) }}>Reintentar</button><button className="secondary-button" disabled={signingOut} onClick={signOut}>Cerrar sesión</button></div></main>
   if(!membership)return <ClientPortal session={session}/>
   return <ClinicContext.Provider value={{ membership, setMembership, setUnsaved,userId:session.user.id }}>
-    <div className="app-shell"><header className="topbar"><Link className="brand" to="/"><span className="brand-mark"><img src="/logo.svg" alt="" /></span><span>{membership.clinic.name || 'Consultorio de podología'}</span></Link>
+    <div className="app-shell"><a className="skip-link" href="#main-content">Ir al contenido</a><header className="topbar"><Link className="brand" to="/"><span className="brand-mark"><img src="/logo.svg" alt="" /></span><span>{membership.clinic.name || 'Consultorio de podología'}</span></Link>
       <div className="topbar-actions"><span className="privacy-label"><ShieldCheck size={15} />Acceso privado</span><span className="account-email" title={session.user.email}>{session.user.email}</span><button className="icon-button" type="button" disabled={signingOut} onClick={signOut}><LogOut size={16} /><span>{signingOut ? 'Saliendo…' : 'Salir'}</span></button></div>
     </header>
     <nav className="main-navigation" aria-label="Navegación principal"><NavLink to="/" end><House size={17} />Inicio</NavLink><NavLink to="/agenda"><CalendarDays size={17}/>Agenda</NavLink><NavLink to="/historias"><FileText size={17} />Historias clínicas</NavLink>{membership.role==='owner'&&<NavLink to="/equipo"><Users size={17}/>Usuarios</NavLink>}<NavLink to="/consultorio"><Settings2 size={17} />Consultorio</NavLink><span>GESTIÓN · CONSULTORIO</span></nav>
-    <main className="workspace">{error && <Notice>{error}</Notice>}<Outlet /></main>
+    <main className="workspace" id="main-content" tabIndex={-1}>{error && <Notice>{error}</Notice>}<Outlet /></main>
     <footer className="app-footer">Consultorio de podología · Información clínica confidencial</footer>
     </div>
   </ClinicContext.Provider>
