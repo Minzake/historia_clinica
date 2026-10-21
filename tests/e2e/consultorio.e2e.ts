@@ -17,7 +17,7 @@ async function fakeBackend(page: Page) {
     const request = route.request()
     const url = new URL(request.url())
     let body: unknown
-    const headers: Record<string, string> = { 'content-type': 'application/json' }
+    const headers: Record<string, string> = { 'content-type': 'application/json', 'access-control-expose-headers': 'content-range' }
     if (url.pathname === '/auth/v1/token') body = session
     else if (url.pathname === '/auth/v1/user') body = user
     else if (url.pathname === '/auth/v1/logout') { await route.fulfill({ status: 204 }); return }
@@ -80,6 +80,12 @@ test('login, patient creation, persistence, search, continuous PDF and logout', 
   await page.getByRole('button', { name: 'Descargar PDF', exact: true }).click()
   await (await fullPromise).saveAs(testInfo.outputPath('historia-completa.pdf'))
   await page.getByRole('link', { name: 'Historias clínicas', exact: true }).first().click()
+  await page.setViewportSize({ width: 375, height: 812 })
+  await expect(page.getByRole('link', { name: 'María Paciente de prueba', exact: true })).toBeVisible()
+  await expect(page.getByRole('status')).toContainText('1 paciente')
+  expect(await page.locator('.history-table').evaluate(table => table.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('pacientes-mobile.png'), fullPage: true })
+  await page.setViewportSize({ width: 1280, height: 720 })
   await page.getByRole('searchbox', { name: 'Buscar por nombre, DNI o número de historia' }).fill('Maria')
   await page.getByRole('link', { name: 'Primera hoja', exact: true }).click()
   await expect(page.getByLabel('Apellido y nombre *')).toHaveValue('María Paciente de prueba')

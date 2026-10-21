@@ -3,8 +3,8 @@ import type { FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { bookingError,saveClientProfile } from '../lib/booking'
 import type { ClientProfile } from '../lib/booking'
-import { Field,Notice } from './ui'
-import { validateClientProfile } from '../lib/validation'
+import { Field,Notice, Form } from './ui'
+import { dniError, validateClientProfile } from '../lib/validation'
 
 export function ClientProfileForm({session,initial,onSaved}:{session:Session;initial?:ClientProfile|null;onSaved:(profile:ClientProfile)=>void}) {
   const metadata=session.user.user_metadata||{}
@@ -20,9 +20,9 @@ export function ClientProfileForm({session,initial,onSaved}:{session:Session;ini
     setBusy(true)
     try {onSaved(await saveClientProfile(name,dni,phone,safe(metadata.booking_slug)||undefined))}catch(err){setError(bookingError(err))}finally{setBusy(false)}
   }
-  return <form onSubmit={save} className="client-profile-form"><p>Estos datos identifican tu cuenta y tus reservas. No otorgan acceso a una historia clínica.</p>
-    <fieldset disabled={busy} className="settings-fields"><Field label="Nombre y apellido" required minLength={2} value={name} onChange={setName}/><Field label="DNI" required inputMode="numeric" maxLength={16} readOnly={Boolean(initial)} pattern="[0-9. -]{6,16}" value={dni} onChange={setDni}/><Field label="Email verificado" type="email" value={session.user.email||''} readOnly/><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone}/></fieldset>
+  return <Form onSubmit={save} className="client-profile-form"><p>Estos datos identifican tu cuenta y tus reservas. No otorgan acceso a una historia clínica.</p>
+    <fieldset disabled={busy} className="settings-fields"><Field label="Nombre y apellido" required minLength={2} autoComplete="name" value={name} onChange={setName}/><Field label="DNI" hint="De 6 a 10 dígitos; podés usar puntos." validationMessage={dniError(dni,true)} required inputMode="numeric" maxLength={16} readOnly={Boolean(initial)} value={dni} onChange={setDni}/><Field label="Email verificado" type="email" value={session.user.email||''} readOnly/><Field label="Celular (opcional)" type="tel" autoComplete="tel" maxLength={40} value={phone} onChange={setPhone}/></fieldset>
     {initial&&<p className="section-subtitle">Si tu DNI tiene un error, contactá al consultorio para revisar la identificación.</p>}{error&&<Notice>{error}</Notice>}
     <div className="dialog-actions"><button type="submit" className="primary-button" disabled={busy}>{busy?'Guardando…':initial?'Guardar mis datos':'Completar mis datos'}</button></div>
-  </form>
+  </Form>
 }

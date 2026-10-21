@@ -1,12 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { blankClinic } from '../src/lib/model'
 import type { BookingSettings, StaffAppointmentInput } from '../src/lib/booking'
-import { normalizeDni, validateBookingSettings, validateClientProfile, validateClinic, validateStaffAppointment, validEmail } from '../src/lib/validation'
+import { dniError, normalizeDni, phoneError, validateBookingSettings, validateClientProfile, validateClinic, validateStaffAppointment, validEmail } from '../src/lib/validation'
 
 const settings: BookingSettings = { clinic_id: 'clinic', slug: 'consultorio', enabled: true, provider_id: 'provider', provider_name: 'Profesional', timezone: 'America/Argentina/Buenos_Aires', advance_days: 30, lead_minutes: 120, cancel_hours: 12, version: 1 }
 const appointment: StaffAppointmentInput = { provider_id: 'provider', starts_at: '2030-01-01T12:00:00Z', duration_minutes: 30, kind: 'consultation', status: 'confirmed', name: 'Paciente', dni: '12345678', email: '', phone: '', notes: '' }
 
 describe('form validation shared by submit handlers and API helpers', () => {
+  it('accepts optional contact fields and rejects unusable phone numbers consistently', () => {
+    for (const phone of ['', '   ', '123456', '+54 (11) 5555-1234', '011.5555.1234']) expect(phoneError(phone)).toBe('')
+    for (const phone of ['abc123456', '12345', '+() -', '12+34+56', '1'.repeat(21)]) {
+      expect(phoneError(phone)).not.toBe('')
+      expect(validateClientProfile('Paciente', '12345678', phone)).not.toBe('')
+      expect(validateClinic({ ...blankClinic(), name: 'Consultorio', phone })).not.toBe('')
+      expect(validateStaffAppointment({ ...appointment, phone })).not.toBe('')
+    }
+    expect(dniError('')).toBe('')
+    expect(dniError('', true)).not.toBe('')
+    expect(dniError('12.345.678', true)).toBe('')
+    expect(dniError('1234x678')).not.toBe('')
+  })
   it('normalizes DNI and validates patient identity and contact lengths', () => {
     expect(normalizeDni('12.345.678')).toBe('12345678')
     expect(validateClientProfile('Paciente', '12.345.678', '')).toBe('')
