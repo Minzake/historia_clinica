@@ -1,17 +1,19 @@
 import { database, errorMessage } from './supabase'
 import { normalizeDni,validateBookingSettings,validateClientProfile,validateStaffAppointment } from './validation'
+import type { MemberRole, SpecialtyAccess } from '../core/types'
 
 export const defaultTimezone='America/Argentina/Buenos_Aires'
 export type ClientProfile={user_id:string;full_name:string;dni:string;phone:string;email:string}
-export type Practitioner={user_id:string;email:string;role:'owner'|'professional'}
-export type TeamMember=Practitioner&{active:boolean;confirmed:boolean;is_self:boolean}
+export type Practitioner={user_id:string;email:string;role:MemberRole;display_name?:string;specialty_ids?:string[]}
+export type TeamMember=Practitioner&{active:boolean;confirmed:boolean;is_self:boolean;specialties?:SpecialtyAccess[];practitioner?:boolean;license?:string}
 export type OpeningHours={weekday:number;opens:string;closes:string}
-export type BookingSettings={clinic_id:string;slug:string;enabled:boolean;provider_id:string|null;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;version:number}
-export type BookingPage={slug:string;name:string;address:string;phone:string;provider_id:string;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;duration_minutes:30}
+export type BookingSettings={clinic_id:string;slug:string;enabled:boolean;provider_id:string|null;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;version:number;page_id?:string;service_id?:string;duration_minutes?:number}
+export type Service={id:string;clinic_id:string;specialty_id:string;name:string;duration_minutes:number;active:boolean;version:number;legacy_default?:boolean}
+export type BookingPage={slug:string;name:string;address:string;phone:string;provider_id:string;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;duration_minutes:number;service_id?:string;service_name?:string;specialty_id?:string;aliases?:string[]}
 export type AppointmentStatus='confirmed'|'cancelled'|'completed'|'no_show'
 export type MyAppointment={id:string;starts_at:string;ends_at:string;status:AppointmentStatus;version:number;source:'web'|'staff';clinic_name:string;phone:string;address:string;timezone:string;slug:string;provider_id:string;provider_name:string;advance_days:number;can_reschedule:boolean;cancel_hours:number;notification_state:string|null}
-export type Appointment={id:string;clinic_id:string;provider_id:string;client_user_id:string|null;patient_id:string|null;contact_name:string;contact_dni:string;contact_email:string;contact_phone:string;starts_at:string;ends_at:string;kind:'consultation'|'block';source:'web'|'staff';status:AppointmentStatus;private_notes:string;version:number;notification_state:string|null}
-export type StaffAppointmentInput={provider_id:string;client_user_id?:string|null;starts_at:string;duration_minutes:number;kind:'consultation'|'block';status:AppointmentStatus;name:string;dni:string;email:string;phone:string;notes:string}
+export type Appointment={id:string;clinic_id:string;provider_id:string;client_user_id:string|null;patient_id:string|null;contact_name:string;contact_dni:string;contact_email:string;contact_phone:string;starts_at:string;ends_at:string;kind:'consultation'|'block';source:'web'|'staff';status:AppointmentStatus;private_notes:string;version:number;notification_state:string|null;service_id?:string|null;can_manage_notes?:boolean}
+export type StaffAppointmentInput={provider_id:string;client_user_id?:string|null;service_id?:string;starts_at:string;duration_minutes:number;kind:'consultation'|'block';status:AppointmentStatus;name:string;dni:string;email:string;phone:string;notes:string}
 
 async function rpc<T>(name:string,args:Record<string,unknown>={}) {
   const {data,error}=await database().rpc(name,args)
@@ -31,21 +33,15 @@ export const getMyAppointments=()=>rpc<MyAppointment[]>('get_my_appointments')
 export const getPractitioners=(clinicId:string)=>rpc<Practitioner[]>('list_practitioners',{p_clinic_id:clinicId})
 export const getTeam=(clinicId:string)=>rpc<TeamMember[]>('list_team',{p_clinic_id:clinicId})
 export const getAgenda=(clinicId:string,from:string,to:string)=>rpc<Appointment[]>('list_agenda',{p_clinic_id:clinicId,p_from:from,p_to:to})
-export async function getBookingSettings(clinicId:string) {
-  const [settings,hours,practitioners]=await Promise.all([
-    database().from('booking_settings').select('*').eq('clinic_id',clinicId).single(),
-    database().from('booking_hours').select('weekday,opens,closes').eq('clinic_id',clinicId).order('weekday').order('opens'),
-    getPractitioners(clinicId),
-  ])
-  if(settings.error)throw settings.error
-  if(hours.error)throw hours.error
-  return {settings:settings.data as BookingSettings,hours:hours.data as OpeningHours[],practitioners}
-}
+export const getBookingSettings=(clinicId:string,pageId?:string)=>rpc<{settings:BookingSettings;hours:OpeningHours[];practitioners:Practitioner[];pages?:{page_id:string;slug:string;provider_name:string;service_id:string;enabled:boolean}[];services?:Service[]}>('get_booking_configuration',{p_clinic_id:clinicId,p_page_id:pageId||null})
 export function saveBookingSettings(settings:BookingSettings,hours:OpeningHours[]) {
   const error=validateBookingSettings(settings,hours)
   if(error)throw new Error(error)
-  return rpc<void>('save_booking_settings',{p_clinic_id:settings.clinic_id,p_version:settings.version,p_data:settings,p_hours:hours})
+  return rpc<string>('save_booking_page',{p_clinic_id:settings.clinic_id,p_id:settings.page_id||null,p_version:settings.version,p_data:settings,p_hours:hours})
 }
+export const saveService=(clinicId:string,service:Partial<Service>&{name:string;duration_minutes:number;active:boolean})=>rpc<string>('save_service',{p_clinic_id:clinicId,p_id:service.id||null,p_version:service.version||0,p_data:{...service,specialty_id:service.specialty_id||'podologia'}})
+export const setSpecialtyAccess=(clinicId:string,userId:string,access:SpecialtyAccess,practitioner:boolean,name:string,license:string)=>rpc<void>('set_member_specialty_access',{p_clinic_id:clinicId,p_user_id:userId,p_specialty_id:access.specialtyId,p_read:access.canRead,p_write:access.canWrite,p_export:access.canExport,p_scope:access.scope,p_practitioner:practitioner,p_name:name,p_license:license})
+export const grantChartAccess=(clinicId:string,chartId:string,userId:string,read:boolean,write:boolean,exportPdf:boolean)=>rpc<void>('grant_chart_access',{p_clinic_id:clinicId,p_chart_id:chartId,p_user_id:userId,p_read:read,p_write:write,p_export:exportPdf})
 
 export async function serverRequest(path:string,body:Record<string,unknown>,method='POST') {
   const {data:{session}}=await database().auth.getSession()
@@ -87,6 +83,9 @@ export function bookingError(error:unknown) {
     INVALID_BLOCK_STATUS:'Un bloqueo solo puede estar confirmado o cancelado.',
     QUESTIONNAIRE_INVALID:'Revisá los antecedentes y las vacunas: hay preguntas repetidas, faltantes o modificadas.',
     INVALID_EMAIL:'Ingresá un correo válido o dejalo vacío.',
+    AGENDA_HAS_APPOINTMENTS:'Esta agenda ya tiene reservas. Creá otra agenda para cambiar de profesional o prestación; los turnos existentes se conservan.',
+    MEMBER_HAS_APPOINTMENTS:'Reasigná o cancelá los turnos futuros de esta persona antes de quitar su perfil profesional.',
+    LEGACY_DURATION_FIXED:'La consulta original conserva 30 minutos. Creá otra prestación para ofrecer una duración diferente.',
     BOOKING_RATE_LIMIT:'Realizaste varios cambios seguidos. Esperá una hora o contactá al consultorio.',
     CHANGE_DEADLINE:'Ya venció el plazo para cambiar este turno por la web. Contactá al consultorio.',
     DNI_IMMUTABLE:'El DNI no se puede cambiar desde el portal. Contactá al consultorio si hay un error.',

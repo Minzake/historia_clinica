@@ -4,7 +4,7 @@ export async function handleTeam(req,res,env=process.env) {
   if(!['POST','PATCH'].includes(req.method)) return respond(res,405,{error:'Método no permitido.'})
   try {
     const admin=adminClient(env),user=await requestUser(req,admin),body=await jsonBody(req)
-    if(!uuid(body.clinic_id)||!['owner','professional'].includes(body.role)) return respond(res,400,{error:'Revisá el consultorio y los permisos solicitados.'})
+    if(!uuid(body.clinic_id)||!['owner','professional','reception'].includes(body.role)) return respond(res,400,{error:'Revisá el consultorio y los permisos solicitados.'})
     const member=await admin.from('clinic_members').select('role,active').eq('user_id',user.id).eq('clinic_id',body.clinic_id).maybeSingle()
     if(member.error||!member.data?.active||member.data.role!=='owner') return respond(res,403,{error:'Solo un administrador activo puede gestionar el equipo.'})
     let target=req.method==='PATCH'?body.user_id:undefined,invited=false

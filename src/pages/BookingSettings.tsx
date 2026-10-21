@@ -1,26 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft,Plus,Save,Trash2 } from 'lucide-react'
 import { useClinic } from '../context'
-import { bookingError,getBookingSettings,saveBookingSettings } from '../lib/booking'
-import type { OpeningHours,BookingSettings as Settings } from '../lib/booking'
+import { bookingError,getBookingSettings,saveBookingSettings,saveService } from '../lib/booking'
+import type { OpeningHours,Service,BookingSettings as Settings } from '../lib/booking'
 import { useRemote } from '../hooks/useRemote'
-import { Field,Loading,Notice, Form, SelectField } from '../components/ui'
+import { Field,Loading,Notice,Modal, Form, SelectField } from '../components/ui'
 import { UnsavedChanges } from '../components/UnsavedChanges'
 import { openingHourErrors, validateBookingSettings } from '../lib/validation'
 
 const weekdays=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+function ServicesDialog({services,onClose,onSaved}:{services:Service[];onClose:()=>void;onSaved:()=>void}) {
+  const {membership}=useClinic()
+  const [draft,setDraft]=useState<Partial<Service>&{name:string;duration_minutes:number;active:boolean}>({name:'',duration_minutes:30,active:true})
+  const [duration,setDuration]=useState('30'),[busy,setBusy]=useState(false),[error,setError]=useState('')
+  async function save(event:FormEvent){event.preventDefault();setBusy(true);setError('');try{await saveService(membership.clinicId,{...draft,duration_minutes:Number(duration)});onSaved()}catch(err){setError(bookingError(err))}finally{setBusy(false)}}
+  return <Modal title="Prestaciones de podología" onClose={()=>{if(!busy)onClose()}}><p>Las prestaciones definen qué atención se reserva y cuánto dura. Cada profesional puede tener su propia agenda.</p>
+    <div className="service-list">{services.map(service=><button className="secondary-button" key={service.id} disabled={busy} onClick={()=>{setDraft(service);setDuration(String(service.duration_minutes));setError('')}}>{service.name} · {service.duration_minutes} min{service.active?'':' · Inactiva'}</button>)}<button className="text-button" disabled={busy} onClick={()=>{setDraft({name:'',duration_minutes:30,active:true});setDuration('30');setError('')}}>Crear otra prestación</button></div>
+    <Form key={draft.id||'new'} onSubmit={save}><fieldset className="settings-fields" disabled={busy}><Field label="Nombre de la prestación" required minLength={2} maxLength={120} value={draft.name} onChange={name=>setDraft(current=>({...current,name}))}/><Field label="Duración de la prestación (minutos)" type="number" required min={15} max={480} step={15} readOnly={Boolean(draft.legacy_default)} value={duration} onChange={setDuration} hint="Las reservas existentes conservan su duración. La consulta original de podología mantiene 30 minutos."/>
+    <label className="toggle-field"><input type="checkbox" checked={draft.active} onChange={event=>setDraft(current=>({...current,active:event.target.checked}))}/><span>Prestación activa</span></label></fieldset>{error&&<Notice>{error}</Notice>}<div className="dialog-actions"><button className="secondary-button" type="button" disabled={busy} onClick={onClose}>Cancelar</button><button className="primary-button" disabled={busy}>{busy?'Guardando…':'Guardar prestación'}</button></div></Form>
+  </Modal>
+}
 export function BookingSettings() {
   const {membership}=useClinic()
   return membership.role==='owner'?<SettingsLoader/>:<Notice>Solo los administradores pueden cambiar los horarios de reserva.</Notice>
 }
 function SettingsLoader() {
-  const {membership}=useClinic(),resource=useRemote(`booking-settings:${membership.clinicId}`,()=>getBookingSettings(membership.clinicId))
+  const {membership}=useClinic()
+  const [pageId,setPageId]=useState<string|undefined>(),[creating,setCreating]=useState(false),[serviceOpen,setServiceOpen]=useState(false),[changed,setChanged]=useState(false)
+  const resource=useRemote(`booking-settings:${membership.clinicId}:${pageId||'default'}`,()=>getBookingSettings(membership.clinicId,pageId))
+  const selectPage=(id?:string,create=false)=>{if(changed&&!window.confirm('Hay cambios sin guardar. ¿Querés descartarlos y cambiar de agenda?'))return;setChanged(false);setPageId(id);setCreating(create)}
   const [message,setMessage]=useState('')
-  return <><Link className="back-link" to="/agenda"><ArrowLeft size={15}/>Agenda</Link><div className="page-heading"><div><p className="eyebrow">CONFIGURACIÓN DE TURNOS</p><h1>Horarios y reservas web</h1><p className="page-description">La web ofrece consultas de 30 minutos. Las atenciones extendidas se cargan desde la agenda.</p></div></div>{message&&<Notice kind="success">{message}</Notice>}{resource.loading?<Loading/>:resource.error?<Notice>{bookingError(resource.error)} <button className="text-button" onClick={resource.reload}>Reintentar</button></Notice>:resource.data&&<SettingsForm key={resource.data.settings.version} initial={resource.data} onSaved={()=>{setMessage('Disponibilidad guardada. Los cambios ya se aplican a las nuevas reservas.');resource.reload()}}/>}</>
+  return <><Link className="back-link" to="/agenda"><ArrowLeft size={15}/>Agenda</Link><div className="page-heading"><div><p className="eyebrow">CONFIGURACIÓN DE TURNOS</p><h1>Horarios y reservas web</h1><p className="page-description">Cada agenda ofrece una prestación con una profesional y sus propios horarios. La consulta inicial de podología conserva sus 30 minutos.</p></div></div><div className="agenda-config-navigation"><div className="button-row">{(resource.data?.pages?.length||0)>1&&<SelectField label="Agenda de reservas" value={creating?'':resource.data?.settings.page_id||''} onChange={event=>selectPage(event.target.value)}><option value="" disabled>Seleccionar agenda</option>{resource.data?.pages?.map(page=><option key={page.page_id} value={page.page_id}>{page.provider_name||page.slug} · {page.slug}</option>)}</SelectField>}<button className="secondary-button" disabled={!resource.data} onClick={()=>selectPage(undefined,true)}><Plus size={16}/>Agregar agenda</button><button className="secondary-button" disabled={!resource.data} onClick={()=>setServiceOpen(true)}>Prestaciones</button></div></div>{message&&<Notice kind="success">{message}</Notice>}{resource.loading?<Loading/>:resource.error?<Notice>{bookingError(resource.error)} <button className="text-button" onClick={resource.reload}>Reintentar</button></Notice>:resource.data&&<SettingsForm key={`${creating?'new':resource.data.settings.page_id||'default'}:${resource.data.settings.version}`} initial={creating?{...resource.data,hours:[],settings:{...resource.data.settings,page_id:undefined,version:0,slug:'',enabled:false,provider_id:null,provider_name:''}}:resource.data} onDirty={setChanged} onSaved={(id)=>{setChanged(false);setCreating(false);if(id)setPageId(id);setMessage('Disponibilidad guardada. Los cambios ya se aplican a las nuevas reservas.');resource.reload()}}/>}{serviceOpen&&resource.data&&<ServicesDialog services={resource.data.services||[]} onClose={()=>setServiceOpen(false)} onSaved={()=>{setServiceOpen(false);resource.reload()}}/>}</>
 }
-function SettingsForm({initial,onSaved}:{initial:Awaited<ReturnType<typeof getBookingSettings>>;onSaved:()=>void}) {
+function SettingsForm({initial,onSaved,onDirty}:{initial:Awaited<ReturnType<typeof getBookingSettings>>;onSaved:(id?:string)=>void;onDirty:(dirty:boolean)=>void}) {
   const {membership}=useClinic()
   const [settings,setSettings]=useState<Settings>({...initial.settings,provider_name:initial.settings.provider_name||membership.clinic.professional})
   const [hours,setHours]=useState<OpeningHours[]>(initial.hours.map((hour)=>({...hour,opens:hour.opens.slice(0,5),closes:hour.closes.slice(0,5)})))
@@ -29,19 +43,24 @@ function SettingsForm({initial,onSaved}:{initial:Awaited<ReturnType<typeof getBo
   const dirty=JSON.stringify({settings,hours})!==baseline
   function update<K extends keyof Settings>(key:K,value:Settings[K]){setSettings((current)=>({...current,[key]:value}))}
   function updateHours(index:number,patch:Partial<OpeningHours>){setHours((current)=>current.map((hour,i)=>i===index?{...hour,...patch}:hour))}
-  const hourErrors=openingHourErrors(hours)
+  useEffect(()=>onDirty(dirty||busy),[dirty,busy,onDirty])
+  const service=initial.services?.find(item=>item.id===settings.service_id)
+  const duration=service?.duration_minutes||settings.duration_minutes||30
+  const hourErrors=openingHourErrors(hours,duration)
   async function save(event:FormEvent) {
     event.preventDefault();setError('')
-    const validation=validateBookingSettings(settings,hours)
+    const validation=validateBookingSettings({...settings,duration_minutes:duration},hours)
     if(validation){setError(validation);return}
     setBusy(true)
-    try{await saveBookingSettings(settings,hours);onSaved()}catch(err){setError(bookingError(err))}finally{setBusy(false)}
+    try{const id=await saveBookingSettings({...settings,duration_minutes:duration},hours);onSaved(id)}catch(err){setError(bookingError(err))}finally{setBusy(false)}
   }
   return <Form className="panel" onSubmit={save}><UnsavedChanges dirty={dirty||busy} saving={busy}/><div className="panel-heading"><h2>Disponibilidad del consultorio</h2><span className={`status-badge ${settings.enabled?'confirmed':'cancelled'}`}>{settings.enabled?'Reservas habilitadas':'Reservas cerradas'}</span></div><div className="panel-content"><fieldset disabled={busy} className="settings-fields">
+    <SelectField label="Prestación de esta agenda" required value={settings.service_id||''} onChange={event=>{update('service_id',event.target.value);update('provider_id',null);update('provider_name','')}}>{initial.services?.map(item=><option key={item.id} value={item.id}>{item.name} · {item.duration_minutes} minutos{item.active?'':' · Inactiva'}</option>)}</SelectField>
+    {service&&!service.active&&<Notice kind="info">Esta prestación está inactiva. Su agenda no ofrece horarios públicos.</Notice>}
     <label className="toggle-field"><input type="checkbox" checked={settings.enabled} onChange={(event)=>update('enabled',event.target.checked)}/><span>Habilitar reservas automáticas por la web</span></label>
-    <div className="field-grid settings-contact-grid"><SelectField label="Profesional que atiende" required={settings.enabled} value={settings.provider_id||''} onChange={(event)=>update('provider_id',event.target.value||null)}><option value="">Seleccionar profesional</option>{initial.practitioners.map((p)=><option key={p.user_id} value={p.user_id}>{p.email}</option>)}</SelectField><Field label="Nombre público de la profesional" maxLength={120} value={settings.provider_name} onChange={(value)=>update('provider_name',value)}/></div>
+    <div className="field-grid settings-contact-grid"><SelectField label="Profesional que atiende" required={settings.enabled} value={settings.provider_id||''} onChange={(event)=>update('provider_id',event.target.value||null)}><option value="">Seleccionar profesional</option>{initial.practitioners.filter(p=>!service||!p.specialty_ids||p.specialty_ids.includes(service.specialty_id)).map((p)=><option key={p.user_id} value={p.user_id}>{p.email}</option>)}</SelectField><Field label="Nombre público de la profesional" maxLength={120} value={settings.provider_name} onChange={(value)=>update('provider_name',value)}/></div>
     <p className="section-subtitle">Elegí a quien realiza las consultas. Una cuenta administrativa técnica no necesita tener agenda.</p>
-    <div className="field-grid settings-contact-grid"><Field label="Identificador del enlace público" hint="De 3 a 60 letras minúsculas, números o guiones. Ej. podologia-centro" data-format-hint="Usá de 3 a 60 letras minúsculas, números o guiones, comenzando con una letra o número." required pattern="[a-z0-9][a-z0-9-]{2,59}" maxLength={60} value={settings.slug} onChange={(value)=>update('slug',value)}/><Field label="Zona horaria" readOnly value={settings.timezone}/></div>
+    <div className="field-grid settings-contact-grid"><Field label="Identificador del enlace público" hint="De 3 a 60 letras minúsculas, números o guiones. Ej. podologia-centro" data-format-hint="Usá de 3 a 60 letras minúsculas, números o guiones, comenzando con una letra o número." required pattern="[a-z0-9](?:[a-z0-9]|-){2,59}" maxLength={60} value={settings.slug} onChange={(value)=>update('slug',value)}/><Field label="Zona horaria" readOnly value={settings.timezone}/></div>
     <p className="section-subtitle">Enlace: <Link to={`/reservar/${settings.slug}`}>{`${window.location.origin}/reservar/${settings.slug}`}</Link></p>
     <h3>Reglas de reserva</h3><div className="field-grid"><Field label="Anticipación máxima (días)" type="number" min={1} max={180} required hint="De 1 a 180 días." value={Number.isFinite(settings.advance_days)?String(settings.advance_days):""} onChange={(value)=>update('advance_days',value===''?Number.NaN:Number(value))}/><Field label="Anticipación mínima (minutos)" type="number" min={0} max={10080} required hint="De 0 a 10.080 minutos. 120 minutos = 2 horas." value={Number.isFinite(settings.lead_minutes)?String(settings.lead_minutes):""} onChange={(value)=>update('lead_minutes',value===''?Number.NaN:Number(value))}/><Field label="Cambios hasta (horas antes)" type="number" min={0} max={168} required hint="De 0 a 168 horas. 12 horas = medio día." value={Number.isFinite(settings.cancel_hours)?String(settings.cancel_hours):""} onChange={(value)=>update('cancel_hours',value===''?Number.NaN:Number(value))}/></div>
     <h3>Días y franjas de atención</h3><p className="section-subtitle">Agregá dos franjas para separar mañana y tarde. Los bloqueos por feriados o ausencias se cargan en Agenda. Cambiar estas reglas no cancela reservas existentes.</p>

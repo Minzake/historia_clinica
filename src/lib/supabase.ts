@@ -29,6 +29,9 @@ export function database() {
 
 export function errorMessage(error: unknown): string {
   const item = error as { code?: string; message?: string; status?: number }
+  if (item?.message?.includes('UNSUPPORTED_CLINICAL_SCHEMA')) return 'Esta especialidad o versión de ficha no está instalada. Actualizá la aplicación o contactá al administrador.'
+  if (item?.message?.includes('CONFLICT_IDENTITY')) return 'Otra persona modificó los datos del paciente. Volvé a abrir la ficha antes de guardar.'
+  if (item?.message?.includes('EXPORT_NOT_ALLOWED')) return 'Tu cuenta no tiene permiso para descargar esta ficha.'
   if (item?.code === '23505') return 'Ya existe un paciente con ese DNI o número de historia clínica en el consultorio.'
   if (item?.message?.includes('CONFLICT')) return 'Otra sesión modificó esta ficha. Volvé a abrirla antes de editar; tus cambios actuales aún no se guardaron.'
   if (item?.message?.includes('NO_MEMBERSHIP')) return 'Tu cuenta no tiene un consultorio asignado. Contactá al administrador.'

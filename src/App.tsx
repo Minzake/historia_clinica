@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { createBrowserRouter, Link, NavLink, Navigate, Outlet, RouterProvider, useLocation, useNavigate } from 'react-router-dom'
 import { CalendarDays,FileText, House, LogOut, Settings2, ShieldCheck,Users } from 'lucide-react'
 import { supabase, database, errorMessage } from './lib/supabase'
-import { getMembership } from './lib/api'
+import { getMemberships } from './lib/api'
 import { passwordSetupRequested } from './lib/auth-links'
 import type { Membership } from './lib/model'
 import { ClinicContext } from './context'
@@ -18,6 +18,8 @@ import { BookingSettings } from './pages/BookingSettings'
 import { Team } from './pages/Team'
 import { Booking } from './pages/Booking'
 import { ClientPortal } from './pages/ClientPortal'
+import { PatientDirectory } from './pages/PatientDirectory'
+import { canReadClinical } from './core/access'
 import './App.css'
 
 const recoveryRequested = passwordSetupRequested(window.location.pathname, window.location.hash)
@@ -58,20 +60,29 @@ function App() {
 }
 
 function Workspace({ session }: { session: Session }) {
+  const navigate=useNavigate()
   const [membership, setMembership] = useState<Membership | null>(null)
+  const [memberships,setMemberships]=useState<Membership[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [signingOut, setSigningOut] = useState(false)
   const unsaved = useRef(false)
+  const switchingClinic=useRef(false)
   const setUnsaved = useCallback((value: boolean) => { unsaved.current = value }, [])
   useEffect(() => {
     let active = true
-    getMembership(session.user.id).then((value) => { if (active) setMembership(value) })
+    getMemberships().then((values) => { if (active) {setMemberships(values);setMembership(current=>values.find(item=>item.clinicId===current?.clinicId)||values[0]||null)} })
       .catch((err) => { if (active) setError(errorMessage(err)) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [session.user.id, attempt])
+  async function refreshAccess(){const values=await getMemberships();setMemberships(values);setMembership(current=>values.find(item=>item.clinicId===current?.clinicId)||values[0]||null)}
+  function changeClinic(clinicId:string){
+    if(unsaved.current&&!window.confirm('Hay cambios sin guardar. ¿Querés descartarlos y cambiar de consultorio?'))return
+    unsaved.current=false;switchingClinic.current=true;setMembership(memberships.find(item=>item.clinicId===clinicId)||null)
+  }
+  useEffect(()=>{if(switchingClinic.current){switchingClinic.current=false;navigate('/',{replace:true})}},[membership?.clinicId,navigate])
   async function signOut() {
     if (unsaved.current && !window.confirm('Hay cambios sin guardar. ¿Querés cerrar sesión y descartarlos?')) return
     setSigningOut(true); setError('')
@@ -81,12 +92,12 @@ function Workspace({ session }: { session: Session }) {
   if (loading) return <Loading label="Abriendo consultorio…" />
   if (!membership&&error) return <main className="setup-page"><h1>Tu acceso al consultorio</h1><Notice>{error}</Notice><div className="button-row"><button className="primary-button" onClick={() => { setLoading(true); setError(''); setAttempt(attempt + 1) }}>Reintentar</button><button className="secondary-button" disabled={signingOut} onClick={signOut}>Cerrar sesión</button></div></main>
   if(!membership)return <ClientPortal session={session}/>
-  return <ClinicContext.Provider value={{ membership, setMembership, setUnsaved,userId:session.user.id }}>
+  return <ClinicContext.Provider key={membership.clinicId} value={{ membership, setMembership, setUnsaved,userId:session.user.id,refreshAccess }}>
     <div className="app-shell"><a className="skip-link" href="#main-content">Ir al contenido</a><header className="topbar"><Link className="brand" to="/"><span className="brand-mark"><img src="/logo.svg" alt="" /></span><span>{membership.clinic.name || 'Consultorio de podología'}</span></Link>
-      <div className="topbar-actions"><span className="privacy-label"><ShieldCheck size={15} />Acceso privado</span><span className="account-email" title={session.user.email}>{session.user.email}</span><button className="icon-button" type="button" disabled={signingOut} onClick={signOut}><LogOut size={16} /><span>{signingOut ? 'Saliendo…' : 'Salir'}</span></button></div>
+      <div className="topbar-actions">{memberships.length>1&&<label className="clinic-switcher"><span>Consultorio</span><select aria-label="Consultorio activo" value={membership.clinicId} onChange={event=>changeClinic(event.target.value)}>{memberships.map(item=><option key={item.clinicId} value={item.clinicId}>{item.clinicId===membership.clinicId?membership.clinic.name||'Consultorio':item.clinic.name||'Consultorio'}</option>)}</select></label>}<span className="privacy-label"><ShieldCheck size={15} />Acceso privado</span><span className="account-email" title={session.user.email}>{session.user.email}</span><button className="icon-button" type="button" disabled={signingOut} onClick={signOut}><LogOut size={16} /><span>{signingOut ? 'Saliendo…' : 'Salir'}</span></button></div>
     </header>
-    <nav className="main-navigation" aria-label="Navegación principal"><NavLink to="/" end><House size={17} />Inicio</NavLink><NavLink to="/agenda"><CalendarDays size={17}/>Agenda</NavLink><NavLink to="/historias"><FileText size={17} />Historias clínicas</NavLink>{membership.role==='owner'&&<NavLink to="/equipo"><Users size={17}/>Usuarios</NavLink>}<NavLink to="/consultorio"><Settings2 size={17} />Consultorio</NavLink><span>GESTIÓN · CONSULTORIO</span></nav>
-    <main className="workspace" id="main-content" tabIndex={-1}>{error && <Notice>{error}</Notice>}<Outlet /></main>
+    <nav className="main-navigation" aria-label="Navegación principal"><NavLink to="/" end><House size={17} />Inicio</NavLink><NavLink to="/agenda"><CalendarDays size={17}/>Agenda</NavLink><NavLink to="/pacientes"><Users size={17}/>Pacientes</NavLink>{canReadClinical(membership)&&<NavLink to="/historias"><FileText size={17} />Historias clínicas</NavLink>}{membership.role==='owner'&&<NavLink to="/equipo"><Users size={17}/>Usuarios</NavLink>}<NavLink to="/consultorio"><Settings2 size={17} />Consultorio</NavLink><span>GESTIÓN · CONSULTORIO</span></nav>
+    <main className="workspace" id="main-content" tabIndex={-1}>{error && <Notice>{error}</Notice>}<Outlet key={membership.clinicId}/></main>
     <footer className="app-footer">Consultorio de podología · Información clínica confidencial</footer>
     </div>
   </ClinicContext.Provider>
@@ -105,6 +116,7 @@ const router = createBrowserRouter([{
   children: [
     { index: true, element: <Dashboard /> },
     { path: 'historias', element: <Patients /> },
+    { path: 'pacientes', element: <PatientDirectory /> },
     { path: 'historias/nueva', element: <PatientEditor key="new" /> },
     { path: 'historias/:patientId', element: <PatientEditor /> },
     { path: 'consultorio', element: <Settings /> },

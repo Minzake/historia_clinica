@@ -4,6 +4,7 @@ import { Download, LoaderCircle, X } from 'lucide-react'
 import { downloadPdf } from '../lib/pdf'
 import type { PdfKind } from '../lib/pdf'
 import type { Clinic, RecordDraft } from '../lib/model'
+import { errorMessage } from '../lib/supabase'
 
 export { Field, Form, SelectField, TextAreaField } from './Form'
 
@@ -29,7 +30,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   </dialog>
 }
 
-export function PdfActions({ record, clinic, disabled = false }: { record: RecordDraft; clinic: Clinic; disabled?: boolean }) {
+export function PdfActions({ record, clinic, disabled = false,beforeDownload }: { record: RecordDraft; clinic: Clinic; disabled?: boolean;beforeDownload?:()=>Promise<RecordDraft> }) {
   const [kind, setKind] = useState<PdfKind>('complete')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -37,9 +38,10 @@ export function PdfActions({ record, clinic, disabled = false }: { record: Recor
   async function download() {
     setBusy(true); setError(''); setMessage('')
     try {
-      await downloadPdf(record, clinic, kind)
+      const source=beforeDownload?await beforeDownload():record
+      await downloadPdf(source, clinic, kind)
       setMessage('PDF generado. Revisá las descargas de tu navegador.')
-    } catch (error) { setError(error instanceof Error && error.message === 'INVALID_RECORD' ? 'La ficha contiene datos inválidos. Volvé a abrirla o contactá al consultorio antes de descargarla.' : 'No se pudo generar el PDF. Intentá nuevamente. Si acabás de actualizar la web, recargá la página.') }
+    } catch (error) { setError(error instanceof Error && error.message === 'INVALID_RECORD' ? 'La ficha contiene datos inválidos. Volvé a abrirla o contactá al consultorio antes de descargarla.' : beforeDownload?errorMessage(error):'No se pudo generar el PDF. Intentá nuevamente. Si acabás de actualizar la web, recargá la página.') }
     finally { setBusy(false) }
   }
   return <div className="pdf-panel">

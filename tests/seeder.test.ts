@@ -44,7 +44,7 @@ function backend(initial: { users?: typeof users; clinics?: Record<string, unkno
           if (!rows) throw new Error('Unexpected data query')
           if (operation === 'insert') {
             const key = table === 'clinics' ? 'id' : 'user_id'
-            if (values.some((input) => rows.some((row) => row[key] === input[key]))) return Promise.resolve({ data: null, error: { code: '23505' } }).then(resolve, reject)
+            if (values.some((input) => rows.some((row) => row[key] === input[key] && (table==='clinics'||row.clinic_id===input.clinic_id)))) return Promise.resolve({ data: null, error: { code: '23505' } }).then(resolve, reject)
             rows.push(...structuredClone(values))
           }
           const matching = rows.filter((row) => filters.every((match) => match(row))).slice(0, limit)
@@ -59,6 +59,14 @@ function backend(initial: { users?: typeof users; clinics?: Record<string, unkno
 }
 
 describe('administrator seeder', () => {
+  it('scopes an explicit center without upgrading or moving memberships in another center',async()=>{
+    const original={user_id:users[0].id,clinic_id:'other-clinic',role:'professional'}
+    const {client,state}=backend({clinics:[{id:'target-clinic'},{id:'other-clinic'}],memberships:[original]})
+    await seedAdmins(client,{...options,clinicId:'target-clinic'},'https://example.supabase.co')
+    expect(state.clinic_members.find(member=>member.clinic_id==='other-clinic')).toEqual(original)
+    expect(state.clinic_members.filter(member=>member.clinic_id==='target-clinic')).toHaveLength(2)
+    expect(state.invitations).toHaveLength(0)
+  })
   it('checks without changing accounts, clinics, roles or passwords', async () => {
     const { client, state } = backend({ users: [] })
     const result = await seedAdmins(client, { ...options, apply: false }, 'https://example.supabase.co')

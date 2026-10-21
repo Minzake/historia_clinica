@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 import type { Membership } from './lib/model'
 
 export type WorkspaceContext = {
-  membership: Membership; setMembership: (value: Membership) => void; setUnsaved: (value: boolean) => void; userId?:string
+  membership: Membership; setMembership: (value: Membership) => void; setUnsaved: (value: boolean) => void; userId?:string; refreshAccess?:()=>Promise<void>
 }
 export const ClinicContext = createContext<WorkspaceContext | null>(null)
 export function useClinic() {

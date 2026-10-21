@@ -2,47 +2,38 @@ import { database } from './supabase'
 import { ageAt, readClinic, validateRecord } from './model'
 import type { Membership, PatientSummary, RecordDraft, Revision, SavedRecord, Clinic } from './model'
 import { validateClinic } from './validation'
+import type { ClinicalMetadata } from '../core/types'
+import { recordModule } from '../modules/registry'
 
-export async function getMembership(userId: string): Promise<Membership | null> {
-  const { data, error } = await database().from('clinic_members').select('clinic_id, role, clinics(settings, version)').eq('user_id', userId).eq('active',true).maybeSingle()
+export async function getMemberships(): Promise<Membership[]> {
+  const { data, error } = await database().rpc('list_my_memberships')
   if (error) throw error
-  if (!data) return null
-  const clinic = data.clinics as unknown as { settings: unknown; version: number }
-  return { clinicId: data.clinic_id, role: data.role, clinic: readClinic(clinic.settings), version: clinic.version }
+  if (!Array.isArray(data) || data.some(item => !Array.isArray(item.specialties))) throw new Error('INVALID_MEMBERSHIPS')
+  return data.map(item => ({ ...item, clinic: readClinic(item.clinic) })) as Membership[]
 }
 
 export async function listPatients(clinicId: string, search = '', page = 0, pageSize = 12) {
-  let query = database().from('patients').select('id, full_name, history_number, dni, updated_at', { count: 'exact' }).eq('clinic_id', clinicId)
-  // Strip PostgREST filter operators and LIKE wildcards before interpolating the OR filter.
-  const term = search.trim().replace(/[^\p{L}\p{N}\s.-]/gu, '').slice(0, 100)
-  if (search.trim() && !term) return { patients: [], count: 0 }
-  if (term) {
-    const folded = term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es')
-    const clauses = [`full_name_search.ilike.%${folded}%`, `history_number.ilike.%${term}%`]
-    const digits = term.replace(/[.\s-]/g, '')
-    if (/^\d+$/.test(digits)) clauses.push(`dni.ilike.%${digits}%`)
-    query = query.or(clauses.join(','))
-  }
-  const { data, error, count } = await query.order('updated_at', { ascending: false }).order('id').range(page * pageSize, (page + 1) * pageSize - 1)
+  const { data, error } = await database().rpc('list_clinical_patients', { p_clinic_id: clinicId, p_query: search.trim().slice(0, 100), p_page: page, p_page_size: pageSize })
   if (error) throw error
-  return { patients: data as PatientSummary[], count: count || 0 }
+  return data as { patients: PatientSummary[]; count: number }
 }
 
 export async function getDashboard(clinicId: string) {
-  const recent = await listPatients(clinicId, '', 0, 5)
-  const { count, error } = await database().from('evolutions').select('id', { count: 'exact', head: true }).eq('clinic_id', clinicId).is('archived_at', null)
+  const { data, error } = await database().rpc('get_clinic_dashboard', { p_clinic_id: clinicId })
   if (error) throw error
-  return { ...recent, evolutions: count || 0 }
+  return data as { patients: PatientSummary[]; count: number; evolutions: number }
 }
 
-export async function getRecord(id: string): Promise<SavedRecord> {
-  const { data, error } = await database().rpc('get_patient_record', { p_patient_id: id })
+export async function getRecord(id: string, clinicId:string): Promise<SavedRecord> {
+  const { data, error } = await database().rpc('get_clinical_chart', { p_patient_id: id, p_specialty_id:'podologia',p_export:false,p_clinic_id:clinicId })
   if (error) throw error
   if (!data) throw new Error('NOT_FOUND')
+  recordModule(data as SavedRecord)
   return data as SavedRecord
 }
 
-export async function saveRecord(clinicId: string, record: RecordDraft, id: string | null, version: number): Promise<SavedRecord> {
+export async function saveRecord(clinicId: string, record: RecordDraft, id: string | null, version: number, metadata?: ClinicalMetadata): Promise<SavedRecord> {
+  recordModule({ ...record, ...metadata })
   const errors = validateRecord(record)
   if (errors.length) throw new Error(errors.join(' '))
   const normalized = structuredClone(record)
@@ -52,7 +43,8 @@ export async function saveRecord(clinicId: string, record: RecordDraft, id: stri
   normalized.clinical.height = normalized.clinical.height.trim()
   if (normalized.patient.birthDate) normalized.patient.age = ageAt(normalized.patient.birthDate, normalized.patient.date)
   const { data, error } = await database().rpc('save_patient_record', {
-    p_clinic_id: clinicId, p_patient_id: id, p_expected_version: version, p_record: normalized,
+    p_clinic_id: clinicId, p_patient_id: id, p_expected_version: version,
+    p_record: { ...normalized, specialtyId: metadata?.specialtyId || 'podologia', schemaVersion: metadata?.schemaVersion ?? 1, identityVersion: metadata?.identityVersion ?? version },
   })
   if (error) throw error
   return data as SavedRecord
@@ -68,16 +60,23 @@ export async function saveClinic(membership: Membership, clinic: Clinic): Promis
   return { ...membership, clinic: readClinic(data.settings), version: data.version }
 }
 
-export async function listRevisions(patientId: string) {
-  const { data, error } = await database().from('clinical_record_versions')
-    .select('id, version, recorded_at').eq('patient_id', patientId).order('version', { ascending: false }).limit(30)
+export async function listRevisions(patientId: string, clinicId:string) {
+  const { data, error } = await database().rpc('list_chart_versions', { p_patient_id: patientId, p_specialty_id: 'podologia',p_clinic_id:clinicId })
   if (error) throw error
   return data as Omit<Revision, 'snapshot'>[]
 }
 
-export async function getRevision(patientId: string, id: number) {
-  const { data, error } = await database().from('clinical_record_versions').select('snapshot')
-    .eq('patient_id', patientId).eq('id', id).single()
+export async function getRevision(patientId: string, id: number, clinicId:string) {
+  const { data, error } = await database().rpc('get_chart_revision', { p_patient_id: patientId, p_version_id: id,p_clinic_id:clinicId })
   if (error) throw error
-  return data.snapshot as RecordDraft
+  recordModule(data as RecordDraft)
+  return data as RecordDraft & ClinicalMetadata
+}
+
+export async function getExportRecord(patientId:string,clinicId:string,expectedVersion:number):Promise<SavedRecord> {
+  const {data,error}=await database().rpc('get_clinical_chart',{p_patient_id:patientId,p_specialty_id:'podologia',p_export:true,p_clinic_id:clinicId})
+  if(error)throw error
+  if(data.version!==expectedVersion)throw new Error('CONFLICT')
+  recordModule(data as SavedRecord)
+  return data as SavedRecord
 }

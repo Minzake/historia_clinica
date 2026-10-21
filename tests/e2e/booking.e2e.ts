@@ -2,12 +2,14 @@ import { expect,test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
 const clinic='20000000-0000-4000-8000-000000000001',owner='10000000-0000-4000-8000-000000000001',provider='10000000-0000-4000-8000-000000000002',client='10000000-0000-4000-8000-000000000004'
+const pageId='40000000-0000-4000-8000-000000000001',serviceId='50000000-0000-4000-8000-000000000001'
+const access=[{specialtyId:'podologia',name:'Podología',canRead:true,canWrite:true,canExport:true,scope:'all'}]
 const day=new Date(Date.now()+3*86400000).toISOString().slice(0,10)
 async function backend(page:Page,staff:boolean,open=true) {
   const user={id:staff?owner:client,email:staff?'owner@example.com':'patient@example.com',email_confirmed_at:new Date().toISOString(),aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{full_name:'Paciente de prueba',dni:'12345678',phone:''},created_at:new Date().toISOString()}
   const token=`eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({sub:user.id,role:'authenticated',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')}.fake-signature`
   const practitioners=[{user_id:owner,email:'owner@example.com',role:'owner'},{user_id:provider,email:'profesional@example.com',role:'owner'}]
-  let settings={clinic_id:clinic,slug:'consultorio',enabled:open,provider_id:open?provider:null,provider_name:open?'Profesional de prueba':'',timezone:'America/Argentina/Buenos_Aires',advance_days:30,lead_minutes:120,cancel_hours:12,version:1}
+  let settings={page_id:pageId,service_id:serviceId,duration_minutes:30,clinic_id:clinic,slug:'consultorio',enabled:open,provider_id:open?provider:null,provider_name:open?'Profesional de prueba':'',timezone:'America/Argentina/Buenos_Aires',advance_days:30,lead_minutes:120,cancel_hours:12,version:1}
   let hours:unknown[]=[],appointments:Record<string,any>[]=[]
   await page.route('**/api/notifications',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({configured:false,sent:0,failed:0})}))
   await page.route('**/api/team',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,invited:true})}))
@@ -21,6 +23,9 @@ async function backend(page:Page,staff:boolean,open=true) {
     else if(url.pathname==='/rest/v1/clinic_members')data=staff?[{clinic_id:clinic,role:'owner',active:true,clinics:{settings:{name:'Consultorio de Podología',professional:'Profesional de prueba',address:'Dirección del consultorio',phone:'1112345678',email:'',license:''},version:1}}]:[]
     else if(url.pathname==='/rest/v1/patients'){data=[];headers['content-range']='*/0'}
     else if(url.pathname==='/rest/v1/evolutions'){data=[];headers['content-range']='*/0'}
+    else if(url.pathname==='/rest/v1/rpc/list_my_memberships')data=staff?[{clinicId:clinic,role:'owner',clinic:{name:'Consultorio de Podología',professional:'Profesional de prueba',address:'Dirección del consultorio',phone:'1112345678',email:'',license:''},version:1,specialties:access}]:[]
+    else if(url.pathname==='/rest/v1/rpc/get_clinic_dashboard'||url.pathname==='/rest/v1/rpc/list_clinical_patients')data={patients:[],count:0,evolutions:0}
+    else if(url.pathname==='/rest/v1/rpc/get_booking_configuration')data={settings,hours,practitioners,pages:[{...settings}],services:[{id:serviceId,clinic_id:clinic,specialty_id:'podologia',name:'Consulta de podología',duration_minutes:30,active:true,version:1,legacy_default:true}]}
     else if(url.pathname==='/rest/v1/booking_settings')data=settings
     else if(url.pathname==='/rest/v1/booking_hours')data=hours
     else if(url.pathname==='/rest/v1/rpc/list_practitioners')data=practitioners
@@ -42,7 +47,7 @@ async function backend(page:Page,staff:boolean,open=true) {
       a.version++
       if(args.p_starts_at){a.starts_at=args.p_starts_at;a.ends_at=new Date(Date.parse(a.starts_at)+1800000).toISOString()}else a.status='cancelled'
       data=null
-    }else if(url.pathname==='/rest/v1/rpc/save_booking_settings'){settings={...settings,...args.p_data,version:settings.version+1};hours=args.p_hours;data=null}
+    }else if(url.pathname==='/rest/v1/rpc/save_booking_page'){settings={...settings,...args.p_data,version:settings.version+1};hours=args.p_hours;data=pageId}
     else if(url.pathname==='/rest/v1/rpc/list_agenda')data=appointments
     else if(url.pathname==='/rest/v1/rpc/save_staff_appointment'){
       const input=args.p_data,id=args.p_id||`30000000-0000-4000-8000-${String(appointments.length+1).padStart(12,'0')}`
@@ -143,7 +148,7 @@ test('public page remains closed until availability is configured',async({page})
 test('invalid booking rules and reversed blocks stay editable and never reach the server', async ({page}) => {
   await backend(page,true,false)
   let saves=0
-  page.on('request',request=>{if(/\/rpc\/save_(booking_settings|staff_appointment)$/.test(new URL(request.url()).pathname))saves++})
+  page.on('request',request=>{if(/\/rpc\/save_(booking_page|staff_appointment)$/.test(new URL(request.url()).pathname))saves++})
   await login(page,true)
   await page.goto('/agenda/configuracion')
   await page.getByLabel('Profesional que atiende').selectOption(provider)

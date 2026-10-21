@@ -8,7 +8,7 @@ import { PatientEditor } from '../src/pages/PatientEditor'
 import { blankClinic, blankRecord } from '../src/lib/model'
 import type { SavedRecord } from '../src/lib/model'
 
-const api = vi.hoisted(() => ({ getRecord: vi.fn(), saveRecord: vi.fn(), listRevisions: vi.fn(), getRevision: vi.fn() }))
+const api = vi.hoisted(() => ({ getRecord: vi.fn(), getExportRecord:vi.fn(), saveRecord: vi.fn(), listRevisions: vi.fn(), getRevision: vi.fn() }))
 const pdf = vi.hoisted(() => ({ downloadPdf: vi.fn() }))
 vi.mock('../src/lib/api', () => api)
 vi.mock('../src/lib/pdf', () => pdf)
@@ -36,6 +36,7 @@ function openEditor(path = '/historias/30000000-0000-4000-8000-000000000001') {
 beforeEach(() => {
   vi.resetAllMocks()
   api.getRecord.mockImplementation(async () => savedRecord())
+  api.getExportRecord.mockImplementation(async()=>savedRecord())
   api.saveRecord.mockImplementation(async (_clinic, record, id, version) => ({ ...structuredClone(record), id: id || savedRecord().id, version: version + 1, updatedAt: new Date().toISOString() }))
   api.listRevisions.mockResolvedValue([])
   pdf.downloadPdf.mockResolvedValue(undefined)
@@ -93,6 +94,24 @@ describe('saved initial sheets and evolutions', () => {
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('Completá el apellido y nombre'))
     expect(api.saveRecord).not.toHaveBeenCalled()
     expect(document.activeElement).toBe(screen.getByLabelText('Apellido y nombre *'))
+  })
+  it('does not generate a PDF if export authorization was revoked after opening the chart', async () => {
+    api.getExportRecord.mockRejectedValue(new Error('EXPORT_NOT_ALLOWED'))
+    openEditor()
+    await screen.findByLabelText('Apellido y nombre *')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Descargar PDF' }))
+    await waitFor(() => expect(api.getExportRecord).toHaveBeenCalledWith(savedRecord().id, 'clinic', 1))
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('descargar'))
+    expect(pdf.downloadPdf).not.toHaveBeenCalled()
+  })
+  it('respects chart-level read-only access even when the member can write other charts', async () => {
+    api.getRecord.mockResolvedValue({ ...savedRecord(), canWrite: false, canExport: false })
+    openEditor()
+    expect((await screen.findByLabelText('Apellido y nombre *')).matches(':disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Guardar historia' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Descargar PDF' })).toHaveProperty('disabled', true)
+    expect(screen.queryByRole('button', { name: 'Versiones anteriores' })).toBeNull()
+    expect(api.saveRecord).not.toHaveBeenCalled()
   })
   it('opens the other sheet and focuses an invalid evolution before saving', async () => {
     openEditor()
