@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { database } from '../lib/supabase'
 import { Field, Notice } from '../components/ui'
+import { normalizeDni,validateClientProfile,validEmail } from '../lib/validation'
 
 export function AuthPage({ recovery = false, register = false, onRecovered }: { recovery?: boolean; register?: boolean; onRecovered?: () => void }) {
   const [forgot, setForgot] = useState(false)
@@ -19,6 +20,7 @@ export function AuthPage({ recovery = false, register = false, onRecovered }: { 
   async function submit(event: FormEvent) {
     event.preventDefault(); setError(''); setMessage(''); setBusy(true)
     try {
+      if (!recovery && !validEmail(email.trim())) { setError('Ingresá un correo válido.'); return }
       if (recovery) {
         if (password.length < 12 || password !== confirmation) {
           setError('Usá al menos 12 caracteres y verificá que ambas contraseñas coincidan.'); return
@@ -36,8 +38,9 @@ export function AuthPage({ recovery = false, register = false, onRecovered }: { 
         setMessage('Si existe una cuenta con ese correo, recibirás un enlace para restablecer la contraseña.')
       } else if(register) {
         if(password.length<12||password!==confirmation){setError('Usá al menos 12 caracteres y verificá que ambas contraseñas coincidan.');return}
-        const normalizedDni=dni.replace(/[.\s-]/g,'')
-        if(fullName.trim().length<2||!/^\d{6,10}$/.test(normalizedDni)){setError('Completá tu nombre y un DNI de 6 a 10 dígitos.');return}
+        const normalizedDni=normalizeDni(dni)
+        const validation=validateClientProfile(fullName,dni,phone)
+        if(validation){setError(validation);return}
         const slug=new URLSearchParams(window.location.search).get('consultorio')||''
         const destination=/^[a-z0-9][a-z0-9-]{2,59}$/.test(slug)?{booking_slug:slug}:{}
         const result=await database().auth.signUp({email:email.trim(),password,options:{emailRedirectTo:`${window.location.origin}/mis-turnos`,data:{full_name:fullName.trim(),dni:normalizedDni,phone:phone.trim(),...destination}}})

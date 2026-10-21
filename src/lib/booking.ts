@@ -1,4 +1,5 @@
 import { database, errorMessage } from './supabase'
+import { normalizeDni,validateBookingSettings,validateClientProfile,validateStaffAppointment } from './validation'
 
 export const defaultTimezone='America/Argentina/Buenos_Aires'
 export type ClientProfile={user_id:string;full_name:string;dni:string;phone:string;email:string}
@@ -6,9 +7,9 @@ export type Practitioner={user_id:string;email:string;role:'owner'|'professional
 export type TeamMember=Practitioner&{active:boolean;confirmed:boolean;is_self:boolean}
 export type OpeningHours={weekday:number;opens:string;closes:string}
 export type BookingSettings={clinic_id:string;slug:string;enabled:boolean;provider_id:string|null;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;version:number}
-export type BookingPage={slug:string;name:string;address:string;phone:string;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;duration_minutes:30}
+export type BookingPage={slug:string;name:string;address:string;phone:string;provider_id:string;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;duration_minutes:30}
 export type AppointmentStatus='confirmed'|'cancelled'|'completed'|'no_show'
-export type MyAppointment={id:string;starts_at:string;ends_at:string;status:AppointmentStatus;version:number;source:'web'|'staff';clinic_name:string;phone:string;address:string;timezone:string;slug:string;cancel_hours:number;notification_state:string|null}
+export type MyAppointment={id:string;starts_at:string;ends_at:string;status:AppointmentStatus;version:number;source:'web'|'staff';clinic_name:string;phone:string;address:string;timezone:string;slug:string;provider_id:string;provider_name:string;advance_days:number;can_reschedule:boolean;cancel_hours:number;notification_state:string|null}
 export type Appointment={id:string;clinic_id:string;provider_id:string;client_user_id:string|null;patient_id:string|null;contact_name:string;contact_dni:string;contact_email:string;contact_phone:string;starts_at:string;ends_at:string;kind:'consultation'|'block';source:'web'|'staff';status:AppointmentStatus;private_notes:string;version:number;notification_state:string|null}
 export type StaffAppointmentInput={provider_id:string;client_user_id?:string|null;starts_at:string;duration_minutes:number;kind:'consultation'|'block';status:AppointmentStatus;name:string;dni:string;email:string;phone:string;notes:string}
 
@@ -18,7 +19,11 @@ async function rpc<T>(name:string,args:Record<string,unknown>={}) {
   return data as T
 }
 export const getClientProfile=()=>rpc<ClientProfile|null>('get_patient_account')
-export const saveClientProfile=(name:string,dni:string,phone:string,slug?:string)=>rpc<ClientProfile>('save_patient_account',{p_name:name,p_dni:dni,p_phone:phone,p_slug:slug||null})
+export function saveClientProfile(name:string,dni:string,phone:string,slug?:string) {
+  const error=validateClientProfile(name,dni,phone)
+  if(error)throw new Error(error)
+  return rpc<ClientProfile>('save_patient_account',{p_name:name.trim(),p_dni:normalizeDni(dni),p_phone:phone.trim(),p_slug:slug||null})
+}
 export const searchRegisteredPatients=(clinicId:string,query='')=>rpc<ClientProfile[]>('search_registered_patients',{p_clinic_id:clinicId,p_query:query})
 export const getBookingPages=()=>rpc<BookingPage[]>('list_booking_pages')
 export const getSlots=(slug:string,date:string)=>rpc<string[]>('get_booking_slots',{p_slug:slug,p_date:date})
@@ -36,7 +41,11 @@ export async function getBookingSettings(clinicId:string) {
   if(hours.error)throw hours.error
   return {settings:settings.data as BookingSettings,hours:hours.data as OpeningHours[],practitioners}
 }
-export const saveBookingSettings=(settings:BookingSettings,hours:OpeningHours[])=>rpc<void>('save_booking_settings',{p_clinic_id:settings.clinic_id,p_version:settings.version,p_data:settings,p_hours:hours})
+export function saveBookingSettings(settings:BookingSettings,hours:OpeningHours[]) {
+  const error=validateBookingSettings(settings,hours)
+  if(error)throw new Error(error)
+  return rpc<void>('save_booking_settings',{p_clinic_id:settings.clinic_id,p_version:settings.version,p_data:settings,p_hours:hours})
+}
 
 export async function serverRequest(path:string,body:Record<string,unknown>,method='POST') {
   const {data:{session}}=await database().auth.getSession()
@@ -60,6 +69,8 @@ export async function changeMyAppointment(appointment:MyAppointment,start:string
   await sendAppointmentNotices(appointment.id)
 }
 export async function saveStaffAppointment(clinicId:string,appointment:Appointment|null,data:StaffAppointmentInput) {
+  const error=validateStaffAppointment(data)
+  if(error)throw new Error(error)
   const id=await rpc<string>('save_staff_appointment',{p_clinic_id:clinicId,p_id:appointment?.id||null,p_version:appointment?.version||0,p_data:data})
   await sendAppointmentNotices(id)
   return id
@@ -71,7 +82,11 @@ export function bookingError(error:unknown) {
   const named:Record<string,string>={
     SLOT_UNAVAILABLE:'Ese horario ya no está disponible. Elegí otro.',BOOKING_CLOSED:'La agenda web está cerrada por el momento.',
     PROFILE_REQUIRED:'Completá tus datos de paciente antes de reservar.',EMAIL_NOT_VERIFIED:'Verificá tu correo antes de continuar.',
-    BOOKING_LIMIT:'Podés tener hasta tres turnos futuros confirmados en el mismo consultorio.',
+    BOOKING_LIMIT:'Ya tenés un turno futuro confirmado con esta profesional. Reprogramá o cancelá el existente; si no aparece en Mis turnos, contactá al consultorio.',
+    APPOINTMENT_DNI_REQUIRED:'Completá el DNI para controlar que el paciente tenga un solo turno por profesional.',
+    INVALID_BLOCK_STATUS:'Un bloqueo solo puede estar confirmado o cancelado.',
+    QUESTIONNAIRE_INVALID:'Revisá los antecedentes y las vacunas: hay preguntas repetidas, faltantes o modificadas.',
+    INVALID_EMAIL:'Ingresá un correo válido o dejalo vacío.',
     BOOKING_RATE_LIMIT:'Realizaste varios cambios seguidos. Esperá una hora o contactá al consultorio.',
     CHANGE_DEADLINE:'Ya venció el plazo para cambiar este turno por la web. Contactá al consultorio.',
     DNI_IMMUTABLE:'El DNI no se puede cambiar desde el portal. Contactá al consultorio si hay un error.',
@@ -113,3 +128,6 @@ export function plusDays(date:string,days:number) {return new Date(Date.parse(`$
 export function weekStart(date:string) {return plusDays(date,-((new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7))}
 export function displayTime(value:string,timezone=defaultTimezone) {return new Date(value).toLocaleTimeString('es-AR',{timeZone:timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'})}
 export const statusLabels:Record<AppointmentStatus,string>={confirmed:'Confirmado',cancelled:'Cancelado',completed:'Atendido',no_show:'Ausente'}
+export function isActiveAppointment(appointment:Pick<MyAppointment,'status'|'starts_at'>,now=Date.now()) {
+  return appointment.status==='confirmed'&&Date.parse(appointment.starts_at)>now
+}

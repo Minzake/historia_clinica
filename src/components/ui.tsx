@@ -44,7 +44,7 @@ export function PdfActions({ record, clinic, disabled = false }: { record: Recor
     try {
       await downloadPdf(record, clinic, kind)
       setMessage('PDF generado. Revisá las descargas de tu navegador.')
-    } catch { setError('No se pudo generar el PDF. Intentá nuevamente.') }
+    } catch (error) { setError(error instanceof Error && error.message === 'INVALID_RECORD' ? 'La ficha contiene datos inválidos. Volvé a abrirla o contactá al consultorio antes de descargarla.' : 'No se pudo generar el PDF. Intentá nuevamente. Si acabás de actualizar la web, recargá la página.') }
     finally { setBusy(false) }
   }
   return <div className="pdf-panel">

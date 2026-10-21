@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import { bookingError,saveClientProfile } from '../lib/booking'
 import type { ClientProfile } from '../lib/booking'
 import { Field,Notice } from './ui'
+import { validateClientProfile } from '../lib/validation'
 
 export function ClientProfileForm({session,initial,onSaved}:{session:Session;initial?:ClientProfile|null;onSaved:(profile:ClientProfile)=>void}) {
   const metadata=session.user.user_metadata||{}
@@ -13,7 +14,10 @@ export function ClientProfileForm({session,initial,onSaved}:{session:Session;ini
   const [phone,setPhone]=useState(initial?.phone||safe(metadata.phone))
   const [error,setError]=useState(''),[busy,setBusy]=useState(false)
   async function save(event:FormEvent) {
-    event.preventDefault();setError('');setBusy(true)
+    event.preventDefault();setError('')
+    const validation=validateClientProfile(name,dni,phone)
+    if(validation){setError(validation);return}
+    setBusy(true)
     try {onSaved(await saveClientProfile(name,dni,phone,safe(metadata.booking_slug)||undefined))}catch(err){setError(bookingError(err))}finally{setBusy(false)}
   }
   return <form onSubmit={save} className="client-profile-form"><p>Estos datos identifican tu cuenta y tus reservas. No otorgan acceso a una historia clínica.</p>

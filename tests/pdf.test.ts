@@ -3,6 +3,10 @@ import { blankClinic, blankEvolution, blankRecord } from '../src/lib/model'
 import { buildPdf } from '../src/lib/pdf'
 
 describe('PDF planillas', () => {
+  it('rejects malformed records before trying to format their fields', async () => {
+    const record = blankRecord()
+    await expect(buildPdf({ ...record, clinical: { ...record.clinical, usual: null } } as unknown as typeof record, blankClinic())).rejects.toThrow('INVALID_RECORD')
+  })
   it('exports the initial sheet independently without a duplicate DNI label', async () => {
     const record = blankRecord()
     record.patient.fullName = 'Paciente PDF'

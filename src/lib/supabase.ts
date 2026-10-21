@@ -32,6 +32,8 @@ export function errorMessage(error: unknown): string {
   if (item?.code === '23505') return 'Ya existe un paciente con ese DNI o número de historia clínica en el consultorio.'
   if (item?.message?.includes('CONFLICT')) return 'Otra sesión modificó esta ficha. Volvé a abrirla antes de editar; tus cambios actuales aún no se guardaron.'
   if (item?.message?.includes('NO_MEMBERSHIP')) return 'Tu cuenta no tiene un consultorio asignado. Contactá al administrador.'
+  if (item?.message?.includes('QUESTIONNAIRE_INVALID')) return 'Revisá los antecedentes y las vacunas: hay preguntas repetidas, faltantes o modificadas.'
+  if (item?.message?.includes('INVALID_EMAIL')) return 'Ingresá un correo válido para el consultorio o dejalo vacío.'
   if (item?.code === '42501' || item?.status === 401 || item?.status === 403) return 'No tenés permiso para esta operación o tu sesión venció. Volvé a iniciar sesión.'
   if (item?.code === 'PGRST205' || item?.code === 'PGRST202' || item?.code === '42P01') return 'Falta instalar la base de datos. Ejecutá la migración de Supabase indicada en el README.'
   if (item?.message?.includes('Failed to fetch') || item?.message?.includes('fetch failed') || item?.message?.includes('NetworkError')) return 'No se pudo conectar. Revisá tu conexión a internet e intentá nuevamente.'

@@ -1,6 +1,7 @@
 import { database } from './supabase'
 import { ageAt, readClinic } from './model'
 import type { Membership, PatientSummary, RecordDraft, Revision, SavedRecord, Clinic } from './model'
+import { validateClinic } from './validation'
 
 export async function getMembership(userId: string): Promise<Membership | null> {
   const { data, error } = await database().from('clinic_members').select('clinic_id, role, clinics(settings, version)').eq('user_id', userId).eq('active',true).maybeSingle()
@@ -56,6 +57,8 @@ export async function saveRecord(clinicId: string, record: RecordDraft, id: stri
 }
 
 export async function saveClinic(membership: Membership, clinic: Clinic): Promise<Membership> {
+  const validation = validateClinic(clinic)
+  if (validation) throw new Error(validation)
   const { data, error } = await database().rpc('save_clinic_settings', {
     p_clinic_id: membership.clinicId, p_expected_version: membership.version, p_settings: clinic,
   })

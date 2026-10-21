@@ -8,6 +8,7 @@ import type { OpeningHours,BookingSettings as Settings } from '../lib/booking'
 import { useRemote } from '../hooks/useRemote'
 import { Field,Loading,Notice } from '../components/ui'
 import { UnsavedChanges } from '../components/UnsavedChanges'
+import { validateBookingSettings } from '../lib/validation'
 
 const weekdays=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
 export function BookingSettings() {
@@ -30,7 +31,8 @@ function SettingsForm({initial,onSaved}:{initial:Awaited<ReturnType<typeof getBo
   function updateHours(index:number,patch:Partial<OpeningHours>){setHours((current)=>current.map((hour,i)=>i===index?{...hour,...patch}:hour))}
   async function save(event:FormEvent) {
     event.preventDefault();setError('')
-    if(settings.enabled&&(!settings.provider_id||!settings.provider_name.trim()||!hours.length)){setError('Antes de habilitar reservas elegí a la profesional, completá su nombre público y agregá al menos una franja horaria.');return}
+    const validation=validateBookingSettings(settings,hours)
+    if(validation){setError(validation);return}
     setBusy(true)
     try{await saveBookingSettings(settings,hours);onSaved()}catch(err){setError(bookingError(err))}finally{setBusy(false)}
   }

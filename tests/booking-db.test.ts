@@ -2,12 +2,15 @@ import { readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { blankClinic, blankRecord } from '../src/lib/model'
 
 const owner='10000000-0000-4000-8000-000000000001', professional='10000000-0000-4000-8000-000000000002'
 const other='10000000-0000-4000-8000-000000000003', client='10000000-0000-4000-8000-000000000004'
 const client2='10000000-0000-4000-8000-000000000005', unverified='10000000-0000-4000-8000-000000000006'
 const clinic='20000000-0000-4000-8000-000000000001', clinic2='20000000-0000-4000-8000-000000000002'
 let db:PGlite
+let legacyPreserved=false
+let legacyRescheduled=false
 const day = new Date(Date.now()+3*86400000).toISOString().slice(0,10)
 const start = `${day}T12:00:00+00:00`
 const hours = Array.from({length:7},(_,weekday)=>({weekday,opens:'09:00',closes:'17:00'}))
@@ -36,6 +39,12 @@ beforeAll(async()=>{
   await db.query('insert into public.clinics(id) values($1),($2)',[clinic,clinic2])
   await db.query("insert into public.clinic_members(user_id,clinic_id,role) values($1,$2,'owner'),($3,$2,'professional'),($4,$5,'owner')",[owner,clinic,professional,other,clinic2])
   await db.exec(readFileSync(new URL('../supabase/migrations/202610210002_booking.sql',import.meta.url),'utf8'))
+  await db.query("insert into public.appointments(clinic_id,provider_id,contact_name,contact_dni,source,starts_at,ends_at) values($1,$2,'Legacy Uno','34567890','staff',$3::timestamptz,$3::timestamptz+interval '30 minutes'),($1,$2,'Legacy Dos','34567890','staff',$3::timestamptz+interval '1 hour',$3::timestamptz+interval '90 minutes')",[clinic,professional,start])
+  await db.exec(readFileSync(new URL('../supabase/migrations/202610210003_validation_rules.sql',import.meta.url),'utf8'))
+  legacyPreserved=(await db.query<{count:number}>("select count(*)::integer as count from public.appointments where contact_dni='34567890' and status='confirmed' and version=1")).rows[0].count===2
+  const legacy=(await db.query<{id:string}>("select id from public.appointments where contact_name='Legacy Uno'")).rows[0]
+  await asUser(owner,()=>rpc('save_staff_appointment',[clinic,legacy.id,1,JSON.stringify({provider_id:professional,starts_at:`${day}T14:00:00Z`,duration_minutes:30,name:'Legacy Uno',dni:'34567890',kind:'consultation',status:'confirmed'})]))
+  legacyRescheduled=(await db.query<{count:number}>("select count(*)::integer as count from public.appointments where contact_dni='34567890' and status='confirmed'")).rows[0].count===2
   await asUser(client,()=>rpc('save_patient_account',['Paciente Uno','12345678','']))
   await asUser(client2,()=>rpc('save_patient_account',['Paciente Dos','23456789','1122334455']))
 },60000)
@@ -46,6 +55,10 @@ beforeEach(async()=>{
 afterAll(async()=>{await db?.close()})
 
 describe('patient accounts, appointments and staff authorization',()=>{
+  it('installs validation rules without changing or cancelling legacy duplicate bookings',()=>{
+    expect(legacyPreserved).toBe(true)
+    expect(legacyRescheduled).toBe(true)
+  })
   it('starts closed and exposes no clinician or patient data through public availability',async()=>{
     await db.exec('set role anon')
     try {
@@ -88,11 +101,11 @@ describe('patient accounts, appointments and staff authorization',()=>{
     await asUser(client,()=>rpc('book_appointment',['consultorio',start]))
     await asUser(client2,async()=>{await expect(rpc('book_appointment',['consultorio',start])).rejects.toMatchObject({code:'22023'})})
     await asUser(client2,()=>rpc('book_appointment',['consultorio',`${day}T12:30:00Z`]))
-    await expect(db.query("insert into public.appointments(clinic_id,provider_id,contact_name,source,starts_at,ends_at) values($1,$2,'Colision','staff',$3::timestamptz,$3::timestamptz+interval '45 minutes')",[clinic,professional,start])).rejects.toMatchObject({code:'23P01'})
+    await expect(db.query("insert into public.appointments(clinic_id,provider_id,contact_name,contact_dni,source,starts_at,ends_at) values($1,$2,'Colision','34567890','staff',$3::timestamptz,$3::timestamptz+interval '45 minutes')",[clinic,professional,start])).rejects.toMatchObject({code:'23P01'})
   })
   it('extended staff appointments and blocks remove every overlapping public slot',async()=>{
     await openBooking()
-    const data={provider_id:professional,starts_at:start,duration_minutes:90,name:'Consulta extendida',kind:'consultation',status:'confirmed'}
+    const data={provider_id:professional,starts_at:start,duration_minutes:90,name:'Consulta extendida',dni:'34567890',kind:'consultation',status:'confirmed'}
     await asUser(owner,()=>rpc('save_staff_appointment',[clinic,null,0,JSON.stringify(data)]))
     const slots=await rpc<string[]>('get_booking_slots',['consultorio',day])
     expect(slots.some((slot)=>Date.parse(slot)>=Date.parse(start)&&Date.parse(slot)<Date.parse(start)+90*60000)).toBe(false)
@@ -143,16 +156,106 @@ describe('patient accounts, appointments and staff authorization',()=>{
       expect(await rpc('claim_appointment_notifications',[client,id,10])).toEqual([])
     }finally{await db.exec('reset role')}
   })
-  it('limits future reservations and rejects starts outside published 30 minute slots',async()=>{
+  it('allows only one active reservation per professional and rejects unpublished slots',async()=>{
     await openBooking()
     await asUser(client,async()=>{
       await expect(rpc('book_appointment',['consultorio',`${day}T12:15:00Z`])).rejects.toMatchObject({code:'22023'})
       await expect(rpc('book_appointment',['consultorio',`${day}T23:00:00Z`])).rejects.toMatchObject({code:'22023'})
       await rpc('book_appointment',['consultorio',start])
-      await rpc('book_appointment',['consultorio',`${day}T13:00:00Z`])
-      await rpc('book_appointment',['consultorio',`${day}T14:00:00Z`])
+      await expect(rpc('book_appointment',['consultorio',`${day}T13:00:00Z`])).rejects.toMatchObject({message:'BOOKING_LIMIT'})
       await expect(rpc('book_appointment',['consultorio',`${day}T15:00:00Z`])).rejects.toMatchObject({message:'BOOKING_LIMIT'})
     })
+  })
+  it('counts manual DNI reservations without exposing or automatically linking them to a patient account',async()=>{
+    await openBooking()
+    const data={provider_id:professional,starts_at:start,duration_minutes:30,name:'Paciente manual',dni:'12345678',kind:'consultation',status:'confirmed'}
+    await asUser(owner,()=>rpc('save_staff_appointment',[clinic,null,0,JSON.stringify(data)]))
+    await asUser(client,async()=>{
+      expect(await rpc('get_my_appointments')).toEqual([])
+      await expect(rpc('book_appointment',['consultorio',`${day}T14:00:00Z`])).rejects.toMatchObject({message:'BOOKING_LIMIT'})
+    })
+    expect((await db.query('select client_user_id,patient_id from public.appointments')).rows[0]).toEqual({client_user_id:null,patient_id:null})
+    await asUser(owner,async()=>{
+      await expect(rpc('save_staff_appointment',[clinic,null,0,JSON.stringify({...data,starts_at:`${day}T15:00:00Z`})])).rejects.toMatchObject({message:'BOOKING_LIMIT'})
+      await rpc('save_staff_appointment',[clinic,null,0,JSON.stringify({...data,provider_id:owner})])
+    })
+    expect((await db.query('select * from public.appointments')).rows).toHaveLength(2)
+  })
+  it('rejects a second linked staff appointment but allows a different professional',async()=>{
+    await openBooking()
+    await asUser(client,()=>rpc('book_appointment',['consultorio',start]))
+    const data={provider_id:professional,client_user_id:client,starts_at:`${day}T14:00:00Z`,duration_minutes:30,name:'Paciente vinculado',kind:'consultation',status:'confirmed'}
+    await asUser(owner,async()=>{
+      await expect(rpc('save_staff_appointment',[clinic,null,0,JSON.stringify(data)])).rejects.toMatchObject({message:'BOOKING_LIMIT'})
+      await rpc('save_staff_appointment',[clinic,null,0,JSON.stringify({...data,provider_id:owner})])
+    })
+    const appointments=await asUser(client,()=>rpc<{id:string;version:number;provider_id:string;advance_days:number;can_reschedule:boolean}[]>('get_my_appointments'))
+    expect(new Set(appointments.map(a=>a.provider_id)).size).toBe(2)
+    expect(appointments.find(a=>a.provider_id===professional)).toMatchObject({advance_days:30,can_reschedule:true})
+    expect(appointments.find(a=>a.provider_id===owner)).toMatchObject({can_reschedule:false})
+    const otherAppointment=appointments.find(a=>a.provider_id===owner)!
+    await asUser(owner,async()=>{
+      await expect(rpc('save_staff_appointment',[clinic,otherAppointment.id,otherAppointment.version,JSON.stringify({...data,starts_at:`${day}T15:00:00Z`})])).rejects.toMatchObject({message:'BOOKING_LIMIT'})
+    })
+  })
+  it('rejects repeated submissions and releases the limit after cancellation',async()=>{
+    await openBooking()
+    const attempts=await asUser(client,()=>Promise.allSettled([
+      rpc<string>('book_appointment',['consultorio',start]),
+      rpc<string>('book_appointment',['consultorio',`${day}T14:00:00Z`]),
+    ]))
+    expect(attempts.filter(a=>a.status==='fulfilled')).toHaveLength(1)
+    expect(attempts.find(a=>a.status==='rejected')).toMatchObject({reason:{message:'BOOKING_LIMIT'}})
+    const booked=attempts.find(a=>a.status==='fulfilled')!
+    if(booked.status!=='fulfilled')throw new Error('Missing booking')
+    await asUser(client,()=>rpc('change_my_appointment',[booked.value,1,null]))
+    await asUser(client,()=>rpc('book_appointment',['consultorio',`${day}T15:00:00Z`]))
+    expect((await db.query("select * from public.appointments where status='confirmed'")).rows).toHaveLength(1)
+  })
+  it('does not count past appointments and requires DNI only for future confirmed consultations',async()=>{
+    await openBooking()
+    const data={provider_id:professional,starts_at:new Date(Date.now()-86400000).toISOString(),duration_minutes:30,name:'Historia de turno',kind:'consultation',status:'confirmed'}
+    await asUser(owner,async()=>{
+      await rpc('save_staff_appointment',[clinic,null,0,JSON.stringify({...data,dni:'12345678'})])
+      await expect(rpc('save_staff_appointment',[clinic,null,0,JSON.stringify({...data,starts_at:start})])).rejects.toMatchObject({message:'APPOINTMENT_DNI_REQUIRED'})
+      await rpc('save_staff_appointment',[clinic,null,0,JSON.stringify({...data,starts_at:start,kind:'block'})])
+    })
+    await asUser(client,()=>rpc('book_appointment',['consultorio',`${day}T14:00:00Z`]))
+  })
+  it('rejects reactivating a cancelled appointment when another active one exists',async()=>{
+    await openBooking()
+    const id=await asUser(client,()=>rpc<string>('book_appointment',['consultorio',start]))
+    await asUser(client,()=>rpc('change_my_appointment',[id,1,null]))
+    await asUser(client,()=>rpc('book_appointment',['consultorio',`${day}T14:00:00Z`]))
+    const data={provider_id:professional,client_user_id:client,starts_at:start,duration_minutes:30,name:'Paciente Uno',status:'confirmed',kind:'consultation'}
+    await asUser(owner,async()=>{await expect(rpc('save_staff_appointment',[clinic,id,2,JSON.stringify(data)])).rejects.toMatchObject({message:'BOOKING_LIMIT'})})
+  })
+  it('rejects invalid block attendance states and malformed clinic email',async()=>{
+    const data={provider_id:professional,starts_at:new Date(Date.now()-86400000).toISOString(),duration_minutes:30,kind:'block',status:'completed'}
+    await asUser(owner,async()=>{
+      await expect(rpc('save_staff_appointment',[clinic,null,0,JSON.stringify(data)])).rejects.toMatchObject({message:'INVALID_BLOCK_STATUS'})
+      await expect(rpc('save_clinic_settings',[clinic,1,JSON.stringify({...blankClinic(),name:'Consultorio',email:'invalid-email'})])).rejects.toMatchObject({message:'INVALID_EMAIL'})
+    })
+  })
+  it('rejects duplicate, missing or relabelled questionnaire entries without saving a clinical record',async()=>{
+    const record=blankRecord();record.patient.fullName='Paciente de prueba'
+    record.patient.antecedents[1]={...record.patient.antecedents[0]}
+    await asUser(owner,async()=>{
+      await expect(rpc('save_patient_record',[clinic,null,0,JSON.stringify(record)])).rejects.toMatchObject({message:'QUESTIONNAIRE_INVALID'})
+      record.patient=blankRecord().patient;record.patient.fullName='Paciente de prueba'
+      record.patient.vaccines[0].label='Pregunta modificada'
+      await expect(rpc('save_patient_record',[clinic,null,0,JSON.stringify(record)])).rejects.toMatchObject({message:'QUESTIONNAIRE_INVALID'})
+    })
+    expect((await db.query('select * from public.patients')).rows).toHaveLength(0)
+  })
+  it('accepts canonical clinical questionnaires with all incremental validations installed',async()=>{
+    const record=blankRecord();record.patient.fullName='Paciente de prueba'
+    const saved=await asUser(owner,()=>rpc<{id:string;patient:typeof record.patient}>('save_patient_record',[clinic,null,0,JSON.stringify(record)]))
+    expect(saved.patient.antecedents).toEqual(record.patient.antecedents)
+    expect(saved.patient.vaccines).toEqual(record.patient.vaccines)
+    await db.query('delete from public.clinical_record_versions where patient_id=$1',[saved.id])
+    await db.query('delete from public.clinical_records where patient_id=$1',[saved.id])
+    await db.query('delete from public.patients where id=$1',[saved.id])
   })
   it('enforces cancellation deadlines and prevents stale versions from changing a booking',async()=>{
     await openBooking()

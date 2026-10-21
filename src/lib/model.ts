@@ -73,7 +73,7 @@ export function bmi(weight: string, height: string) {
 }
 
 export function validDate(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value))
+  return typeof value === 'string' && /^[0-9]{4}-\d{2}-\d{2}$/.test(value) && Number(value.slice(0, 4)) > 0 && !Number.isNaN(Date.parse(value))
     && new Date(value).toISOString().slice(0, 10) === value
 }
 
@@ -84,9 +84,31 @@ export function ageAt(birthDate: string, reference = today()) {
   return String(refYear - year - (refMonth < month || (refMonth === month && refDay < day) ? 1 : 0))
 }
 
-export function validateRecord({ patient, clinical, evolutions }: RecordDraft): string[] {
+export function recordStructureError(value: unknown): string {
+  const object = (item: unknown): item is Record<string, unknown> => Boolean(item) && typeof item === 'object' && !Array.isArray(item)
+  if (!object(value) || !object(value.patient) || !object(value.clinical) || !Array.isArray(value.evolutions)) return 'La ficha tiene una estructura inválida. Volvé a abrirla o contactá al consultorio.'
+  const { patient, clinical, evolutions } = value
+  for (const [key, template] of Object.entries(blankPatient())) {
+    if (typeof template === 'string' && (typeof patient[key] !== 'string' || patient[key].length > 2000)) return 'Revisá los datos personales: hay campos inválidos o demasiado largos.'
+  }
+  for (const [key, max] of [['usual', 2000], ['pressure', 40], ['glucose', 40], ['weight', 10], ['height', 10]] as const) {
+    if (typeof clinical[key] !== 'string' || clinical[key].length > max) return 'Revisá los valores clínicos y la longitud de las observaciones.'
+  }
+  for (const key of ['antecedents', 'vaccines'] as const) {
+    const items = patient[key]
+    if (!Array.isArray(items) || items.some(item => !object(item) || typeof item.id !== 'string' || item.id.length > 40 || typeof item.label !== 'string' || item.label.length > 100 || typeof item.notes !== 'string' || item.notes.length > 2000 || !['unset', 'yes', 'no'].includes(item.answer as string))) return 'Revisá las respuestas y las observaciones de antecedentes y vacunas.'
+  }
+  if (evolutions.length > 500 || evolutions.some(item => !object(item) || typeof item.id !== 'string' || typeof item.date !== 'string' || typeof item.procedure !== 'string' || item.procedure.length > 20000)) return 'Revisá las consultas: máximo 500 entradas y 20000 caracteres por procedimiento.'
+  return ''
+}
+
+export function validateRecord(record: RecordDraft): string[] {
+  const structure = recordStructureError(record)
+  if (structure) return [structure]
+  const { patient, clinical, evolutions } = record
   const errors: string[] = []
   if (patient.fullName.trim().length < 2) errors.push('Completá el apellido y nombre del paciente.')
+  if (patient.fullName.length > 200 || patient.historyNumber.length > 40 || patient.referredBy.length > 80) errors.push('Revisá la longitud del nombre (200), número de historia (40) y referencia (80 caracteres).')
   if (!validDate(patient.date) || patient.date > today()) errors.push('La fecha de la historia debe ser válida y no puede ser futura.')
   if (patient.birthDate && (!validDate(patient.birthDate) || patient.birthDate > patient.date)) errors.push('La fecha de nacimiento debe ser válida y anterior o igual a la fecha de la historia.')
   if (patient.age && (!/^\d{1,3}$/.test(patient.age) || Number(patient.age) > 125)) errors.push('Revisá la edad del paciente (0 a 125 años).')
@@ -96,6 +118,11 @@ export function validateRecord({ patient, clinical, evolutions }: RecordDraft): 
   }
   if (evolutions.some((e) => !validDate(e.date) || e.date > today() || (patient.birthDate && e.date < patient.birthDate))) errors.push('Revisá las fechas de las evoluciones: no pueden ser futuras ni anteriores al nacimiento.')
   if (evolutions.some((e) => !e.procedure.trim())) errors.push('Completá el procedimiento de cada evolución o quitá las filas vacías.')
+  if (new Set(evolutions.map(e => e.id)).size !== evolutions.length || evolutions.some(e => !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(e.id))) errors.push('Hay consultas repetidas o con identificadores inválidos. Volvé a abrir la ficha.')
+  const template = blankPatient()
+  for (const key of ['antecedents', 'vaccines'] as const) {
+    if (patient[key].length !== template[key].length || patient[key].some((item, index) => item.id !== template[key][index]?.id || item.label !== template[key][index]?.label)) errors.push('Revisá los antecedentes y las vacunas: hay preguntas repetidas, faltantes o modificadas.')
+  }
   return errors
 }
 

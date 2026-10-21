@@ -13,11 +13,18 @@ export function respond(res,status,data) {
   res.end(JSON.stringify(data))
 }
 export async function jsonBody(req) {
-  if (req.body && typeof req.body==='object') return req.body
+  const validate=(value)=>{
+    if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('INVALID_BODY')
+    try {if(Buffer.byteLength(JSON.stringify(value),'utf8')>16384)throw new Error('INVALID_BODY')}
+    catch {throw new Error('INVALID_BODY')}
+    return value
+  }
+  if (req.body!==undefined && typeof req.body==='object') return validate(req.body)
+  if (req.body!==undefined && typeof req.body!=='string') throw new Error('INVALID_BODY')
   let body=typeof req.body==='string'?req.body:''
-  if (!body) for await(const chunk of req) {body+=chunk; if(body.length>16384) throw new Error('INVALID_BODY')}
-  if(body.length>16384) throw new Error('INVALID_BODY')
-  try {return body?JSON.parse(body):{}} catch {throw new Error('INVALID_BODY')}
+  if (!body) for await(const chunk of req) {body+=chunk; if(Buffer.byteLength(body,'utf8')>16384) throw new Error('INVALID_BODY')}
+  if(Buffer.byteLength(body,'utf8')>16384) throw new Error('INVALID_BODY')
+  try {return validate(body?JSON.parse(body):{})} catch {throw new Error('INVALID_BODY')}
 }
 export async function requestUser(req,admin) {
   const token=/^Bearer ([^\s]{20,8000})$/i.exec(req.headers.authorization || '')?.[1]

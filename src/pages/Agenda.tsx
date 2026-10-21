@@ -6,7 +6,9 @@ import { useClinic } from '../context'
 import { bookingError,dateInZone,defaultTimezone,displayTime,getAgenda,getBookingSettings,localDateTime,plusDays,saveStaffAppointment,searchRegisteredPatients,sendAppointmentNotices,serverRequest,statusLabels,weekStart,zonedInstant } from '../lib/booking'
 import type { Appointment,AppointmentStatus,Practitioner,StaffAppointmentInput } from '../lib/booking'
 import { useRemote } from '../hooks/useRemote'
+import { useNow } from '../hooks/useNow'
 import { Field,Loading,Modal,Notice } from '../components/ui'
+import { normalizeDni } from '../lib/validation'
 
 export function Agenda() {
   const {membership}=useClinic()
@@ -40,7 +42,7 @@ export function Agenda() {
 
 function StaffAppointmentModal({initial,kind,day,timezone,practitioners,defaultProvider,onClose,onSaved}:{initial:Appointment|null;kind:'consultation'|'block';day:string;timezone:string;practitioners:Practitioner[];defaultProvider:string;onClose:()=>void;onSaved:()=>void}) {
   const {membership,userId}=useClinic()
-  const [now]=useState(()=>Date.now())
+  const now=useNow()
   const [provider,setProvider]=useState(initial?.provider_id||(membership.role==='professional'?userId||defaultProvider:defaultProvider))
   const [dateTime,setDateTime]=useState(initial?localDateTime(initial.starts_at,timezone):`${day}T09:00`)
   const [duration,setDuration]=useState(initial?String(Math.round((Date.parse(initial.ends_at)-Date.parse(initial.starts_at))/60000)):'30')
@@ -57,7 +59,7 @@ function StaffAppointmentModal({initial,kind,day,timezone,practitioners,defaultP
       if(useAccount&&!accountId)throw new Error('Seleccioná una cuenta verificada para vincular el turno, o desmarcá esa opción.')
       const start=zonedInstant(dateTime,timezone)
       const minutes=kind==='block'?(Date.parse(zonedInstant(until,timezone))-Date.parse(start))/60000:Number(duration)
-      const data:StaffAppointmentInput={provider_id:provider,client_user_id:useAccount?accountId||null:null,starts_at:start,duration_minutes:minutes,kind,status,name,dni:dni.replace(/[.\s-]/g,''),email:email.trim(),phone,notes}
+      const data:StaffAppointmentInput={provider_id:provider,client_user_id:useAccount?accountId||null:null,starts_at:start,duration_minutes:minutes,kind,status,name:name.trim(),dni:normalizeDni(dni),email:email.trim(),phone:phone.trim(),notes}
       await saveStaffAppointment(membership.clinicId,initial,data);onSaved()
     }catch(err){setError(bookingError(err))}finally{setBusy(false)}
   }
@@ -69,7 +71,7 @@ function StaffAppointmentModal({initial,kind,day,timezone,practitioners,defaultP
     <div className="field-grid settings-contact-grid"><Field label={kind==='block'?'Desde':'Fecha y hora'} type="datetime-local" required value={dateTime} onChange={setDateTime}/>{kind==='block'?<Field label="Hasta" type="datetime-local" required value={until} onChange={setUntil}/>:<Field label="Duración (minutos)" type="number" min={15} max={480} step={15} required value={duration} onChange={setDuration}/>}</div><p className="section-subtitle">Zona horaria del consultorio: {timezone.replace(/_/g,' ')}. Los turnos especiales pueden durar más de 30 minutos y quedar fuera del horario web.</p>
     {kind!=='block'&&<div className="registered-account-picker"><label className="toggle-field"><input type="checkbox" checked={useAccount} disabled={Boolean(initial?.client_user_id)} onChange={(event)=>{setUseAccount(event.target.checked);setAccountId('')}}/><span>Vincular a una cuenta de paciente registrada</span></label>{useAccount&&!initial?.client_user_id&&<><div className="account-search"><Field label="Buscar cuenta por nombre, DNI o email" value={accountQuery} onChange={setAccountQuery}/><button type="button" className="secondary-button" onClick={()=>setSubmittedQuery(accountQuery)}>Buscar</button></div>{accounts.loading?<Loading label="Buscando cuentas del consultorio…"/>:accounts.error?<Notice>{bookingError(accounts.error)}</Notice>:<label className="field"><span>Cuenta de paciente</span><select required value={accountId} onChange={(event)=>selectAccount(event.target.value)}><option value="">Seleccionar cuenta verificada</option>{accounts.data?.map((account)=><option key={account.user_id} value={account.user_id}>{account.full_name} · DNI {account.dni} · {account.email}</option>)}</select></label>}<p className="section-subtitle">Seleccioná la cuenta solo después de comprobar la identidad. El turno aparecerá en su portal; ninguna historia clínica se vincula automáticamente.</p></>}</div>}
     <Field label={kind==='block'?'Motivo del bloqueo (interno)':'Nombre y apellido del paciente'} value={name} onChange={setName} required={kind!=='block'} minLength={kind!=='block'?2:undefined} readOnly={linked}/>
-    {kind!=='block'&&<><div className="field-grid settings-contact-grid"><Field label="DNI (opcional)" inputMode="numeric" maxLength={16} value={dni} onChange={setDni} readOnly={linked}/><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone} readOnly={linked}/></div><Field label="Email para avisos (opcional)" type="email" maxLength={254} value={email} onChange={setEmail} readOnly={linked}/>{linked&&<p className="section-subtitle">Los datos de contacto provienen de su cuenta verificada. Una reserva vinculada no puede transferirse a otra persona.</p>}</>}
+    {kind!=='block'&&<><div className="field-grid settings-contact-grid"><Field label="DNI" inputMode="numeric" maxLength={16} required={future&&status==='confirmed'} value={dni} onChange={setDni} readOnly={linked}/><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone} readOnly={linked}/></div><p className="section-subtitle">El DNI es obligatorio para turnos futuros confirmados: un turno por paciente y profesional, incluso si se carga manualmente.</p><Field label="Email para avisos (opcional)" type="email" maxLength={254} value={email} onChange={setEmail} readOnly={linked}/>{linked&&<p className="section-subtitle">Los datos de contacto provienen de su cuenta verificada. Una reserva vinculada no puede transferirse a otra persona.</p>}</>}
     <label className="field"><span>Estado</span><select value={status} onChange={(event)=>setStatus(event.target.value as AppointmentStatus)}><option value="confirmed">Confirmado</option><option value="cancelled">Cancelado · liberar horario</option>{kind!=='block'&&<><option value="completed" disabled={future}>Atendido</option><option value="no_show" disabled={future}>Ausente</option></>}</select></label><label className="field"><span>Observación interna · no se envía al paciente</span><textarea rows={2} maxLength={2000} value={notes} onChange={(event)=>setNotes(event.target.value)}/></label>
     </fieldset>{initial?.contact_dni&&kind!=='block'&&<p className="section-subtitle"><Link to={`/historias?q=${encodeURIComponent(initial.contact_dni)}`}>Buscar su ficha clínica por DNI</Link> · No se vincula ninguna historia automáticamente.</p>}{error&&<Notice>{error}</Notice>}<div className="dialog-actions"><button className="secondary-button" type="button" disabled={busy} onClick={onClose}>Cancelar</button><button className="primary-button" type="submit" disabled={busy}>{busy?'Guardando…':'Guardar turno'}</button></div></form></Modal>
 }

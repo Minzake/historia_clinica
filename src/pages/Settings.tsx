@@ -8,6 +8,7 @@ import type { Clinic } from '../lib/model'
 import { errorMessage } from '../lib/supabase'
 import { Field, Notice } from '../components/ui'
 import { UnsavedChanges } from '../components/UnsavedChanges'
+import { validateClinic } from '../lib/validation'
 
 export function Settings() {
   const { membership, setMembership } = useClinic()
@@ -21,7 +22,8 @@ export function Settings() {
   const update = (key: keyof Clinic, value: string) => { setDraft((current) => ({ ...current, [key]: value })); setMessage('') }
   async function save(event: FormEvent) {
     event.preventDefault(); setError(''); setMessage('')
-    if (!draft.name.trim() && !draft.professional.trim()) { setError('Completá el nombre del consultorio o del profesional.'); return }
+    const validation = validateClinic(draft)
+    if (validation) { setError(validation); return }
     setBusy(true)
     try { setMembership(await saveClinic(membership, draft)); setMessage('Los datos del consultorio quedaron guardados.') }
     catch (err) { setError(errorMessage(err)) }

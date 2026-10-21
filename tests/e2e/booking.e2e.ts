@@ -30,10 +30,13 @@ async function backend(page:Page,staff:boolean,open=true) {
     else if(url.pathname==='/rest/v1/rpc/list_booking_pages')data=settings.enabled?[{...settings,name:'Consultorio de Podología',address:'Dirección del consultorio',phone:'1112345678',duration_minutes:30}]:[]
     else if(url.pathname==='/rest/v1/rpc/get_booking_slots')data=[12,12.5,13,13.5,14].map(hour=>`${args.p_date}T${String(Math.floor(hour)).padStart(2,'0')}:${hour%1?'30':'00'}:00+00:00`).filter(slot=>!appointments.some(a=>a.status!=='cancelled'&&Date.parse(a.starts_at)<Date.parse(slot)+1800000&&Date.parse(a.ends_at)>Date.parse(slot)))
     else if(url.pathname==='/rest/v1/rpc/book_appointment'){
+      if(appointments.some(a=>a.client_user_id===client&&a.provider_id===provider&&a.status==='confirmed'&&Date.parse(a.starts_at)>Date.now())){
+        await route.fulfill({status:400,headers,body:JSON.stringify({code:'22023',message:'BOOKING_LIMIT'})});return
+      }
       const id=`30000000-0000-4000-8000-${String(appointments.length+1).padStart(12,'0')}`
       appointments.push({id,clinic_id:clinic,provider_id:provider,client_user_id:client,patient_id:null,contact_name:'Paciente de prueba',contact_dni:'12345678',contact_email:'patient@example.com',contact_phone:'',starts_at:args.p_starts_at,ends_at:new Date(Date.parse(args.p_starts_at)+1800000).toISOString(),kind:'consultation',source:'web',status:'confirmed',private_notes:'',version:1,notification_state:'pending'})
       data=id
-    }else if(url.pathname==='/rest/v1/rpc/get_my_appointments')data=appointments.filter(a=>a.client_user_id===client).map(a=>({...a,clinic_name:'Consultorio de Podología',address:'Dirección del consultorio',phone:'1112345678',timezone:settings.timezone,slug:settings.slug,cancel_hours:12}))
+    }else if(url.pathname==='/rest/v1/rpc/get_my_appointments')data=appointments.filter(a=>a.client_user_id===client).map(a=>({...a,clinic_name:'Consultorio de Podología',address:'Dirección del consultorio',phone:'1112345678',provider_name:'Profesional de prueba',timezone:settings.timezone,slug:settings.slug,cancel_hours:12,advance_days:settings.advance_days,can_reschedule:a.source==='web'&&a.provider_id===settings.provider_id&&settings.enabled}))
     else if(url.pathname==='/rest/v1/rpc/change_my_appointment'){
       const a=appointments.find(item=>item.id===args.p_id)!
       a.version++
@@ -68,7 +71,14 @@ test('patient books 30 minutes, reschedules, cancels and cannot open clinical ma
   await expect(page).toHaveURL(/\/mis-turnos$/)
   await expect(page.getByText('09:00–09:30',{exact:true})).toBeVisible()
   await expect(page.getByText(/El aviso por email está pendiente; la reserva ya está guardada/)).toBeVisible()
+  await page.getByRole('link',{name:'Reservar turno',exact:true}).click()
+  await expect(page.getByText(/Ya tenés un turno confirmado con Profesional de prueba/)).toBeVisible()
+  await expect(page.getByRole('button',{name:'Confirmar turno',exact:true})).toHaveCount(0)
+  await page.getByRole('link',{name:'Ver mi turno',exact:true}).click()
   await page.getByRole('button',{name:'Reprogramar',exact:true}).click()
+  const maxDate=await page.getByLabel('Día de la consulta').getAttribute('max')
+  const minDate=await page.getByLabel('Día de la consulta').getAttribute('min')
+  expect(Date.parse(maxDate!)-Date.parse(minDate!)).toBe(30*86400000)
   await page.getByRole('button',{name:'09:30',exact:true}).click()
   await page.getByRole('button',{name:'Confirmar nuevo horario',exact:true}).click()
   await expect(page.getByText('09:30–10:00',{exact:true})).toBeVisible()
@@ -80,6 +90,11 @@ test('patient books 30 minutes, reschedules, cancels and cannot open clinical ma
   await page.getByRole('button',{name:'Cancelar turno',exact:true}).click()
   await page.getByRole('button',{name:'Confirmar cancelación',exact:true}).click()
   await expect(page.getByText('Cancelado',{exact:true})).toBeVisible()
+  await page.getByRole('link',{name:'Reservar turno',exact:true}).click()
+  await page.getByLabel('Día de la consulta').fill(day)
+  await page.getByRole('button',{name:'10:00',exact:true}).click()
+  await page.getByRole('button',{name:'Confirmar turno',exact:true}).click()
+  await expect(page.getByText('10:00–10:30',{exact:true})).toBeVisible()
 })
 
 test('owner configures the professional, opens booking, adds a 90 minute appointment and a block',async({page},testInfo)=>{
@@ -97,6 +112,7 @@ test('owner configures the professional, opens booking, adds a 90 minute appoint
   await page.getByLabel('Fecha de la agenda').fill(day)
   await page.getByRole('button',{name:'Nuevo turno',exact:true}).click()
   await page.getByLabel('Nombre y apellido del paciente').fill('Paciente atención extendida')
+  await page.getByLabel('DNI',{exact:true}).fill('12345678')
   await page.getByLabel('Duración (minutos)').fill('90')
   await page.getByRole('button',{name:'Guardar turno',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Paciente atención extendida'})).toBeVisible()

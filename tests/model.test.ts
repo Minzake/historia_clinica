@@ -45,4 +45,22 @@ describe('clinical data', () => {
     expect(readClinic(null).name).toBe('')
     expect(readClinic({ professional: 'Profesional' }).professional).toBe('Profesional')
   })
+  it('rejects incomplete runtime data instead of throwing while validating it', () => {
+    const record = blankRecord()
+    expect(validateRecord({ ...record, clinical: { ...record.clinical, usual: null } } as unknown as typeof record)).not.toEqual([])
+    expect(validateRecord({} as typeof record)).not.toEqual([])
+    record.patient.antecedents[0].notes = 'x'.repeat(2001)
+    expect(validateRecord(record)).not.toEqual([])
+  })
+  it('rejects duplicated questionnaires and evolution identifiers', () => {
+    const record = blankRecord()
+    record.patient.fullName = 'Paciente'
+    record.patient.antecedents[1] = { ...record.patient.antecedents[0] }
+    expect(validateRecord(record).some(error => error.includes('preguntas repetidas'))).toBe(true)
+    record.patient = { ...blankRecord().patient, fullName: 'Paciente' }
+    const evolution = { ...blankEvolution(), procedure: 'Control' }
+    record.evolutions = [evolution, { ...evolution }]
+    expect(validateRecord(record).some(error => error.includes('consultas repetidas'))).toBe(true)
+    expect(validDate('0000-01-01')).toBe(false)
+  })
 })

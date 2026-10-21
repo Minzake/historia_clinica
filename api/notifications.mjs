@@ -17,6 +17,6 @@ export async function handleNotifications(req,res,env=process.env) {
       appointmentId=body.appointment_id
     }else return respond(res,405,{error:'Método no permitido.'})
     return respond(res,200,await dispatchNotifications({admin,actor,appointmentId,env}))
-  }catch(error){return respond(res,error.message==='UNAUTHORIZED'?401:503,{error:'No se pudieron procesar los avisos. Los turnos permanecen guardados y los correos se reintentarán.'})}
+  }catch(error){return respond(res,error.message==='UNAUTHORIZED'?401:error.message==='INVALID_BODY'?400:503,{error:error.message==='INVALID_BODY'?'Solicitud no válida.':'No se pudieron procesar los avisos. Los turnos permanecen guardados y los correos se reintentarán.'})}
 }
 export default function handler(req,res){return handleNotifications(req,res)}

@@ -1,7 +1,7 @@
 import type { jsPDF as PdfDocument } from 'jspdf'
 import { autoTable } from 'jspdf-autotable'
 import type { UserOptions } from 'jspdf-autotable'
-import { ageAt, bmi, formatDate } from './model'
+import { ageAt, bmi, formatDate, recordStructureError } from './model'
 import type { Clinic, RecordDraft } from './model'
 
 export type PdfKind = 'complete' | 'initial' | 'evolutions' | 'blank-evolution'
@@ -39,6 +39,7 @@ function clinicHeader(doc: PdfDocument, clinic: Clinic) {
 }
 
 export async function buildPdf(record: RecordDraft, clinic: Clinic, kind: PdfKind = 'complete') {
+  if (recordStructureError(record)) throw new Error('INVALID_RECORD')
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ format: 'a4', unit: 'mm' })
   doc.setLineHeightFactor(1.2)
