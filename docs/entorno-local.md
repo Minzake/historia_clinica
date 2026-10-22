@@ -18,7 +18,9 @@ npm run local
 | API Supabase | http://127.0.0.1:54321 |
 | PostgreSQL | `127.0.0.1:54322` |
 
-El primer arranque descarga los contenedores. El comando prepara la red limitada a loopback, arranca Supabase, aplica únicamente migraciones pendientes, genera `.env.testing.local` y abre el servidor Vite en modo `testing`, con las APIs de equipo y notificaciones en el mismo puerto.
+El primer arranque descarga los contenedores. El comando prepara la red local, arranca Supabase, verifica que los puertos publicados estén ligados explícitamente a `127.0.0.1`, aplica únicamente migraciones pendientes, genera `.env.testing.local` y abre el servidor Vite en modo `testing`, con las APIs de equipo y notificaciones en el mismo puerto.
+
+Algunas versiones de Docker Desktop no respetan el binding predeterminado de la red. En ese caso el script recrea exclusivamente los contenedores identificados con el proyecto `historia-clinica-local`, reutiliza sus volúmenes, configuración y alias, fija los puertos a loopback y espera a que estén saludables. No elimina volúmenes ni modifica contenedores de otras aplicaciones.
 
 Cerrar el servidor Vite con `Ctrl+C`. Para detener los contenedores de este proyecto conservando sus datos:
 

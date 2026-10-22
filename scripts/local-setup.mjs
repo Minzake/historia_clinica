@@ -6,6 +6,7 @@ import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { applyMigration, applyIncrementalMigration } from './migrate-db.mjs'
 import { localEnvironment } from './local-environment.mjs'
+import { restrictLocalPorts } from './local-ports.mjs'
 
 const project = 'historia-clinica-local'
 const cli = process.platform === 'win32' ? 'supabase.exe' : 'supabase'
@@ -42,6 +43,7 @@ async function startStack() {
 
 async function prepare() {
   await startStack()
+  await restrictLocalPorts()
   const status = JSON.parse(capture(cli, ['status', '--output', 'json']))
   const env = localEnvironment(status)
   const db = new pg.Client({ connectionString: env.POSTGRES_URL, ssl: false, connectionTimeoutMillis: 10000 })
