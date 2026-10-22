@@ -401,6 +401,35 @@ input, select, textarea, [tabindex="-1"] { scroll-margin-block: 90px; }
 .agenda-config-navigation .button-row { align-items:end; }
 .service-list { display:grid;gap:8px;margin:16px 0 22px; }
 .registered-account-picker { display:grid; gap:12px; }
+.public-link-card { display:grid; gap:14px; padding:20px; border:1px solid #cedfca; border-radius:6px; background:#f6faf2; min-width:0; }
+.public-link-card h3, .public-link-card p { margin:0; }
+.public-link-card p { font-size:12px; line-height:1.6; color:#647a5f; }
+.public-link-url { overflow-wrap:anywhere; color:#246f5c; font-weight:600; font-size:14px; user-select:all; }
+.agenda-day-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:18px; }
+.agenda-day-heading h2 { margin:0; font-size:13px; text-transform:capitalize; }
+.agenda-day-heading .text-button { display:flex; align-items:center; gap:4px; }
+.week-view .agenda-day-heading { align-items:start; flex-direction:column; gap:6px; }
+.staff-appointment-form .settings-fields { gap:20px; }
+.appointment-form-section { display:grid; gap:16px; padding-bottom:20px; border-bottom:1px solid #e0e9da; min-width:0; }
+.appointment-form-section h3 { margin:0; font-size:14px; color:#355d43; }
+.appointment-form-section > .text-button { justify-self:start; text-align:left; }
+.patient-appointment-results { display:grid; gap:8px; max-height:220px; overflow:auto; }
+.patient-appointment-results button { text-align:left; overflow-wrap:anywhere; }
+.patient-appointment-fields { grid-template-columns:1.6fr 1fr; }
+.appointment-duration { display:grid; gap:12px; }
+.appointment-duration .field { max-width:190px; }
+.appointment-time-picker > strong { font-size:12px; }
+.appointment-times { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+.appointment-times .secondary-button { justify-content:center; padding:8px; }
+.staff-appointment-form button[aria-pressed="true"] { color:#fff; background:#337458; border-color:#337458; }
+.appointment-summary { display:grid; gap:6px; padding:16px; background:#eef6e9; border-radius:5px; font-size:13px; }
+.appointment-summary span { font-size:12px; }
+.staff-appointment-form > .dialog-actions { position:sticky; bottom:-25px; z-index:1; padding:16px 0 0; background:#fff; box-shadow:0 -10px 12px #fff; }
+@media(max-width:540px) {
+  .patient-appointment-fields { grid-template-columns:1fr; }
+  .public-link-card { padding:16px; }
+  .staff-appointment-form > .dialog-actions { bottom:-18px; padding-bottom:8px; }
+}
 .account-search { display:flex; gap:10px; align-items:end; }
 .account-search .field { flex:1; }
 .opening-hour { display:grid; grid-template-columns:1.4fr 1fr 1fr 36px; gap:14px; align-items:end; padding:15px; border:1px solid #dce6d5; border-radius:4px; background:#fafcf7; }

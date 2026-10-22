@@ -53,3 +53,11 @@ Los comandos `npm run dev` y `npm run db:migrate` conservan su comportamiento pr
 El migrador existente registra checksums en `private.app_migrations`; `supabase/config.toml` deshabilita la aplicación paralela de migraciones y seeds por la CLI para mantener un único escritor. Los cinco SQL iniciales se aplicaron sin cambios. Agregar nuevas migraciones, sin modificar las ya aplicadas, y volver a ejecutar `npm run local:setup`.
 
 La configuración `supabase/config.toml` de esta entrega está destinada al entorno local. Una futura integración Supabase Branching/CI debe acordar su migrador, seeds y configuración remota antes de activarla.
+
+## Probar las mejoras de agenda
+
+En **Agenda → Horarios**, el enlace interno largo se reemplaza por una propuesta legible basada en la prestación y la profesional. **Personalizar enlace** permite elegir otro nombre. Guardar la disponibilidad activa el nuevo nombre y habilita **Copiar enlace**; los enlaces anteriores se conservan como alias. Los nombres que ya estaban personalizados se mantienen. Estos cambios usan las funciones de la migración 005 y no requieren una migración adicional.
+
+En **Nuevo turno**, completar el paciente o buscarlo por nombre/DNI, elegir día, horario y duración y guardar. La profesional se selecciona automáticamente si hay una sola habilitada. Los horarios sugeridos excluyen turnos y bloqueos registrados y consideran la duración elegida; se pueden ingresar otros horarios manualmente. Para la prestación/profesional de la agenda configurada se usan sus franjas; en otros casos se sugieren horas entre las 9 y las 18, indicado en pantalla. La base conserva la protección final contra reservas simultáneas, incluso en otros consultorios.
+
+La vista semanal permite **Agregar turno** desde cada día. Los datos de contacto y las observaciones son opcionales; el estado se modifica al editar un turno existente. Buscar un paciente administrativo solo completa sus datos: la vinculación con una cuenta del portal se hace de forma explícita mediante **Usar una cuenta del portal de pacientes**.
