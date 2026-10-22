@@ -1,6 +1,15 @@
 # Resumen para continuar en un nuevo chat
 
-Actualizado: 21 de octubre de 2026.
+Actualizado: 22 de octubre de 2026.
+
+## Entorno de pruebas disponible
+
+- `develop` tiene base propia: proyecto Supabase `historia-clinica-develop`, referencia `mhddieetrmniazjrrkzg`, São Paulo. La referencia de producción sigue siendo `yzqcvnqrwgkxpztpqmrt`.
+- Preview estable: https://historia-clinica-git-develop-minzakes-projects.vercel.app. Variables Vercel con destino Preview y rama develop; no se modificaron las variables Production.
+- Migraciones 001–005 aplicadas y registradas en el proyecto de pruebas. Se verificaron login, membresía, guardado/lectura/exportación autorizada y denegación clínica a recepción contra Supabase real, con usuarios/datos temporales eliminados después.
+- Administrador de pruebas: `axelfiol12@gmail.com`, cuenta independiente sin copiar contraseña de producción; usar recuperación de contraseña para definirla. No se enviaron correos durante la preparación. Consultorio de pruebas vacío, podología habilitada, agenda pública cerrada y sin horarios.
+- Credenciales locales en `.env.develop.local`, ignorado por Git. Para Vite: `npm run dev -- --mode develop`. No asumir que `npm run db:migrate` apunta a develop: carga `.env.local`.
+- Detalles operativos: `docs/entorno-develop.md`. El resto de este resumen incluye contexto histórico anterior; para el modelo modular, consultar `docs/implementacion-multiespecialidad.md`.
 
 ## Proyecto y objetivo
 

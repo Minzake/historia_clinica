@@ -512,3 +512,4 @@ input, select, textarea, [tabindex="-1"] { scroll-margin-block: 90px; }
   .history-table .table-actions { flex-wrap: wrap; justify-content: flex-start; gap: 12px; }
   .history-table .table-actions a { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; }
 }
+.environment-banner { padding: 8px 16px; background: #fff3cd; color: #594313; text-align: center; font-size: 13px; font-weight: 600; }

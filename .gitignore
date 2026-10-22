@@ -18,6 +18,7 @@ coverage
 playwright-report
 test-results
 .vercel
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*

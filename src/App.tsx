@@ -131,4 +131,4 @@ const router = createBrowserRouter([{
   ],
 }])
 
-export default function Root() { return <RouterProvider router={router} /> }
+export default function Root() { return <>{import.meta.env.VITE_APP_ENVIRONMENT === 'develop' && <div className="environment-banner" role="status">Entorno de pruebas · Usá datos ficticios.</div>}<RouterProvider router={router} /></> }
