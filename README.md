@@ -21,6 +21,8 @@ Aplicación privada con React + TypeScript + Vite, desplegable en Vercel. Supaba
 
 ## Base para otras especialidades
 
+Para probar en esta computadora con base y usuarios locales: **`npm run local`**, luego http://localhost:5173. Requiere Docker Desktop. Ver [entorno local, cuentas y correo de prueba](docs/entorno-local.md).
+
 La [Preview de develop](https://historia-clinica-git-develop-minzakes-projects.vercel.app) usa una base Supabase independiente con las migraciones 001–005 instaladas. Ver [acceso y operación del entorno de pruebas](docs/entorno-develop.md). Crear únicamente pacientes ficticios allí.
 
 Las etapas 1–3 del [plan de reutilización por especialidad y policonsultorio](docs/plan-multiespecialidad.md) están aplicadas en `develop`: módulo de podología separado, identidad administrativa, fichas/permisos por especialidad, recepción, múltiples membresías y agendas por prestación. **Solo está instalada podología.** La [guía de implementación y migración](docs/implementacion-multiespecialidad.md) explica la puesta en marcha, compatibilidad y límites pendientes. Estos cambios requieren las migraciones 004 y 005 además del nuevo frontend/API.

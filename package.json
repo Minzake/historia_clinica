@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "local": "node scripts/local-setup.mjs --serve",
+    "local:setup": "node scripts/local-setup.mjs",
+    "local:stop": "supabase stop --project-id historia-clinica-local",
     "build": "node scripts/migrate-db.mjs --if-requested && node scripts/seed-admins.mjs --if-requested && node scripts/check-deployment.mjs --if-requested && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",

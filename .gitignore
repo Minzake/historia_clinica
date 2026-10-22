@@ -19,6 +19,7 @@ playwright-report
 test-results
 .vercel
 supabase/.temp/
+supabase/.branches/
 
 # Editor directories and files
 .vscode/*
