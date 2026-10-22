@@ -1,0 +1,1656 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagrama completo del sistema · Podología</title>
+<style>
+*{box-sizing:border-box}body{margin:0;color:var(--foreground,#263a31);font:14px/1.55 var(--font-sans,system-ui,sans-serif)}h1{margin:0 0 8px;font-size:25px;line-height:1.22;font-weight:650}h2{font-size:22px;line-height:1.3;margin:0 0 8px;font-weight:650}h3{font-size:14px;margin:0 0 12px}p{margin:0}.subtitle,.description,.route{color:var(--muted-foreground,#62756a)}.subtitle{margin-bottom:18px}.description{margin:8px 0 20px}.toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:22px;border-bottom:1px solid var(--border,#d5e1d8)}.toolbar label{flex:1;min-width:210px;font-size:12px;font-weight:600}.toolbar select{display:block;width:100%;margin-top:6px;padding:10px 12px;min-height:42px;border-radius:8px;border:1px solid var(--border,#d5e1d8);background:var(--card,#fff);color:inherit;font:inherit;font-size:13px}button{font:inherit;cursor:pointer;color:inherit}button:focus-visible,select:focus-visible{outline:2px solid var(--ring,#3f8663);outline-offset:3px}.secondary{font-size:12px;padding:10px 12px;border:1px solid var(--border,#d5e1d8);border-radius:8px;background:var(--card,#fff);color:inherit;line-height:1.45}.toolbar button[aria-pressed=true]{color:var(--primary-foreground,#fff);background:var(--primary,#2d6a4b)}.panel[hidden]{display:none}.kicker{display:block;font-size:10px;letter-spacing:.1em;font-weight:700;color:var(--muted-foreground,#62756a);margin-bottom:7px}.route{font:11px/1.6 var(--font-mono,monospace);overflow-wrap:anywhere}.row{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(115px,1fr);gap:26px;align-items:center}.step{scroll-margin-top:20px;outline:none;border-radius:8px}.step:focus-visible{outline:2px solid var(--ring,#3f8663);outline-offset:5px}.node{border:1px solid var(--border,#cadbce);border-radius:9px;background:var(--card,#f7faf7);padding:15px 16px;text-align:center;min-width:0}.node strong{display:block;font-size:14px;font-weight:650}.node p{font-size:12px;color:var(--muted-foreground,#62756a);margin-top:5px;line-height:1.55}.node.start,.node.end{border-radius:28px;background:var(--accent-surface,#eaf4eb);border-color:var(--accent,#79aa8a)}.node.start strong,.node.end strong{color:var(--accent-surface-foreground,var(--foreground,#254e35))}.arrow{height:30px;position:relative;display:flex;align-items:center;justify-content:center}.arrow:before{content:"";width:1px;background:var(--muted-foreground,#76907f);position:absolute;top:0;bottom:6px}.arrow:after{content:"";position:absolute;bottom:3px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--muted-foreground,#76907f)}.arrow span{position:relative;left:22px;font-size:10px;color:var(--muted-foreground,#62756a);padding:0 3px;background:var(--background,#fff)}.diamond{position:relative;display:grid;place-items:center;min-height:114px;text-align:center}.diamond svg{position:absolute;inset:0;width:100%;height:100%}.diamond polygon{fill:var(--secondary,#eef4ed);stroke:var(--border,#bcd0c0);stroke-width:1}.diamond strong{position:relative;width:66%;font-size:13px;line-height:1.4}.aside{font-size:12px;color:var(--muted-foreground,#62756a);min-width:0}.aside p{overflow-wrap:anywhere}.branch{border-left:2px solid var(--warning,#b78c42);padding:10px 0 10px 14px;position:relative}.branch:before{content:"";height:1px;position:absolute;top:50%;left:-28px;width:24px;background:var(--muted-foreground,#76907f)}.branch:after{content:"";position:absolute;left:-7px;top:calc(50% - 3px);border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid var(--muted-foreground,#76907f)}.badge{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;color:var(--foreground,#334638)}.jump{font-size:11px;line-height:1.5;color:var(--accent,var(--primary,#286745));border:0;background:transparent;text-align:left;padding:6px 0;margin-top:5px;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}.terminal{display:block;font-size:10px;margin-top:6px;font-weight:600}.notes{border-top:1px solid var(--border,#d5e1d8);padding-top:14px;margin-top:20px;display:grid;gap:9px;font-size:12px;color:var(--muted-foreground,#62756a)}.section-bottom{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;margin-top:20px}.alternate-label{margin:26px 0 12px;font-size:12px;font-weight:600;color:var(--muted-foreground,#62756a)}.entry{width:70%;margin:18px auto 0}.splitter{height:30px;width:67%;margin:auto;border-bottom:1px solid var(--border,#c9d9cd);position:relative}.splitter:before{content:"";position:absolute;left:50%;height:30px;border-left:1px solid var(--border,#c9d9cd)}.lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.lane{display:grid;gap:8px;align-content:start;position:relative;padding-top:18px}.lane:before{content:"";position:absolute;top:0;left:50%;height:12px;border-left:1px solid var(--border,#c9d9cd)}.lane-label{font-size:11px;font-weight:650;text-align:center;color:var(--muted-foreground,#62756a)}.lane .node{padding:14px 10px;min-height:115px}.lane .node strong{font-size:13px}.mini-arrow{text-align:center;color:var(--muted-foreground,#62756a);line-height:1}.lane .secondary{text-align:center;font-size:11px;min-height:55px}.public-connection{text-align:center;margin-top:10px}.team-heading{margin:22px 0 12px;padding-top:14px;border-top:1px solid var(--border,#d5e1d8)}.module-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.module{display:grid;gap:6px;text-align:left;padding:16px;border:1px solid var(--border,#cadbce);background:var(--card,#f7faf7);border-radius:9px;min-width:0}.module:hover{border-color:var(--accent,#79aa8a);background:var(--secondary,#eef4ed)}.module-title{font-size:14px;font-weight:650;display:flex;justify-content:space-between;gap:8px}.module-text{font-size:12px;color:var(--muted-foreground,#62756a)}.module-role{font-size:10px;font-weight:650;color:var(--muted-foreground,#62756a)}.connections{margin-top:24px;display:grid;gap:10px;font-size:12px;color:var(--muted-foreground,#62756a)}.connections h3{color:var(--foreground,#263a31);margin:0}.table-wrap{overflow:auto;margin:18px 0 24px}table{width:100%;border-collapse:collapse;font-size:11px;line-height:1.6}caption{text-align:left;font-weight:650;margin-bottom:8px;font-size:13px}th,td{border:1px solid var(--border,#d5e1d8);text-align:left;padding:9px;vertical-align:top}th{background:var(--secondary,#eef4ed)}.all-mode .panel+.panel{border-top:2px solid var(--border,#d5e1d8);margin-top:38px;padding-top:28px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.print-note{margin-top:22px;font-size:11px;color:var(--muted-foreground,#62756a)}
+@media(max-width:440px){h1{font-size:23px}h2{font-size:20px}.row{gap:19px;grid-template-columns:minmax(0,1.5fr) minmax(104px,1fr)}.node{padding:13px 10px}.node strong{font-size:13px}.node p,.aside{font-size:11px}.diamond{min-height:120px}.diamond strong{width:70%;font-size:12px}.branch{padding-left:10px}.branch:before{left:-21px;width:17px}.toolbar{gap:8px}.toolbar label{flex-basis:100%}.toolbar>button{flex:1}.module-grid{grid-template-columns:1fr}.lanes{gap:7px}.lane .node{padding:12px 7px;min-height:160px}.lane .node strong{font-size:12px}.lane .node p{font-size:10px}.lane .secondary{padding:9px 5px;font-size:10px;min-height:62px}.entry{width:90%}.jump{font-size:10px}}
+@media print{body{color:#222;font-size:11px}.toolbar,.section-bottom,.print-note,.jump,.module,.public-connection{display:none!important}.panel[hidden]{display:block!important}.panel{break-before:page;border:0!important;margin:0!important;padding:0!important}.overview{break-before:auto}.step,.row,.node,.diamond,.notes p{break-inside:avoid}.node,.diamond polygon{background:#fafafa!important;fill:#fafafa!important;color:#222!important;stroke:#aaa!important}.node strong,.aside,.description,.route,.kicker,.node p,.notes{color:#333!important}.module-grid{display:block}.module{display:grid!important;margin:8px 0;break-inside:avoid}.module-title,.module-text,.module-role{color:#222!important}.branch{border-color:#999}.section-heading{margin-bottom:16px}h1{font-size:22px}h2{font-size:20px}.all-mode .panel+.panel{border:0!important}.connections{color:#333!important}}
+</style>
+</head>
+<body>
+<h1>Diagrama completo del sistema</h1>
+<p class="subtitle">Funcionamiento implementado en develop · Podología · 22 de octubre de 2026.</p>
+<nav class="toolbar" aria-label="Navegación de diagramas">
+<label for="flow-select">Recorrido<select id="flow-select">
+<option value="mapa">00 · Mapa general</option>
+<option value="acceso">01 · Acceso y cuentas</option>
+<option value="permisos">02 · Consultorios, roles y permisos</option>
+<option value="pacientes">03 · Directorio de pacientes</option>
+<option value="historias">04 · Historia clínica y evoluciones</option>
+<option value="documentos">05 · PDF, planillas y versiones</option>
+<option value="agenda">06 · Agenda, turnos manuales y bloqueos</option>
+<option value="reservas">07 · Reservas públicas y portal del paciente</option>
+<option value="disponibilidad">08 · Prestaciones, horarios y enlace público</option>
+<option value="equipo">09 · Usuarios, perfiles y asignaciones</option>
+<option value="consultorio">10 · Configuración del consultorio</option>
+<option value="controles">11 · Validaciones, avisos y persistencia</option>
+</select>
+</label>
+<button class="secondary" type="button" id="show-all" aria-pressed="false">Ver todo</button>
+<button class="secondary" type="button" id="print-all">Imprimir todo / PDF</button>
+</nav>
+<p class="sr-only" id="view-status" aria-live="polite">
+</p>
+<section class="panel overview" id="panel-mapa" aria-labelledby="heading-mapa">
+<h2 id="heading-mapa" tabindex="-1">Mapa general del sistema</h2>
+<p class="description">Elegí un módulo para abrir su diagrama completo. “Ver todo” reúne los 11 recorridos en una sola vista.</p>
+<div class="entry node start">
+<strong>Entrada a la web</strong>
+<p>Inicio de sesión, registro o enlace de reserva.</p>
+</div>
+<div class="splitter" aria-hidden="true">
+</div>
+<div class="lanes">
+<div class="lane">
+<span class="lane-label">Visitante</span>
+<div class="node">
+<strong>Consultar reservas públicas</strong>
+<p>Ver agendas abiertas y horarios.</p>
+</div>
+<div class="mini-arrow">↓</div>
+<button type="button" class="secondary" data-go="acceso:entrada">Crear cuenta / Ingresar <span aria-hidden="true">↗</span>
+</button>
+</div>
+<div class="lane">
+<span class="lane-label">Paciente</span>
+<div class="node">
+<strong>Cuenta verificada</strong>
+<p>Sin membresía de equipo → portal.</p>
+</div>
+<div class="mini-arrow">↓</div>
+<button type="button" class="secondary" data-go="reservas:portal">Mis datos y Mis turnos <span aria-hidden="true">↗</span>
+</button>
+</div>
+<div class="lane">
+<span class="lane-label">Equipo</span>
+<div class="node">
+<strong>Membresía activa</strong>
+<p>Seleccionar consultorio y aplicar permisos.</p>
+</div>
+<div class="mini-arrow">↓</div>
+<button type="button" class="secondary" data-go="permisos:membresias">Roles y alcance <span aria-hidden="true">↗</span>
+</button>
+</div>
+</div>
+<p class="public-connection">
+<button type="button" class="jump" data-go="reservas:enlace">Ver flujo de reservas públicas <span aria-hidden="true">↗</span>
+</button>
+</p>
+<div class="team-heading">
+<span class="kicker">EQUIPO → MÓDULOS SEGÚN ROL Y PERMISOS</span>
+</div>
+<div class="module-grid">
+<button type="button" class="module" data-go="pacientes:directorio">
+<span class="module-title">Pacientes <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Identificación, contacto y acceso a ficha.</span>
+<span class="module-role">Equipo autorizado</span>
+</button>
+<button type="button" class="module" data-go="historias:buscar">
+<span class="module-title">Historias clínicas <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Ficha inicial, antecedentes y evoluciones.</span>
+<span class="module-role">Permiso clínico</span>
+</button>
+<button type="button" class="module" data-go="documentos:origen">
+<span class="module-title">PDF y versiones <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Planillas, exportación e historial guardado.</span>
+<span class="module-role">Permiso de exportación</span>
+</button>
+<button type="button" class="module" data-go="agenda:abrir">
+<span class="module-title">Agenda <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Día/semana, turnos, bloqueos y asistencia.</span>
+<span class="module-role">Según rol</span>
+</button>
+<button type="button" class="module" data-go="disponibilidad:entrar">
+<span class="module-title">Prestaciones y reservas web <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Profesional, duración, franjas y enlace legible.</span>
+<span class="module-role">Administrador</span>
+</button>
+<button type="button" class="module" data-go="equipo:administrador">
+<span class="module-title">Usuarios y equipo <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Invitar, cambiar rol y asignar permisos.</span>
+<span class="module-role">Administrador</span>
+</button>
+<button type="button" class="module" data-go="consultorio:abrir">
+<span class="module-title">Consultorio <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Datos del centro y encabezados de planillas.</span>
+<span class="module-role">Edición: administrador</span>
+</button>
+<button type="button" class="module" data-go="controles:accion">
+<span class="module-title">Validaciones y avisos <span aria-hidden="true">↗</span>
+</span>
+<span class="module-text">Permisos, versiones, persistencia y email.</span>
+<span class="module-role">Transversal</span>
+</button>
+</div>
+<div class="connections">
+<h3>Conexiones entre módulos</h3>
+<p>
+<b>Pacientes → Historia clínica:</b> reutiliza la identidad; la ficha exige permiso clínico.</p>
+<p>
+<b>Usuarios → Agenda e Historias:</b> configura quién atiende y qué fichas puede leer, modificar o exportar.</p>
+<p>
+<b>Prestaciones y disponibilidad → Reserva pública → Agenda:</b> el paciente elige un horario y la reserva guardada ocupa la agenda.</p>
+<p>
+<b>Historia → PDF y versiones:</b> exporta solo datos guardados y autorizados; cada guardado conserva una versión.</p>
+<p>
+<b>Cambios de turno → Avisos:</b> confirmación, reprogramación y cancelación pueden generar email; el turno no depende del envío.</p>
+</div>
+<div class="notes">
+<p>
+<b>Tres registros separados:</b> cuenta del portal, identidad administrativa del paciente y ficha clínica. Coincidir en DNI o email no concede acceso a una historia.</p>
+<p>
+<b>Estado actual:</b> podología es la única especialidad clínica instalada. Los permisos y los datos se separan por consultorio. Otros módulos de especialidad requieren implementación.</p>
+</div>
+</section>
+<section class="panel" id="panel-acceso" aria-labelledby="heading-acceso" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 01 / 11</p>
+<h2 id="heading-acceso" tabindex="-1">Acceso y cuentas</h2>
+<p class="route">Inicio · /registro · /recuperar</p>
+<p class="description">Registro público para pacientes, acceso del equipo por invitación y recuperación de cuenta.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-acceso-entrada" tabindex="-1">
+<div class="node start">
+<strong>Abrir la aplicación</strong>
+<p>Entrar por Inicio o por un enlace de reserva.</p>
+</div>
+<aside class="aside">
+<p>El enlace público permite consultar agendas sin iniciar sesión.</p>
+<button type="button" class="jump" data-go="reservas:enlace">Ver Reservas públicas y portal del paciente <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-acceso-conexion" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Está configurada la conexión?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Mostrar configuración inicial. El sistema no habilita el acceso a datos hasta conectar Supabase.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-acceso-opcion" tabindex="-1">
+<div class="node ">
+<strong>Elegir forma de acceso</strong>
+<p>Iniciar sesión, crear cuenta de paciente, recuperar contraseña o aceptar una invitación.</p>
+</div>
+<aside class="aside">
+<p>Crear cuenta no otorga acceso administrativo ni profesional.</p>
+<button type="button" class="jump" data-go="equipo:administrador">Ver Usuarios, perfiles y asignaciones <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-acceso-registro" tabindex="-1">
+<div class="node ">
+<strong>Si es una cuenta nueva: registrarse</strong>
+<p>Nombre, DNI, email y contraseña de al menos 12 caracteres con confirmación. Celular opcional. Validar datos y enviar verificación.</p>
+</div>
+<aside class="aside">
+<p>Si ya existe la cuenta, ingresar o recuperar la contraseña. Si los datos son inválidos, corregir y reintentar.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-acceso-credenciales" tabindex="-1">
+<div class="node ">
+<strong>Ingresar o recuperar el acceso</strong>
+<p>Login: email y contraseña. Recuperación: solicitar enlace, abrirlo y definir una nueva contraseña.</p>
+</div>
+<aside class="aside">
+<p>Sin correo de verificación: solicitar reenvío. En una invitación, elegir contraseña desde su enlace.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-acceso-sesion" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Sesión válida y correo verificado?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Corregir el acceso o verificar el correo antes de continuar.</p>
+<button type="button" class="jump" data-go="acceso:credenciales">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-acceso-destino" tabindex="-1">
+<div class="node end">
+<strong>Resolver destino según acceso</strong>
+<p>Miembro activo de un consultorio → espacio de trabajo. Sin membresía → portal del paciente.</p>
+</div>
+<aside class="aside">
+<p>Las rutas públicas de reservas y Mis turnos tienen recorridos propios.</p>
+<button type="button" class="jump" data-go="permisos:membresias">Ver Consultorios, roles y permisos <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="permisos:membresias">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-permisos" aria-labelledby="heading-permisos" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 02 / 11</p>
+<h2 id="heading-permisos" tabindex="-1">Consultorios, roles y permisos</h2>
+<p class="route">Espacio de trabajo · Inicio</p>
+<p class="description">El rol administrativo y los permisos clínicos se comprueban por separado.</p>
+</div>
+<div class="table-wrap">
+<table>
+<caption>Qué habilita cada perfil</caption>
+<thead>
+<tr>
+<th>Perfil</th>
+<th>Gestión</th>
+<th>Historias clínicas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Administrador</td>
+<td>Equipo, disponibilidad y configuración; pacientes y agenda.</td>
+<td>Solo con permisos clínicos.</td>
+</tr>
+<tr>
+<td>Profesional</td>
+<td>Pacientes y gestión de sus turnos/bloqueos.</td>
+<td>Según especialidad y alcance.</td>
+</tr>
+<tr>
+<td>Recepción</td>
+<td>Datos administrativos y agenda.</td>
+<td>Sin acceso clínico.</td>
+</tr>
+<tr>
+<td>Paciente</td>
+<td>Su cuenta y sus turnos en el portal.</td>
+<td>Sin acceso a historias desde el portal.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-permisos-membresias" tabindex="-1">
+<div class="node start">
+<strong>Cargar membresías activas</strong>
+<p>Identificar los consultorios a los que pertenece la cuenta.</p>
+</div>
+<aside class="aside">
+<p>Si falla la carga, reintentar o cerrar sesión.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-permisos-miembro" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Pertenece a un consultorio?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Abrir Mis turnos. Registrarse por la web no crea una membresía de equipo.</p>
+<button type="button" class="jump" data-go="reservas:portal">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-permisos-centro" tabindex="-1">
+<div class="node ">
+<strong>Seleccionar consultorio activo</strong>
+<p>Si tiene más de uno, usar el selector. Los datos y permisos se cargan para ese consultorio.</p>
+</div>
+<aside class="aside">
+<p>Al cambiar de centro con cambios pendientes, confirmar si se descartan.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-permisos-rol" tabindex="-1">
+<div class="node ">
+<strong>Aplicar el rol de la membresía</strong>
+<p>Administrador: equipo y configuración. Profesional: agenda con gestión de sus turnos y fichas autorizadas. Recepción: pacientes y agenda.</p>
+</div>
+<aside class="aside">
+<p>Ser administrador no implica poder leer historias clínicas.</p>
+<button type="button" class="jump" data-go="equipo:administrador">Ver Usuarios, perfiles y asignaciones <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-permisos-clinico" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Tiene permiso clínico?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Inicio administrativo con acceso a pacientes y agenda. Sin contenido de historias clínicas.</p>
+<button type="button" class="jump" data-go="pacientes:directorio">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-permisos-alcance" tabindex="-1">
+<div class="node ">
+<strong>Comprobar especialidad y alcance</strong>
+<p>Lectura, escritura y exportación por separado. Alcance: todas las fichas de la especialidad o solo asignadas/creadas.</p>
+</div>
+<aside class="aside">
+<p>Las asignaciones a una ficha no pueden ampliar los permisos generales de especialidad.</p>
+<button type="button" class="jump" data-go="equipo:administrador">Ver Usuarios, perfiles y asignaciones <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-permisos-inicio" tabindex="-1">
+<div class="node end">
+<strong>Mostrar Inicio y módulos autorizados</strong>
+<p>Con acceso clínico: resumen de historias/evoluciones, búsqueda, últimas fichas y planillas vacías. El menú se ajusta a sus permisos.</p>
+</div>
+<aside class="aside">
+<p>Los controles se repiten en el servidor; ocultar un botón no es la única protección.</p>
+</aside>
+</div>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="pacientes:directorio">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-pacientes" aria-labelledby="heading-pacientes" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 03 / 11</p>
+<h2 id="heading-pacientes" tabindex="-1">Directorio de pacientes</h2>
+<p class="route">/pacientes</p>
+<p class="description">Datos de identificación y contacto compartidos por el equipo autorizado del consultorio.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-pacientes-directorio" tabindex="-1">
+<div class="node start">
+<strong>Abrir Pacientes</strong>
+<p>Buscar por nombre, DNI o número de historia y navegar los resultados.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-pacientes-existe" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿El paciente ya está registrado?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Agregar paciente con datos administrativos y contacto.</p>
+<button type="button" class="jump" data-go="pacientes:datos">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-pacientes-editar" tabindex="-1">
+<div class="node ">
+<strong>Seleccionar paciente → Editar datos</strong>
+<p>Abrir sus datos administrativos. Esto no abre automáticamente su historia clínica.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-pacientes-datos" tabindex="-1">
+<div class="node ">
+<strong>Completar o actualizar identificación</strong>
+<p>Nombre, DNI opcional, número de historia, nacimiento, domicilio, teléfonos, obra social, ocupación y contacto de emergencia.</p>
+</div>
+<aside class="aside">
+<p>El número de historia puede asignarse automáticamente al guardar.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-pacientes-valido" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Datos válidos y sin duplicados?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Corregir formato, fechas o DNI/número de historia duplicado. Si otra sesión cambió los datos, recargar antes de editar.</p>
+<button type="button" class="jump" data-go="pacientes:datos">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-pacientes-guardar" tabindex="-1">
+<div class="node ">
+<strong>Guardar identidad administrativa</strong>
+<p>Persistir la nueva versión y actualizar el directorio.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-pacientes-ficha" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Puede abrir o crear una ficha?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Continuar con datos administrativos y agenda, sin acceder a información clínica.</p>
+<button type="button" class="jump" data-go="agenda:abrir">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-pacientes-abrirficha" tabindex="-1">
+<div class="node end">
+<strong>Abrir / Crear ficha de podología</strong>
+<p>Reutilizar la misma identidad del paciente para su ficha autorizada.</p>
+</div>
+<aside class="aside">
+<p>Un administrador también puede asignar acceso desde el directorio, sin abrir el contenido clínico.</p>
+<button type="button" class="jump" data-go="historias:buscar">Ver Historia clínica y evoluciones <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+</div>
+<div class="notes">
+<p>Buscar un paciente al cargar un turno solo completa sus datos. No vincula una cuenta del portal ni una historia automáticamente.</p>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="historias:buscar">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-historias" aria-labelledby="heading-historias" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 04 / 11</p>
+<h2 id="heading-historias" tabindex="-1">Historia clínica y evoluciones</h2>
+<p class="route">/historias · /historias/nueva · /historias/:patientId</p>
+<p class="description">Ficha clínica de podología con permisos por especialidad y por paciente.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-historias-buscar" tabindex="-1">
+<div class="node start">
+<strong>Buscar una historia o crear una ficha</strong>
+<p>Desde Inicio, Historias clínicas o la ficha del directorio administrativo.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-historias-modulo" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Especialidad instalada y lectura autorizada?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Mostrar falta de permiso o especialidad no disponible. No cargar contenido clínico.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-historias-cargar" tabindex="-1">
+<div class="node ">
+<strong>Cargar ficha existente o identidad del paciente</strong>
+<p>Una ficha nueva puede reutilizar un paciente administrativo existente. Una ficha existente carga su versión guardada.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-historias-escribir" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Tiene permiso para modificar esta ficha?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Consulta en modo lectura. PDF y versiones solo si tiene permiso de exportación.</p>
+<button type="button" class="jump" data-go="documentos:permiso">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-historias-hojauno" tabindex="-1">
+<div class="node ">
+<strong>Hoja 1 · Datos y antecedentes</strong>
+<p>Fecha de apertura, identificación, antecedentes, vacunas, tratamientos, medicación, hábitos y autorización para fotografías.</p>
+</div>
+<aside class="aside">
+<p>Una respuesta sin marcar es “sin responder”. La autorización registrada no reemplaza un consentimiento firmado.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-historias-hojados" tabindex="-1">
+<div class="node ">
+<strong>Hoja 2 · Evoluciones</strong>
+<p>Presión, glucemia, peso, talla, IMC calculado, observaciones y consultas con fecha y procedimiento.</p>
+</div>
+<aside class="aside">
+<p>Agregar o editar consultas. Quitar una consulta requiere confirmación y se aplica al guardar; las versiones previas se conservan.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-historias-validar" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Ficha y consultas válidas?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Mostrar errores y llevar al campo y hoja correspondientes. Corregir y volver a guardar.</p>
+<button type="button" class="jump" data-go="historias:hojauno">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-historias-version" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿La versión sigue vigente?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Otra sesión modificó la ficha o identidad. No sobrescribir; recargar la versión guardada y revisar los cambios.</p>
+<button type="button" class="jump" data-go="historias:cargar">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-historias-guardada" tabindex="-1">
+<div class="node end">
+<strong>Guardar ficha y nueva versión histórica</strong>
+<p>Actualizar la historia del consultorio y conservar una copia del guardado.</p>
+</div>
+<aside class="aside">
+<p>Con permiso de exportación, descargar PDF o consultar versiones anteriores.</p>
+<button type="button" class="jump" data-go="documentos:origen">Ver PDF, planillas y versiones <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="documentos:origen">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-documentos" aria-labelledby="heading-documentos" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 05 / 11</p>
+<h2 id="heading-documentos" tabindex="-1">PDF, planillas y versiones</h2>
+<p class="route">Inicio → Planillas PDF · Historia → Descargar / Versiones anteriores</p>
+<p class="description">Exportación con control independiente de permisos y de versión.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-documentos-origen" tabindex="-1">
+<div class="node start">
+<strong>Elegir qué imprimir o descargar</strong>
+<p>Planilla vacía desde Inicio clínico, documento actual de un paciente o una versión histórica.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-documentos-vacia" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Es una planilla vacía?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">Sí</b>
+<p>Desde Inicio clínico, elegir el tipo de planilla y generar PDF sin datos de un paciente.</p>
+<button type="button" class="jump" data-go="documentos:generar">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>No</span>
+</div>
+</div>
+<div class="row step" id="step-documentos-permiso" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Tiene permiso de exportación?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>No habilitar PDF ni descarga de versiones clínicas.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-documentos-origenversion" tabindex="-1">
+<div class="node ">
+<strong>Elegir ficha actual o versión anterior</strong>
+<p>Actual: guardar los cambios antes de descargar. Historial: seleccionar una de las últimas 30 versiones disponibles.</p>
+</div>
+<aside class="aside">
+<p>El historial sirve para consulta y PDF. No hay una acción de restauración automática.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-documentos-revalidar" tabindex="-1">
+<div class="node ">
+<strong>Revalidar acceso y versión en el servidor</strong>
+<p>Para la ficha actual, comprobar que no haya cambiado desde que se abrió. Para una versión, obtener su copia autorizada.</p>
+</div>
+<aside class="aside">
+<p>Si cambia la versión o el permiso, recargar antes de exportar.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-documentos-tipo" tabindex="-1">
+<div class="node ">
+<strong>Seleccionar contenido</strong>
+<p>Historia completa, ficha inicial, evoluciones registradas o evolución vacía para completar en papel.</p>
+</div>
+<aside class="aside">
+<p>Las versiones anteriores se descargan como historia completa.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-documentos-generar" tabindex="-1">
+<div class="node end">
+<strong>Generar y descargar PDF</strong>
+<p>Documento con los datos del consultorio y la plantilla de podología. Firma a completar en papel.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="agenda:abrir">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-agenda" aria-labelledby="heading-agenda" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 06 / 11</p>
+<h2 id="heading-agenda" tabindex="-1">Agenda, turnos manuales y bloqueos</h2>
+<p class="route">/agenda</p>
+<p class="description">Carga y seguimiento interno de turnos con duración configurable y protección contra superposiciones.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-agenda-abrir" tabindex="-1">
+<div class="node start">
+<strong>Abrir Agenda</strong>
+<p>Elegir día o semana, filtrar profesional si hay varias y consultar los turnos.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-agenda-accion" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Quiere bloquear un horario?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">Sí</b>
+<p>Bloquear horario → profesional, Desde, Hasta y motivo opcional. Validar duración y superposiciones; guardar bloqueo.</p>
+<button type="button" class="jump" data-go="agenda:bloqueado">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>No</span>
+</div>
+</div>
+<div class="row step" id="step-agenda-nuevo" tabindex="-1">
+<div class="node ">
+<strong>Nuevo turno / Agregar turno desde un día</strong>
+<p>La fecha del día elegido queda cargada. Si hay una sola profesional elegible, se selecciona automáticamente.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-agenda-paciente" tabindex="-1">
+<div class="node ">
+<strong>Identificar al paciente</strong>
+<p>Buscar un paciente administrativo o completar nombre y DNI. Opcional: seleccionar expresamente una cuenta verificada del portal.</p>
+</div>
+<aside class="aside">
+<p>Verificar identidad antes de vincular el portal. El DNI no enlaza una historia clínica por sí solo.</p>
+<button type="button" class="jump" data-go="pacientes:directorio">Ver Directorio de pacientes <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-agenda-horario" tabindex="-1">
+<div class="node ">
+<strong>Elegir prestación, profesional, día y duración</strong>
+<p>Seleccionar un horario sugerido o escribir otra hora. Revisar el horario de finalización. Contacto y notas opcionales.</p>
+</div>
+<aside class="aside">
+<p>Las sugerencias excluyen ocupación conocida. Las atenciones manuales pueden quedar fuera del horario web.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-agenda-validar" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Datos válidos y horario libre?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Corregir campos, duración, superposición o el límite de un turno futuro por paciente/profesional.</p>
+<button type="button" class="jump" data-go="agenda:horario">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-agenda-guardar" tabindex="-1">
+<div class="node ">
+<strong>Guardar y volver a comprobar en el servidor</strong>
+<p>Comprobar permisos, identidad, ocupación y límite de reservas. Si otra sesión ocupó la hora, elegir otra.</p>
+</div>
+<aside class="aside">
+<p>Los solapamientos del mismo profesional también se protegen entre consultorios.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-agenda-seguimiento" tabindex="-1">
+<div class="node end">
+<strong>Turno confirmado → seguimiento</strong>
+<p>Abrir para editar, cambiar horario/duración, cancelar, marcar atendido o ausente. Atendido/ausente se habilita cuando el turno ya no es futuro.</p>
+</div>
+<aside class="aside">
+<p>La cancelación libera el horario y conserva el registro. Las reservas web mantienen protegida la identidad del paciente.</p>
+</aside>
+</div>
+<p class="alternate-label">Rama alternativa: bloqueo de horario</p>
+<div class="row step" id="step-agenda-bloqueado" tabindex="-1">
+<div class="node end">
+<strong>Bloqueo guardado</strong>
+<p>Ocupa el horario y lo excluye de las reservas. Editar el intervalo o cancelar el bloqueo para liberar el horario.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+</div>
+<div class="notes">
+<p>El perfil profesional habilitado define quién atiende; una cuenta administrativa técnica no necesita atender. Las observaciones internas se muestran y modifican solo con permiso.</p>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="reservas:enlace">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-reservas" aria-labelledby="heading-reservas" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 07 / 11</p>
+<h2 id="heading-reservas" tabindex="-1">Reservas públicas y portal del paciente</h2>
+<p class="route">/reservar/:slug · /registro · /mis-turnos</p>
+<p class="description">Autoservicio del paciente sin acceso a historias clínicas.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-reservas-enlace" tabindex="-1">
+<div class="node start">
+<strong>Abrir enlace público o listado de agendas</strong>
+<p>Elegir la atención disponible. Los enlaces antiguos se resuelven como alias cuando se renombra una agenda.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-reservas-abierta" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Agenda abierta y prestación activa?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Mostrar agenda cerrada o no encontrada. Consultar otras agendas o contactar al consultorio.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-reservas-cuenta" tabindex="-1">
+<div class="node ">
+<strong>Consultar horarios e ingresar a la cuenta</strong>
+<p>Puede ver disponibilidad como visitante. Para confirmar necesita email verificado y perfil de paciente con nombre y DNI.</p>
+</div>
+<aside class="aside">
+<p>Si faltan datos, completar el perfil y volver a confirmar. Los horarios no se retienen durante el registro.</p>
+<button type="button" class="jump" data-go="acceso:entrada">Ver Acceso y cuentas <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-reservas-duplicado" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Ya tiene un turno futuro con esa profesional?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">Sí</b>
+<p>Ir a Mis turnos. Reprogramar o cancelar el turno existente en lugar de crear otro.</p>
+<button type="button" class="jump" data-go="reservas:portal">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>No</span>
+</div>
+</div>
+<div class="row step" id="step-reservas-elegir" tabindex="-1">
+<div class="node ">
+<strong>Elegir día y horario</strong>
+<p>Respetar franjas, duración de la prestación, anticipación mínima/máxima y ocupación. Sin horarios: cambiar de fecha.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-reservas-confirmar" tabindex="-1">
+<div class="node ">
+<strong>Confirmar reserva</strong>
+<p>El servidor verifica otra vez identidad, reglas, disponibilidad y límite de reservas.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-reservas-valida" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿La reserva se pudo guardar?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Mostrar el motivo; corregir datos o elegir un nuevo horario y reintentar.</p>
+<button type="button" class="jump" data-go="reservas:elegir">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-reservas-portal" tabindex="-1">
+<div class="node ">
+<strong>Mis turnos</strong>
+<p>Ver turnos futuros e historial, estados y avisos por email. Mis datos permite editar nombre y celular; el DNI guardado no se cambia desde el portal.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-reservas-plazo" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Turno confirmado y dentro del plazo de cambios?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Consultar el turno y contactar al consultorio para cambios. No habilitar acciones fuera de plazo.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-reservas-gestion" tabindex="-1">
+<div class="node ">
+<strong>Cancelar o reprogramar</strong>
+<p>Cancelar: confirmar para liberar horario. Reprogramar: elegir nuevo horario y confirmar, si la reserva permite reprogramación web.</p>
+</div>
+<aside class="aside">
+<p>Si no permite reprogramar por web, contactar al consultorio. Cada cambio se valida de nuevo.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-reservas-actualizado" tabindex="-1">
+<div class="node end">
+<strong>Turno actualizado en Mis turnos</strong>
+<p>El cambio queda guardado aunque el email esté pendiente. Cerrar sesión al terminar.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="disponibilidad:entrar">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-disponibilidad" aria-labelledby="heading-disponibilidad" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 08 / 11</p>
+<h2 id="heading-disponibilidad" tabindex="-1">Prestaciones, horarios y enlace público</h2>
+<p class="route">/agenda/configuracion · Solo administrador</p>
+<p class="description">Preparación de las agendas que luego ven los pacientes en la web.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-disponibilidad-entrar" tabindex="-1">
+<div class="node start">
+<strong>Abrir Horarios y reservas web</strong>
+<p>Seleccionar una agenda existente o Agregar agenda.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-disponibilidad-servicio" tabindex="-1">
+<div class="node ">
+<strong>Elegir o crear prestación</strong>
+<p>Nombre, duración en múltiplos de 15 minutos y estado activo. La consulta original de podología conserva 30 minutos.</p>
+</div>
+<aside class="aside">
+<p>Desactivar una prestación evita que su agenda ofrezca horarios públicos.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-disponibilidad-profesional" tabindex="-1">
+<div class="node ">
+<strong>Asignar profesional habilitado</strong>
+<p>Elegir quién atiende esa especialidad y completar su nombre público.</p>
+</div>
+<aside class="aside">
+<p>El perfil se habilita desde Usuarios → Acceso clínico y perfil profesional.</p>
+<button type="button" class="jump" data-go="equipo:administrador">Ver Usuarios, perfiles y asignaciones <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-disponibilidad-reglas" tabindex="-1">
+<div class="node ">
+<strong>Definir días, franjas y reglas</strong>
+<p>Anticipación máxima y mínima, plazo para cambios y franjas sin superposición. Feriados o ausencias: usar bloqueos en Agenda.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-disponibilidad-slug" tabindex="-1">
+<div class="node ">
+<strong>Revisar el enlace legible</strong>
+<p>Usar la propuesta o Personalizar enlace. No hace falta copiar un identificador interno.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-disponibilidad-activar" tabindex="-1">
+<div class="node ">
+<strong>Habilitar reservas web y guardar disponibilidad</strong>
+<p>Para abrir la agenda se necesita profesional, nombre público, franjas válidas y prestación activa.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-disponibilidad-valida" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Configuración válida y enlace libre?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Corregir reglas, franjas o nombre del enlace y guardar otra vez. Si ya tiene reservas, cambiar de profesional/prestación puede requerir otra agenda.</p>
+<button type="button" class="jump" data-go="disponibilidad:servicio">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-disponibilidad-publicar" tabindex="-1">
+<div class="node end">
+<strong>Copiar y compartir el enlace guardado</strong>
+<p>Compartir por mensaje, email o redes. Al renombrar, los enlaces anteriores siguen como alias. Cerrar reservas no cancela turnos existentes.</p>
+</div>
+<aside class="aside">
+<p>El enlace abre el recorrido de reserva del paciente.</p>
+<button type="button" class="jump" data-go="reservas:enlace">Ver Reservas públicas y portal del paciente <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="equipo:administrador">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-equipo" aria-labelledby="heading-equipo" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 09 / 11</p>
+<h2 id="heading-equipo" tabindex="-1">Usuarios, perfiles y asignaciones</h2>
+<p class="route">/equipo · Asignar acceso desde Pacientes o Historia</p>
+<p class="description">Solo el administrador gestiona el equipo. Los accesos clínicos se configuran por separado.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-equipo-administrador" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Es administrador del consultorio?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>No permitir la gestión del equipo ni de sus permisos.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-equipo-invitar" tabindex="-1">
+<div class="node ">
+<strong>Invitar o asignar una cuenta por email</strong>
+<p>Elegir rol: administrador, profesional o recepción.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-equipo-existente" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿La cuenta ya existe?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">Sí</b>
+<p>Asignarla al consultorio sin cambiar su contraseña.</p>
+<button type="button" class="jump" data-go="equipo:rol">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>No</span>
+</div>
+</div>
+<div class="row step" id="step-equipo-aceptar" tabindex="-1">
+<div class="node ">
+<strong>Enviar invitación → aceptar desde el correo</strong>
+<p>La persona abre el enlace y elige su contraseña. El equipo muestra invitaciones pendientes y cuentas activas.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-equipo-rol" tabindex="-1">
+<div class="node ">
+<strong>Configurar rol y estado</strong>
+<p>Cambiar rol, suspender o reactivar con confirmación. La interfaz no permite cambiar su propio rol ni suspenderse.</p>
+</div>
+<aside class="aside">
+<p>Suspender acceso no elimina datos. Pueden requerirse reasignaciones de turnos futuros antes de ciertos cambios.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-equipo-clinico" tabindex="-1">
+<div class="node ">
+<strong>Configurar acceso clínico por especialidad</strong>
+<p>Habilitar lectura, escritura y exportación. Elegir alcance: todas las fichas o solo asignadas/creadas.</p>
+</div>
+<aside class="aside">
+<p>Recepción no tiene acceso clínico. Un administrador puede tener todos los permisos administrativos y ningún permiso clínico.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-equipo-perfil" tabindex="-1">
+<div class="node ">
+<strong>Indicar si atiende consultas</strong>
+<p>Habilitar perfil profesional, nombre público y matrícula. Solo las personas habilitadas pueden ofrecer la prestación.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-equipo-asignar" tabindex="-1">
+<div class="node ">
+<strong>Si el alcance es por asignación: elegir ficha</strong>
+<p>Desde Pacientes o Historia → Asignar acceso. Elegir integrante y habilitar lectura, escritura o exportación de esa ficha.</p>
+</div>
+<aside class="aside">
+<p>No puede exceder sus permisos por especialidad. Con alcance “todas”, el acceso se administra desde Usuarios.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-equipo-efectivo" tabindex="-1">
+<div class="node end">
+<strong>Guardar y aplicar los permisos</strong>
+<p>El servidor controla acceso por consultorio, especialidad y ficha. El usuario verá solo sus funciones y datos autorizados.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+</div>
+<div class="notes">
+<p>Usuarios incluye una búsqueda de cuentas de pacientes verificadas del consultorio. Es un directorio de cuentas/contacto, sin vinculación automática a historias clínicas.</p>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="consultorio:abrir">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-consultorio" aria-labelledby="heading-consultorio" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 10 / 11</p>
+<h2 id="heading-consultorio" tabindex="-1">Configuración del consultorio</h2>
+<p class="route">/consultorio</p>
+<p class="description">Datos del centro compartidos con el equipo y usados en las planillas.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-consultorio-abrir" tabindex="-1">
+<div class="node start">
+<strong>Abrir Consultorio</strong>
+<p>Consultar nombre del centro, profesional, matrícula, dirección, teléfono y email.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-consultorio-editar" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Tiene rol administrador?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Mostrar la configuración en modo consulta, sin permitir cambios.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-consultorio-datos" tabindex="-1">
+<div class="node ">
+<strong>Editar datos del consultorio</strong>
+<p>Completar como mínimo el nombre del consultorio o del profesional. Validar email, teléfono y longitud de los campos.</p>
+</div>
+<aside class="aside">
+<p>Si se detectan datos de una versión anterior en el navegador y el centro está vacío, se pueden importar al formulario y luego guardar.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-consultorio-version" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Datos válidos y versión vigente?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Corregir errores. Si otra sesión modificó los datos, recargar y revisar antes de guardar.</p>
+<button type="button" class="jump" data-go="consultorio:datos">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-consultorio-guardar" tabindex="-1">
+<div class="node end">
+<strong>Guardar datos</strong>
+<p>Actualizar la configuración del consultorio activo y los datos utilizados para generar nuevas planillas.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+<button type="button" class="secondary" data-go="controles:accion">Siguiente recorrido <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<section class="panel" id="panel-controles" aria-labelledby="heading-controles" hidden>
+<div class="section-heading">
+<p class="kicker">RECORRIDO 11 / 11</p>
+<h2 id="heading-controles" tabindex="-1">Validaciones, avisos y persistencia</h2>
+<p class="route">Controles compartidos por todos los módulos</p>
+<p class="description">Cómo se guardan los cambios, cómo se manejan los errores y qué servicios participan.</p>
+</div>
+<div class="flowchart">
+<div class="row step" id="step-controles-accion" tabindex="-1">
+<div class="node start">
+<strong>Realizar una consulta o cambio</strong>
+<p>La web usa Supabase Auth para sesión; las operaciones de datos pasan por funciones autorizadas. Equipo y avisos usan API de servidor.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-controles-permiso" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Sesión y permisos vigentes?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Rechazar la operación. Volver a ingresar o solicitar acceso al administrador.</p>
+<button type="button" class="jump" data-go="acceso:credenciales">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-controles-validacion" tabindex="-1">
+<div class="node ">
+<strong>Validar campos y reglas de negocio</strong>
+<p>Tipos, longitudes, fechas, DNI, teléfonos, email, duración, franjas, permisos clínicos y límites de reservas.</p>
+</div>
+<aside class="aside">
+<p>La pantalla orienta al usuario y la base comprueba las reglas que corresponden a cada operación.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-controles-concurrencia" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Versión y restricciones vigentes?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>No sobrescribir cambios ajenos ni duplicar horarios/identidades. Corregir o recargar y reintentar.</p>
+<button type="button" class="jump" data-go="controles:accion">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-controles-persistir" tabindex="-1">
+<div class="node ">
+<strong>Guardar en la base del entorno activo</strong>
+<p>Datos aislados por consultorio y permisos. Historias con versiones; turnos con estados; datos de identidad separados de los clínicos.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-controles-aviso" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Es un cambio de turno con aviso?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>Mostrar el resultado guardado. Finalizar la operación sin envío de aviso de turno.</p>
+<span class="terminal">Fin de esta rama</span>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-controles-cola" tabindex="-1">
+<div class="node ">
+<strong>Registrar aviso y procesar pendientes</strong>
+<p>Intento al reservar o cambiar el turno, botón de avisos pendientes y endpoint programable autenticado.</p>
+</div>
+<aside class="aside">
+<p>Correo de turnos: Resend cuando está configurado. No se presupone que haya un cron activo.</p>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+</div>
+</div>
+<div class="row step" id="step-controles-email" tabindex="-1">
+<div class="diamond">
+<svg aria-hidden="true" viewBox="0 0 360 108" preserveAspectRatio="none">
+<polygon points="180,1 359,54 180,107 1,54"/>
+</svg>
+<strong>¿Proveedor de email configurado y envío exitoso?</strong>
+</div>
+<aside class="aside branch">
+<b class="badge">No</b>
+<p>El turno sigue guardado. Mantener el aviso pendiente o disponible para reintento.</p>
+<button type="button" class="jump" data-go="controles:cola">Continuar aquí <span aria-hidden="true">↗</span>
+</button>
+</aside>
+</div>
+<div class="row arrow-row">
+<div class="arrow">
+<span>Sí</span>
+</div>
+</div>
+<div class="row step" id="step-controles-enviado" tabindex="-1">
+<div class="node end">
+<strong>Actualizar estado del aviso</strong>
+<p>El sistema registra el resultado del envío; el turno conserva su estado independientemente del email.</p>
+</div>
+<aside class="aside">
+</aside>
+</div>
+</div>
+<div class="notes">
+<p>Si falla la red, mostrar el error y permitir reintentar sin afirmar que se guardó. Los formularios que implementan protección de cambios pendientes piden confirmación al salir, cambiar de consultorio o cerrar sesión.</p>
+<p>Entorno local: Supabase en Docker y correo de Auth en Mailpit; los avisos externos de turnos están deshabilitados. Local y producción no sincronizan automáticamente datos, contraseñas ni permisos.</p>
+<p>Estado actual: solo el módulo clínico de podología está instalado. La base permite separar consultorios, especialidades, prestaciones y fichas; otras especialidades necesitan su módulo antes de funcionar.</p>
+</div>
+<div class="section-bottom">
+<button type="button" class="secondary" data-go="mapa">Volver al mapa <span aria-hidden="true">↗</span>
+</button>
+</div>
+</section>
+<p class="print-note">Rectángulo: acción · Rombo: decisión · Flecha: continuidad · Rama lateral: alternativa, error o retorno. Los enlaces “Ver…” conectan con otro módulo. La impresión incluye el mapa y los 11 recorridos.</p>
+<script>
+const panels=[...document.querySelectorAll('.panel')],select=document.getElementById('flow-select'),allButton=document.getElementById('show-all');
+function showFlow(id,all=false){document.body.classList.toggle('all-mode',all);panels.forEach(p=>p.hidden=!all&&p.id!=='panel-'+id);select.value=id;allButton.setAttribute('aria-pressed',String(all));allButton.textContent=all?'Volver al mapa':'Ver todo';document.getElementById('view-status').textContent=all?'Todos los recorridos visibles':select.options[select.selectedIndex]?.textContent||'Mapa general'}
+select.addEventListener('change',()=>showFlow(select.value));
+allButton.addEventListener('click',()=>{if(allButton.getAttribute('aria-pressed')==='true')showFlow('mapa');else showFlow('mapa',true)});
+document.getElementById('print-all').addEventListener('click',()=>window.print());
+document.addEventListener('click',e=>{const button=e.target.closest('[data-go]');if(!button)return;const [flow,node]=button.dataset.go.split(':');showFlow(flow);const target=document.getElementById(node?'step-'+flow+'-'+node:'heading-'+flow);if(target){target.focus({preventScroll:true});target.scrollIntoView({behavior:'smooth',block:'start'})}});
+const targets=[...document.querySelectorAll('[data-go]')].map(b=>b.dataset.go);
+console.assert(panels.length===12,'Mapa y once recorridos');
+console.assert(document.querySelectorAll('.step').length===89,'Ochenta y nueve pasos principales');
+console.assert(targets.every(t=>{const [f,n]=t.split(':');return document.getElementById(n?'step-'+f+'-'+n:'panel-'+f)}),'Todos los vínculos internos tienen destino');
+const flowChecks=[];for(const p of panels){showFlow(p.id.replace('panel-',''));flowChecks.push({id:p.id,overflow:document.documentElement.scrollWidth>innerWidth,height:document.body.scrollHeight})}showFlow('mapa');console.assert(flowChecks.every(f=>!f.overflow),'Todos los diagramas caben en el ancho disponible');console.log(JSON.stringify({sections:panels.length,steps:89,links:targets.length,maxHeight:Math.max(...flowChecks.map(f=>f.height)),checks:flowChecks}));
+</script>
+</body>
+</html>

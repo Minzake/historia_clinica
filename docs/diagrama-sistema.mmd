@@ -1,0 +1,341 @@
+%% Diagrama funcional del sistema implementado en develop.
+%% Podología es la única especialidad clínica instalada.
+%% Las líneas punteadas enlazan módulos relacionados; las sólidas representan continuidad.
+flowchart TB
+    SISTEMA(["Entrada al sistema"])
+    SISTEMA -->|Acceso o registro| acceso_entrada
+    SISTEMA -->|Enlace público| reservas_enlace
+    subgraph ACCESO["01 · Acceso y cuentas"]
+        direction TB
+        acceso_entrada(["Abrir la aplicación — Entrar por Inicio o por un enlace de<br/>reserva."])
+        acceso_conexion{"¿Está configurada la conexión?"}
+        acceso_conexion_alt["Mostrar configuración inicial. El sistema no habilita el acceso a<br/>datos hasta conectar Supabase."]
+        acceso_conexion -->|No| acceso_conexion_alt
+        acceso_opcion["Elegir forma de acceso — Iniciar sesión, crear cuenta de<br/>paciente, recuperar contraseña o aceptar una invitación."]
+        acceso_registro["Si es una cuenta nueva: registrarse — Nombre, DNI, email y<br/>contraseña de al menos 12 caracteres con confirmación. Celular<br/>opcional. Validar datos y enviar verificación."]
+        acceso_credenciales["Ingresar o recuperar el acceso — Login: email y contraseña.<br/>Recuperación: solicitar enlace, abrirlo y definir una nueva<br/>contraseña."]
+        acceso_sesion{"¿Sesión válida y correo verificado?"}
+        acceso_sesion_alt["Corregir el acceso o verificar el correo antes de continuar."]
+        acceso_sesion -->|No| acceso_sesion_alt
+        acceso_sesion_alt --> acceso_credenciales
+        acceso_destino(["Resolver destino según acceso — Miembro activo de un consultorio<br/>→ espacio de trabajo. Sin membresía → portal del paciente."])
+        acceso_entrada --> acceso_conexion
+        acceso_conexion -->|Sí| acceso_opcion
+        acceso_opcion --> acceso_registro
+        acceso_registro --> acceso_credenciales
+        acceso_credenciales --> acceso_sesion
+        acceso_sesion -->|Sí| acceso_destino
+    end
+    subgraph PERMISOS["02 · Consultorios, roles y permisos"]
+        direction TB
+        permisos_membresias(["Cargar membresías activas — Identificar los consultorios a los<br/>que pertenece la cuenta."])
+        permisos_miembro{"¿Pertenece a un consultorio?"}
+        permisos_miembro_alt["Abrir Mis turnos. Registrarse por la web no crea una membresía de<br/>equipo."]
+        permisos_miembro -->|No| permisos_miembro_alt
+        permisos_miembro_alt --> reservas_portal
+        permisos_centro["Seleccionar consultorio activo — Si tiene más de uno, usar el<br/>selector. Los datos y permisos se cargan para ese consultorio."]
+        permisos_rol["Aplicar el rol de la membresía — Administrador: equipo y<br/>configuración. Profesional: agenda con gestión de sus turnos y<br/>fichas autorizadas. Recepción: pacientes y agenda."]
+        permisos_clinico{"¿Tiene permiso clínico?"}
+        permisos_clinico_alt["Inicio administrativo con acceso a pacientes y agenda. Sin<br/>contenido de historias clínicas."]
+        permisos_clinico -->|No| permisos_clinico_alt
+        permisos_clinico_alt --> pacientes_directorio
+        permisos_alcance["Comprobar especialidad y alcance — Lectura, escritura y<br/>exportación por separado. Alcance: todas las fichas de la<br/>especialidad o solo asignadas/creadas."]
+        permisos_inicio(["Mostrar Inicio y módulos autorizados — Con acceso clínico:<br/>resumen de historias/evoluciones, búsqueda, últimas fichas y<br/>planillas vacías. El menú se ajusta a sus permisos."])
+        permisos_membresias --> permisos_miembro
+        permisos_miembro -->|Sí| permisos_centro
+        permisos_centro --> permisos_rol
+        permisos_rol --> permisos_clinico
+        permisos_clinico -->|Sí| permisos_alcance
+        permisos_alcance --> permisos_inicio
+    end
+    subgraph PACIENTES["03 · Directorio de pacientes"]
+        direction TB
+        pacientes_directorio(["Abrir Pacientes — Buscar por nombre, DNI o número de historia y<br/>navegar los resultados."])
+        pacientes_existe{"¿El paciente ya está registrado?"}
+        pacientes_existe_alt["Agregar paciente con datos administrativos y contacto."]
+        pacientes_existe -->|No| pacientes_existe_alt
+        pacientes_existe_alt --> pacientes_datos
+        pacientes_editar["Seleccionar paciente → Editar datos — Abrir sus datos<br/>administrativos. Esto no abre automáticamente su historia<br/>clínica."]
+        pacientes_datos["Completar o actualizar identificación — Nombre, DNI opcional,<br/>número de historia, nacimiento, domicilio, teléfonos, obra<br/>social, ocupación y contacto de emergencia."]
+        pacientes_valido{"¿Datos válidos y sin duplicados?"}
+        pacientes_valido_alt["Corregir formato, fechas o DNI/número de historia duplicado. Si<br/>otra sesión cambió los datos, recargar antes de editar."]
+        pacientes_valido -->|No| pacientes_valido_alt
+        pacientes_valido_alt --> pacientes_datos
+        pacientes_guardar["Guardar identidad administrativa — Persistir la nueva versión y<br/>actualizar el directorio."]
+        pacientes_ficha{"¿Puede abrir o crear una ficha?"}
+        pacientes_ficha_alt["Continuar con datos administrativos y agenda, sin acceder a<br/>información clínica."]
+        pacientes_ficha -->|No| pacientes_ficha_alt
+        pacientes_ficha_alt --> agenda_abrir
+        pacientes_abrirficha(["Abrir / Crear ficha de podología — Reutilizar la misma identidad<br/>del paciente para su ficha autorizada."])
+        pacientes_directorio --> pacientes_existe
+        pacientes_existe -->|Sí| pacientes_editar
+        pacientes_editar --> pacientes_datos
+        pacientes_datos --> pacientes_valido
+        pacientes_valido -->|Sí| pacientes_guardar
+        pacientes_guardar --> pacientes_ficha
+        pacientes_ficha -->|Sí| pacientes_abrirficha
+    end
+    subgraph HISTORIAS["04 · Historia clínica y evoluciones"]
+        direction TB
+        historias_buscar(["Buscar una historia o crear una ficha — Desde Inicio, Historias<br/>clínicas o la ficha del directorio administrativo."])
+        historias_modulo{"¿Especialidad instalada y lectura autorizada?"}
+        historias_modulo_alt["Mostrar falta de permiso o especialidad no disponible. No cargar<br/>contenido clínico."]
+        historias_modulo -->|No| historias_modulo_alt
+        historias_cargar["Cargar ficha existente o identidad del paciente — Una ficha nueva<br/>puede reutilizar un paciente administrativo existente. Una ficha<br/>existente carga su versión guardada."]
+        historias_escribir{"¿Tiene permiso para modificar esta ficha?"}
+        historias_escribir_alt["Consulta en modo lectura. PDF y versiones solo si tiene permiso<br/>de exportación."]
+        historias_escribir -->|No| historias_escribir_alt
+        historias_escribir_alt --> documentos_permiso
+        historias_hojauno["Hoja 1 · Datos y antecedentes — Fecha de apertura,<br/>identificación, antecedentes, vacunas, tratamientos, medicación,<br/>hábitos y autorización para fotografías."]
+        historias_hojados["Hoja 2 · Evoluciones — Presión, glucemia, peso, talla, IMC<br/>calculado, observaciones y consultas con fecha y procedimiento."]
+        historias_validar{"¿Ficha y consultas válidas?"}
+        historias_validar_alt["Mostrar errores y llevar al campo y hoja correspondientes.<br/>Corregir y volver a guardar."]
+        historias_validar -->|No| historias_validar_alt
+        historias_validar_alt --> historias_hojauno
+        historias_version{"¿La versión sigue vigente?"}
+        historias_version_alt["Otra sesión modificó la ficha o identidad. No sobrescribir;<br/>recargar la versión guardada y revisar los cambios."]
+        historias_version -->|No| historias_version_alt
+        historias_version_alt --> historias_cargar
+        historias_guardada(["Guardar ficha y nueva versión histórica — Actualizar la historia<br/>del consultorio y conservar una copia del guardado."])
+        historias_buscar --> historias_modulo
+        historias_modulo -->|Sí| historias_cargar
+        historias_cargar --> historias_escribir
+        historias_escribir -->|Sí| historias_hojauno
+        historias_hojauno --> historias_hojados
+        historias_hojados --> historias_validar
+        historias_validar -->|Sí| historias_version
+        historias_version -->|Sí| historias_guardada
+    end
+    subgraph DOCUMENTOS["05 · PDF, planillas y versiones"]
+        direction TB
+        documentos_origen(["Elegir qué imprimir o descargar — Planilla vacía desde Inicio<br/>clínico, documento actual de un paciente o una versión histórica."])
+        documentos_vacia{"¿Es una planilla vacía?"}
+        documentos_vacia_alt["Desde Inicio clínico, elegir el tipo de planilla y generar PDF<br/>sin datos de un paciente."]
+        documentos_vacia -->|Sí| documentos_vacia_alt
+        documentos_vacia_alt --> documentos_generar
+        documentos_permiso{"¿Tiene permiso de exportación?"}
+        documentos_permiso_alt["No habilitar PDF ni descarga de versiones clínicas."]
+        documentos_permiso -->|No| documentos_permiso_alt
+        documentos_origenversion["Elegir ficha actual o versión anterior — Actual: guardar los<br/>cambios antes de descargar. Historial: seleccionar una de las<br/>últimas 30 versiones disponibles."]
+        documentos_revalidar["Revalidar acceso y versión en el servidor — Para la ficha actual,<br/>comprobar que no haya cambiado desde que se abrió. Para una<br/>versión, obtener su copia autorizada."]
+        documentos_tipo["Seleccionar contenido — Historia completa, ficha inicial,<br/>evoluciones registradas o evolución vacía para completar en<br/>papel."]
+        documentos_generar(["Generar y descargar PDF — Documento con los datos del consultorio<br/>y la plantilla de podología. Firma a completar en papel."])
+        documentos_origen --> documentos_vacia
+        documentos_vacia -->|No| documentos_permiso
+        documentos_permiso -->|Sí| documentos_origenversion
+        documentos_origenversion --> documentos_revalidar
+        documentos_revalidar --> documentos_tipo
+        documentos_tipo --> documentos_generar
+    end
+    subgraph AGENDA["06 · Agenda, turnos manuales y bloqueos"]
+        direction TB
+        agenda_abrir(["Abrir Agenda — Elegir día o semana, filtrar profesional si hay<br/>varias y consultar los turnos."])
+        agenda_accion{"¿Quiere bloquear un horario?"}
+        agenda_accion_alt["Bloquear horario → profesional, Desde, Hasta y motivo opcional.<br/>Validar duración y superposiciones; guardar bloqueo."]
+        agenda_accion -->|Sí| agenda_accion_alt
+        agenda_accion_alt --> agenda_bloqueado
+        agenda_nuevo["Nuevo turno / Agregar turno desde un día — La fecha del día<br/>elegido queda cargada. Si hay una sola profesional elegible, se<br/>selecciona automáticamente."]
+        agenda_paciente["Identificar al paciente — Buscar un paciente administrativo o<br/>completar nombre y DNI. Opcional: seleccionar expresamente una<br/>cuenta verificada del portal."]
+        agenda_horario["Elegir prestación, profesional, día y duración — Seleccionar un<br/>horario sugerido o escribir otra hora. Revisar el horario de<br/>finalización. Contacto y notas opcionales."]
+        agenda_validar{"¿Datos válidos y horario libre?"}
+        agenda_validar_alt["Corregir campos, duración, superposición o el límite de un turno<br/>futuro por paciente/profesional."]
+        agenda_validar -->|No| agenda_validar_alt
+        agenda_validar_alt --> agenda_horario
+        agenda_guardar["Guardar y volver a comprobar en el servidor — Comprobar permisos,<br/>identidad, ocupación y límite de reservas. Si otra sesión ocupó<br/>la hora, elegir otra."]
+        agenda_seguimiento(["Turno confirmado → seguimiento — Abrir para editar, cambiar<br/>horario/duración, cancelar, marcar atendido o ausente.<br/>Atendido/ausente se habilita cuando el turno ya no es futuro."])
+        agenda_bloqueado(["Bloqueo guardado — Ocupa el horario y lo excluye de las reservas.<br/>Editar el intervalo o cancelar el bloqueo para liberar el<br/>horario."])
+        agenda_abrir --> agenda_accion
+        agenda_accion -->|No| agenda_nuevo
+        agenda_nuevo --> agenda_paciente
+        agenda_paciente --> agenda_horario
+        agenda_horario --> agenda_validar
+        agenda_validar -->|Sí| agenda_guardar
+        agenda_guardar --> agenda_seguimiento
+    end
+    subgraph RESERVAS["07 · Reservas públicas y portal del paciente"]
+        direction TB
+        reservas_enlace(["Abrir enlace público o listado de agendas — Elegir la atención<br/>disponible. Los enlaces antiguos se resuelven como alias cuando<br/>se renombra una agenda."])
+        reservas_abierta{"¿Agenda abierta y prestación activa?"}
+        reservas_abierta_alt["Mostrar agenda cerrada o no encontrada. Consultar otras agendas o<br/>contactar al consultorio."]
+        reservas_abierta -->|No| reservas_abierta_alt
+        reservas_cuenta["Consultar horarios e ingresar a la cuenta — Puede ver<br/>disponibilidad como visitante. Para confirmar necesita email<br/>verificado y perfil de paciente con nombre y DNI."]
+        reservas_duplicado{"¿Ya tiene un turno futuro con esa profesional?"}
+        reservas_duplicado_alt["Ir a Mis turnos. Reprogramar o cancelar el turno existente en<br/>lugar de crear otro."]
+        reservas_duplicado -->|Sí| reservas_duplicado_alt
+        reservas_duplicado_alt --> reservas_portal
+        reservas_elegir["Elegir día y horario — Respetar franjas, duración de la<br/>prestación, anticipación mínima/máxima y ocupación. Sin horarios:<br/>cambiar de fecha."]
+        reservas_confirmar["Confirmar reserva — El servidor verifica otra vez identidad,<br/>reglas, disponibilidad y límite de reservas."]
+        reservas_valida{"¿La reserva se pudo guardar?"}
+        reservas_valida_alt["Mostrar el motivo; corregir datos o elegir un nuevo horario y<br/>reintentar."]
+        reservas_valida -->|No| reservas_valida_alt
+        reservas_valida_alt --> reservas_elegir
+        reservas_portal["Mis turnos — Ver turnos futuros e historial, estados y avisos por<br/>email. Mis datos permite editar nombre y celular; el DNI guardado<br/>no se cambia desde el portal."]
+        reservas_plazo{"¿Turno confirmado y dentro del plazo de cambios?"}
+        reservas_plazo_alt["Consultar el turno y contactar al consultorio para cambios. No<br/>habilitar acciones fuera de plazo."]
+        reservas_plazo -->|No| reservas_plazo_alt
+        reservas_gestion["Cancelar o reprogramar — Cancelar: confirmar para liberar<br/>horario. Reprogramar: elegir nuevo horario y confirmar, si la<br/>reserva permite reprogramación web."]
+        reservas_actualizado(["Turno actualizado en Mis turnos — El cambio queda guardado aunque<br/>el email esté pendiente. Cerrar sesión al terminar."])
+        reservas_enlace --> reservas_abierta
+        reservas_abierta -->|Sí| reservas_cuenta
+        reservas_cuenta --> reservas_duplicado
+        reservas_duplicado -->|No| reservas_elegir
+        reservas_elegir --> reservas_confirmar
+        reservas_confirmar --> reservas_valida
+        reservas_valida -->|Sí| reservas_portal
+        reservas_portal --> reservas_plazo
+        reservas_plazo -->|Sí| reservas_gestion
+        reservas_gestion --> reservas_actualizado
+    end
+    subgraph DISPONIBILIDAD["08 · Prestaciones, horarios y enlace público"]
+        direction TB
+        disponibilidad_entrar(["Abrir Horarios y reservas web — Seleccionar una agenda existente<br/>o Agregar agenda."])
+        disponibilidad_servicio["Elegir o crear prestación — Nombre, duración en múltiplos de 15<br/>minutos y estado activo. La consulta original de podología<br/>conserva 30 minutos."]
+        disponibilidad_profesional["Asignar profesional habilitado — Elegir quién atiende esa<br/>especialidad y completar su nombre público."]
+        disponibilidad_reglas["Definir días, franjas y reglas — Anticipación máxima y mínima,<br/>plazo para cambios y franjas sin superposición. Feriados o<br/>ausencias: usar bloqueos en Agenda."]
+        disponibilidad_slug["Revisar el enlace legible — Usar la propuesta o Personalizar<br/>enlace. No hace falta copiar un identificador interno."]
+        disponibilidad_activar["Habilitar reservas web y guardar disponibilidad — Para abrir la<br/>agenda se necesita profesional, nombre público, franjas válidas y<br/>prestación activa."]
+        disponibilidad_valida{"¿Configuración válida y enlace libre?"}
+        disponibilidad_valida_alt["Corregir reglas, franjas o nombre del enlace y guardar otra vez.<br/>Si ya tiene reservas, cambiar de profesional/prestación puede<br/>requerir otra agenda."]
+        disponibilidad_valida -->|No| disponibilidad_valida_alt
+        disponibilidad_valida_alt --> disponibilidad_servicio
+        disponibilidad_publicar(["Copiar y compartir el enlace guardado — Compartir por mensaje,<br/>email o redes. Al renombrar, los enlaces anteriores siguen como<br/>alias. Cerrar reservas no cancela turnos existentes."])
+        disponibilidad_entrar --> disponibilidad_servicio
+        disponibilidad_servicio --> disponibilidad_profesional
+        disponibilidad_profesional --> disponibilidad_reglas
+        disponibilidad_reglas --> disponibilidad_slug
+        disponibilidad_slug --> disponibilidad_activar
+        disponibilidad_activar --> disponibilidad_valida
+        disponibilidad_valida -->|Sí| disponibilidad_publicar
+    end
+    subgraph EQUIPO["09 · Usuarios, perfiles y asignaciones"]
+        direction TB
+        equipo_administrador{"¿Es administrador del consultorio?"}
+        equipo_administrador_alt["No permitir la gestión del equipo ni de sus permisos."]
+        equipo_administrador -->|No| equipo_administrador_alt
+        equipo_invitar["Invitar o asignar una cuenta por email — Elegir rol:<br/>administrador, profesional o recepción."]
+        equipo_existente{"¿La cuenta ya existe?"}
+        equipo_existente_alt["Asignarla al consultorio sin cambiar su contraseña."]
+        equipo_existente -->|Sí| equipo_existente_alt
+        equipo_existente_alt --> equipo_rol
+        equipo_aceptar["Enviar invitación → aceptar desde el correo — La persona abre el<br/>enlace y elige su contraseña. El equipo muestra invitaciones<br/>pendientes y cuentas activas."]
+        equipo_rol["Configurar rol y estado — Cambiar rol, suspender o reactivar con<br/>confirmación. La interfaz no permite cambiar su propio rol ni<br/>suspenderse."]
+        equipo_clinico["Configurar acceso clínico por especialidad — Habilitar lectura,<br/>escritura y exportación. Elegir alcance: todas las fichas o solo<br/>asignadas/creadas."]
+        equipo_perfil["Indicar si atiende consultas — Habilitar perfil profesional,<br/>nombre público y matrícula. Solo las personas habilitadas pueden<br/>ofrecer la prestación."]
+        equipo_asignar["Si el alcance es por asignación: elegir ficha — Desde Pacientes o<br/>Historia → Asignar acceso. Elegir integrante y habilitar lectura,<br/>escritura o exportación de esa ficha."]
+        equipo_efectivo(["Guardar y aplicar los permisos — El servidor controla acceso por<br/>consultorio, especialidad y ficha. El usuario verá solo sus<br/>funciones y datos autorizados."])
+        equipo_administrador -->|Sí| equipo_invitar
+        equipo_invitar --> equipo_existente
+        equipo_existente -->|No| equipo_aceptar
+        equipo_aceptar --> equipo_rol
+        equipo_rol --> equipo_clinico
+        equipo_clinico --> equipo_perfil
+        equipo_perfil --> equipo_asignar
+        equipo_asignar --> equipo_efectivo
+    end
+    subgraph CONSULTORIO["10 · Configuración del consultorio"]
+        direction TB
+        consultorio_abrir(["Abrir Consultorio — Consultar nombre del centro, profesional,<br/>matrícula, dirección, teléfono y email."])
+        consultorio_editar{"¿Tiene rol administrador?"}
+        consultorio_editar_alt["Mostrar la configuración en modo consulta, sin permitir cambios."]
+        consultorio_editar -->|No| consultorio_editar_alt
+        consultorio_datos["Editar datos del consultorio — Completar como mínimo el nombre<br/>del consultorio o del profesional. Validar email, teléfono y<br/>longitud de los campos."]
+        consultorio_version{"¿Datos válidos y versión vigente?"}
+        consultorio_version_alt["Corregir errores. Si otra sesión modificó los datos, recargar y<br/>revisar antes de guardar."]
+        consultorio_version -->|No| consultorio_version_alt
+        consultorio_version_alt --> consultorio_datos
+        consultorio_guardar(["Guardar datos — Actualizar la configuración del consultorio<br/>activo y los datos utilizados para generar nuevas planillas."])
+        consultorio_abrir --> consultorio_editar
+        consultorio_editar -->|Sí| consultorio_datos
+        consultorio_datos --> consultorio_version
+        consultorio_version -->|Sí| consultorio_guardar
+    end
+    subgraph CONTROLES["11 · Validaciones, avisos y persistencia"]
+        direction TB
+        controles_accion(["Realizar una consulta o cambio — La web usa Supabase Auth para<br/>sesión; las operaciones de datos pasan por funciones autorizadas.<br/>Equipo y avisos usan API de servidor."])
+        controles_permiso{"¿Sesión y permisos vigentes?"}
+        controles_permiso_alt["Rechazar la operación. Volver a ingresar o solicitar acceso al<br/>administrador."]
+        controles_permiso -->|No| controles_permiso_alt
+        controles_permiso_alt --> acceso_credenciales
+        controles_validacion["Validar campos y reglas de negocio — Tipos, longitudes, fechas,<br/>DNI, teléfonos, email, duración, franjas, permisos clínicos y<br/>límites de reservas."]
+        controles_concurrencia{"¿Versión y restricciones vigentes?"}
+        controles_concurrencia_alt["No sobrescribir cambios ajenos ni duplicar horarios/identidades.<br/>Corregir o recargar y reintentar."]
+        controles_concurrencia -->|No| controles_concurrencia_alt
+        controles_concurrencia_alt --> controles_accion
+        controles_persistir["Guardar en la base del entorno activo — Datos aislados por<br/>consultorio y permisos. Historias con versiones; turnos con<br/>estados; datos de identidad separados de los clínicos."]
+        controles_aviso{"¿Es un cambio de turno con aviso?"}
+        controles_aviso_alt["Mostrar el resultado guardado. Finalizar la operación sin envío<br/>de aviso de turno."]
+        controles_aviso -->|No| controles_aviso_alt
+        controles_cola["Registrar aviso y procesar pendientes — Intento al reservar o<br/>cambiar el turno, botón de avisos pendientes y endpoint<br/>programable autenticado."]
+        controles_email{"¿Proveedor de email configurado y envío exitoso?"}
+        controles_email_alt["El turno sigue guardado. Mantener el aviso pendiente o disponible<br/>para reintento."]
+        controles_email -->|No| controles_email_alt
+        controles_email_alt --> controles_cola
+        controles_enviado(["Actualizar estado del aviso — El sistema registra el resultado<br/>del envío; el turno conserva su estado independientemente del<br/>email."])
+        controles_accion --> controles_permiso
+        controles_permiso -->|Sí| controles_validacion
+        controles_validacion --> controles_concurrencia
+        controles_concurrencia -->|Sí| controles_persistir
+        controles_persistir --> controles_aviso
+        controles_aviso -->|Sí| controles_cola
+        controles_cola --> controles_email
+        controles_email -->|Sí| controles_enviado
+    end
+    acceso_destino -->|Resolver membresía| permisos_membresias
+    permisos_inicio -->|Datos administrativos| pacientes_directorio
+    permisos_inicio -->|Con acceso clínico| historias_buscar
+    permisos_inicio -->|Agenda del consultorio| agenda_abrir
+    permisos_inicio -->|Administrador| equipo_administrador
+    permisos_inicio -->|Configuración| consultorio_abrir
+    agenda_abrir -->|Horarios: administrador| disponibilidad_entrar
+    pacientes_abrirficha -->|Abrir o crear ficha| historias_buscar
+    historias_guardada -->|Con permiso de exportación| documentos_origen
+    disponibilidad_publicar -->|Enlace compartido| reservas_enlace
+    equipo_efectivo -. "Permisos efectivos" .-> permisos_rol
+    equipo_perfil -. "Profesionales elegibles" .-> disponibilidad_profesional
+    agenda_paciente -. "Búsqueda de identidad" .-> pacientes_directorio
+    reservas_cuenta -. "Autenticación" .-> acceso_opcion
+    agenda_guardar -. "Validación y avisos" .-> controles_accion
+    reservas_confirmar -. "Validación y avisos" .-> controles_accion
+    historias_guardada -. "Persistencia y versiones" .-> controles_persistir
+    consultorio_guardar -. "Datos en las planillas" .-> documentos_generar
+
+%% Reglas y aclaraciones asociadas a los recorridos:
+%% acceso_entrada: El enlace público permite consultar agendas sin iniciar sesión.
+%% acceso_opcion: Crear cuenta no otorga acceso administrativo ni profesional.
+%% acceso_registro: Si ya existe la cuenta, ingresar o recuperar la contraseña. Si los datos son inválidos, corregir y reintentar.
+%% acceso_credenciales: Sin correo de verificación: solicitar reenvío. En una invitación, elegir contraseña desde su enlace.
+%% acceso_destino: Las rutas públicas de reservas y Mis turnos tienen recorridos propios.
+%% permisos_membresias: Si falla la carga, reintentar o cerrar sesión.
+%% permisos_centro: Al cambiar de centro con cambios pendientes, confirmar si se descartan.
+%% permisos_rol: Ser administrador no implica poder leer historias clínicas.
+%% permisos_alcance: Las asignaciones a una ficha no pueden ampliar los permisos generales de especialidad.
+%% permisos_inicio: Los controles se repiten en el servidor; ocultar un botón no es la única protección.
+%% pacientes_datos: El número de historia puede asignarse automáticamente al guardar.
+%% pacientes_abrirficha: Un administrador también puede asignar acceso desde el directorio, sin abrir el contenido clínico.
+%% pacientes: Buscar un paciente al cargar un turno solo completa sus datos. No vincula una cuenta del portal ni una historia automáticamente.
+%% historias_hojauno: Una respuesta sin marcar es “sin responder”. La autorización registrada no reemplaza un consentimiento firmado.
+%% historias_hojados: Agregar o editar consultas. Quitar una consulta requiere confirmación y se aplica al guardar; las versiones previas se conservan.
+%% historias_guardada: Con permiso de exportación, descargar PDF o consultar versiones anteriores.
+%% documentos_origenversion: El historial sirve para consulta y PDF. No hay una acción de restauración automática.
+%% documentos_revalidar: Si cambia la versión o el permiso, recargar antes de exportar.
+%% documentos_tipo: Las versiones anteriores se descargan como historia completa.
+%% agenda_paciente: Verificar identidad antes de vincular el portal. El DNI no enlaza una historia clínica por sí solo.
+%% agenda_horario: Las sugerencias excluyen ocupación conocida. Las atenciones manuales pueden quedar fuera del horario web.
+%% agenda_guardar: Los solapamientos del mismo profesional también se protegen entre consultorios.
+%% agenda_seguimiento: La cancelación libera el horario y conserva el registro. Las reservas web mantienen protegida la identidad del paciente.
+%% agenda: El perfil profesional habilitado define quién atiende; una cuenta administrativa técnica no necesita atender. Las observaciones internas se muestran y modifican solo con permiso.
+%% reservas_cuenta: Si faltan datos, completar el perfil y volver a confirmar. Los horarios no se retienen durante el registro.
+%% reservas_gestion: Si no permite reprogramar por web, contactar al consultorio. Cada cambio se valida de nuevo.
+%% disponibilidad_servicio: Desactivar una prestación evita que su agenda ofrezca horarios públicos.
+%% disponibilidad_profesional: El perfil se habilita desde Usuarios → Acceso clínico y perfil profesional.
+%% disponibilidad_publicar: El enlace abre el recorrido de reserva del paciente.
+%% equipo_rol: Suspender acceso no elimina datos. Pueden requerirse reasignaciones de turnos futuros antes de ciertos cambios.
+%% equipo_clinico: Recepción no tiene acceso clínico. Un administrador puede tener todos los permisos administrativos y ningún permiso clínico.
+%% equipo_asignar: No puede exceder sus permisos por especialidad. Con alcance “todas”, el acceso se administra desde Usuarios.
+%% equipo: Usuarios incluye una búsqueda de cuentas de pacientes verificadas del consultorio. Es un directorio de cuentas/contacto, sin vinculación automática a historias clínicas.
+%% consultorio_datos: Si se detectan datos de una versión anterior en el navegador y el centro está vacío, se pueden importar al formulario y luego guardar.
+%% controles_validacion: La pantalla orienta al usuario y la base comprueba las reglas que corresponden a cada operación.
+%% controles_cola: Correo de turnos: Resend cuando está configurado. No se presupone que haya un cron activo.
+%% controles: Si falla la red, mostrar el error y permitir reintentar sin afirmar que se guardó. Los formularios que implementan protección de cambios pendientes piden confirmación al salir, cambiar de consultorio o cerrar sesión.
+%% controles: Entorno local: Supabase en Docker y correo de Auth en Mailpit; los avisos externos de turnos están deshabilitados. Local y producción no sincronizan automáticamente datos, contraseñas ni permisos.
+%% controles: Estado actual: solo el módulo clínico de podología está instalado. La base permite separar consultorios, especialidades, prestaciones y fichas; otras especialidades necesitan su módulo antes de funcionar.
