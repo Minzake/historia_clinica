@@ -1,3 +1,4 @@
+import { BrandLogo,BrandName } from '../components/Branding'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react'
@@ -58,7 +59,7 @@ export function AuthPage({ recovery = false, register = false, onRecovered }: { 
   }
 
   return <main className="auth-layout">
-    <section className="auth-intro"><div className="auth-brand"><span className="brand-mark"><img src="/logo.svg" alt="" /></span>Consultorio · Podología</div>
+    <section className="auth-intro"><div className="auth-brand"><BrandLogo/><BrandName fallback="Consultorio · Podología"/></div>
       <div><p className="eyebrow">TU CONSULTORIO, EN UN SOLO LUGAR</p><h1>Más tiempo para<br />cuidar cada paso.</h1><p>Pacientes, historias clínicas y seguimiento de tus consultas, organizados y siempre a mano.</p></div>
       <div className="auth-privacy"><ShieldCheck size={20} /><span>Turnos para pacientes · Gestión privada del consultorio.</span></div>
     </section>
@@ -82,7 +83,7 @@ export function AuthPage({ recovery = false, register = false, onRecovered }: { 
 }
 
 export function SetupPage() {
-  return <main className="setup-page"><span className="brand-mark"><img src="/logo.svg" alt="" /></span><p className="eyebrow">CONFIGURACIÓN INICIAL</p><h1>Conectemos tu consultorio</h1>
+  return <main className="setup-page"><BrandLogo/><p className="eyebrow">CONFIGURACIÓN INICIAL</p><h1>Conectemos tu consultorio</h1>
     <p>La aplicación está lista para conectarse a Supabase. No se habilita el acceso a pacientes hasta completar la configuración.</p>
     <ol><li>Creá un proyecto en Supabase y ejecutá la migración de <code>supabase/migrations/</code>.</li><li>Creá el usuario y asignalo al consultorio siguiendo el <code>README.md</code>.</li><li>Agregá <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> en Vercel y volvé a desplegar.</li></ol>
     <Notice kind="info">Usá únicamente la clave pública. Nunca una clave <code>service_role</code> ni <code>sb_secret_…</code> en el navegador.</Notice>

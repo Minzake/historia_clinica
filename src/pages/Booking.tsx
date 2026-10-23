@@ -1,5 +1,7 @@
+import { BrandLogo,BrandName } from '../components/Branding'
+import { useBranding } from '../branding-context'
 import { formatDate } from '../core/format'
-import { useCallback,useState } from 'react'
+import { useCallback,useEffect,useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { Link,useLocation,useNavigate } from 'react-router-dom'
 import { CalendarDays,Check,Clock,MapPin } from 'lucide-react'
@@ -13,6 +15,7 @@ import { bookingDestination,bookingSelection } from '../lib/booking-navigation'
 import './booking.css'
 
 export function Booking({session,slug=''}:{session:Session|null;slug?:string}) {
+  const {selectPublicSlug}=useBranding()
   const now=useNow()
   const location=useLocation(),requested=bookingSelection(location.search)
   const pages=useRemote('public-booking-pages',getBookingPages)
@@ -24,6 +27,7 @@ export function Booking({session,slug=''}:{session:Session|null;slug?:string}) {
   const selectSlot=useCallback((value:string,reason?:'unavailable')=>{setSelected(value);setSelectionNotice(reason?'El horario que habías elegido ya no está disponible. Elegí otro.':'')},[])
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[onboarding,setOnboarding]=useState(false)
   const page=pages.data?.find((item)=>(item.slug===(chosen||pages.data?.[0]?.slug)||item.aliases?.includes(chosen)))
+  useEffect(()=>{selectPublicSlug(page?.slug||slug);return ()=>selectPublicSlug('')},[page?.slug,slug,selectPublicSlug])
   const active=appointments.data?.find((appointment)=>appointment.provider_id===page?.provider_id&&isActiveAppointment(appointment,now))
   const navigate=useNavigate()
   const destination=bookingDestination(page?.slug||'',date,selected)
@@ -39,7 +43,7 @@ export function Booking({session,slug=''}:{session:Session|null;slug?:string}) {
     }catch(err){setError(bookingError(err));setSelected('');setAvailabilityAttempt(current=>current+1);appointments.reload()}
     finally{setBusy(false)}
   }
-  return <div className="patient-layout booking-page"><header className="patient-topbar"><Link className="brand" to={session?'/mis-turnos':'/'}><span className="brand-mark"><img src="/logo.svg" alt=""/></span>Consultorio · Turnos</Link><Link className="secondary-button" to={session?'/mis-turnos':loginUrl}>{session?'Mis turnos':'Ingresar'}</Link></header>
+  return <div className="patient-layout booking-page"><header className="patient-topbar"><Link className="brand" to={session?'/mis-turnos':'/'}><BrandLogo/><BrandName fallback="Consultorio · Turnos"/></Link><Link className="secondary-button" to={session?'/mis-turnos':loginUrl}>{session?'Mis turnos':'Ingresar'}</Link></header>
     <main className="booking-workspace"><div className="page-heading"><div><p className="eyebrow">RESERVA ONLINE</p><h1>Reservá tu consulta</h1><p className="page-description">Elegí una atención disponible y confirmá tu horario.</p></div></div>
       {pages.loading?<Loading/>:pages.error?<Notice>{bookingError(pages.error)} <button className="text-button" onClick={pages.reload}>Reintentar</button></Notice>:!pages.data?.length?<section className="panel empty-state"><CalendarDays size={32}/><h2>La agenda web todavía no está abierta</h2><p>El consultorio debe configurar sus días y horarios. Podés crear tu cuenta para reservar cuando se habilite.</p><Link className="primary-button" to={session?'/mis-turnos':'/registro'}>{session?'Ir a mis turnos':'Crear mi cuenta'}</Link></section>:!page?<Notice>No encontramos esa agenda. <button className="text-button" onClick={()=>setChosen('')}>Ver consultorios disponibles</button></Notice>:<div className="booking-layout">
         <aside className="panel booking-info"><p className="eyebrow">TU ATENCIÓN</p><h2>{page.name}</h2>{pages.data.length>1&&<label className="field"><span>Atención</span><select value={page.slug} onChange={(event)=>{setChosen(event.target.value);setSelected('')}}>{pages.data.map((item)=><option key={item.slug} value={item.slug}>{item.name} · {item.service_name||"Consulta"} · {item.provider_name}</option>)}</select></label>}

@@ -29,6 +29,7 @@ export function database() {
 
 export function errorMessage(error: unknown): string {
   const item = error as { code?: string; message?: string; status?: number }
+  if(item?.message?.includes('INVALID_BRAND_IMAGE'))return 'La imagen no es válida. Volvé a cargar el logo o el ícono de la pestaña.'
   if (item?.message?.includes('UNSUPPORTED_CLINICAL_SCHEMA')) return 'Esta especialidad o versión de ficha no está instalada. Actualizá la aplicación o contactá al administrador.'
   if (item?.message?.includes('CONFLICT_IDENTITY')) return 'Otra persona modificó los datos del paciente. Volvé a abrir la ficha antes de guardar.'
   if (item?.message?.includes('EXPORT_NOT_ALLOWED')) return 'Tu cuenta no tiene permiso para descargar esta ficha.'

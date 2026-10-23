@@ -1,0 +1,7 @@
+import { ImagePlus,RotateCcw } from 'lucide-react'
+import { useId } from 'react'
+
+export function BrandImageField({kind,value,disabled,error,onFile,onClear}:{kind:'logo'|'favicon';value:string;disabled:boolean;error:string;onFile:(file:File)=>void;onClear:()=>void}) {
+  const id=useId(),logo=kind==='logo'
+  return <div className="brand-image-field"><div className={`brand-image-preview ${logo?'':'brand-image-preview--icon'}`}><img src={value||(logo?'/logo.svg':'/favicon.svg')} alt={logo?'Vista previa del logo':'Vista previa del favicon'}/></div><div className="brand-image-controls"><strong>{logo?'Logo del consultorio':'Ícono de la pestaña (favicon)'}</strong><p>{logo?'Aparece en el encabezado y en el acceso al consultorio.':'Se ve junto al nombre de la página en el navegador.'}</p><div className="button-row"><label className={`secondary-button brand-file-button ${disabled?'disabled':''}`} htmlFor={id}><ImagePlus size={15} aria-hidden="true"/>{value?'Cambiar imagen':'Elegir imagen'}</label><input className="brand-file-input" id={id} type="file" accept="image/png,image/jpeg,image/webp" aria-label={logo?'Cargar logo':'Cargar favicon'} disabled={disabled} onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)onFile(file)}}/>{value&&<button className="text-button" type="button" disabled={disabled} onClick={onClear}><RotateCcw size={13} aria-hidden="true"/>Usar predeterminado</button>}</div>{error&&<p className="brand-image-error" role="alert">{error}</p>}</div></div>
+}

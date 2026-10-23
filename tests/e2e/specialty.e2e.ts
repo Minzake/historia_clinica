@@ -31,7 +31,8 @@ async function backend(page:Page,role:'owner'|'reception',multi=false,clinical=t
     else if(path==='/auth/v1/logout'){await route.fulfill({status:204});return}
     else {
       requests.push({name,args})
-      if(name==='list_my_memberships')data=[{clinicId:clinic,role,clinic:clinicData,version:1,specialties:role==='owner'&&clinical?permissions:[]},...(multi?[{clinicId:clinic2,role:'owner',clinic:{...blankClinic(),name:'Segundo centro'},version:1,specialties:[]}]:[])]
+      if(name==='get_clinic_branding')data=multi&&args.p_clinic_id?{clinicId:args.p_clinic_id,name:args.p_clinic_id===clinic2?'Segundo centro':'Centro de prueba',logo:'',favicon:''}:null
+      else if(name==='list_my_memberships')data=[{clinicId:clinic,role,clinic:clinicData,version:1,specialties:role==='owner'&&clinical?permissions:[]},...(multi?[{clinicId:clinic2,role:'owner',clinic:{...blankClinic(),name:'Segundo centro'},version:1,specialties:[]}]:[])]
       else if(name==='get_clinic_dashboard'||name==='list_clinical_patients')data={patients:[...records.values()].map(r=>({id:r.id,full_name:r.patient.fullName,history_number:r.patient.historyNumber,dni:r.patient.dni,updated_at:r.updatedAt})),count:records.size,evolutions:0}
       else if(name==='get_clinical_chart') {
         if(role==='reception'||args.p_clinic_id!==clinic){await route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({code:'42501',message:'Access denied'})});return}
@@ -92,11 +93,13 @@ test('changing center protects unsaved edits and returns to the selected center 
   await page.getByLabel('Consultorio activo').selectOption(clinic2)
   await expect(page.getByLabel('Consultorio activo')).toHaveValue(clinic)
   await expect(page.getByLabel('Domicilio')).toHaveValue('Edición pendiente')
+  await expect(page).toHaveTitle('Centro de prueba')
   const before=state.requests.length
   page.once('dialog',dialog=>dialog.accept())
   await page.getByLabel('Consultorio activo').selectOption(clinic2)
   await expect(page).toHaveURL(/\/$/)
   await expect(page.getByLabel('Consultorio activo')).toHaveValue(clinic2)
+  await expect(page).toHaveTitle('Segundo centro')
   await expect(page.getByRole('navigation').getByRole('link',{name:'Historias clínicas'})).toHaveCount(0)
   await expect(page.getByText('Dato clínico privado')).toHaveCount(0)
   expect(state.requests.slice(before).some(r=>r.name==='get_clinical_chart'&&r.args.p_clinic_id===clinic)).toBe(false)

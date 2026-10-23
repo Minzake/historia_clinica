@@ -23,7 +23,8 @@ async function backend(page:Page,mode:'write'|'read'|'reception'='write',existin
       requests.push({name,args})
       const links=mode==='reception'?[]:[{specialtyId:'odontologia',name:'Odontología',action:record?'open':'create'}]
       const identity={id:patientId,version:1,full_name:'Ana Paciente',dni:'22334455',history_number:'HC-000001',details:{birthDate:'2016-05-12',address:'',phone:'',mobile:'',insurance:'',occupation:'',emergencyContact:'',emergencyPhone:''},chart_links:links}
-      if(name==='list_my_memberships')data=[{clinicId:clinic,role:mode==='reception'?'reception':'owner',clinic:clinicData,version:1,specialties:mode==='reception'?[]:(bothSpecialties?[{specialtyId:'odontologia',name:'Odontología'},{specialtyId:'podologia',name:'Podología'}]:[{specialtyId:'odontologia',name:'Odontología'}]).map(s=>({...s,canRead:true,canWrite:mode==='write',canExport:mode==='write',scope:'all'}))}]
+      if(name==='get_clinic_branding')data=null
+      else if(name==='list_my_memberships')data=[{clinicId:clinic,role:mode==='reception'?'reception':'owner',clinic:clinicData,version:1,specialties:mode==='reception'?[]:(bothSpecialties?[{specialtyId:'odontologia',name:'Odontología'},{specialtyId:'podologia',name:'Podología'}]:[{specialtyId:'odontologia',name:'Odontología'}]).map(s=>({...s,canRead:true,canWrite:mode==='write',canExport:mode==='write',scope:'all'}))}]
       else if(name==='get_clinic_dashboard'||name==='list_clinical_patients')data={patients:record?[{id:patientId,full_name:record.patient.fullName,dni:record.patient.dni,history_number:record.patient.historyNumber,updated_at:record.updatedAt,chart_links:links}]:[],count:record?1:0,evolutions:record?.evolutions.length||0}
       else if(name==='list_patient_identities')data={patients:[identity],count:1}
       else if(name==='get_patient_identity')data=identity

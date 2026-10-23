@@ -4,6 +4,7 @@ import type { Membership, PatientSummary, RecordDraft, Revision, SavedRecord, Cl
 import { validateClinic } from './validation'
 import type { ClinicalMetadata } from '../core/types'
 import { recordModule } from '../modules/registry'
+import { validBrandImage } from './branding'
 
 export async function getMemberships(): Promise<Membership[]> {
   const { data, error } = await database().rpc('list_my_memberships')
@@ -50,11 +51,13 @@ export async function saveRecord(clinicId: string, record: RecordDraft, id: stri
   return data as SavedRecord
 }
 
-export async function saveClinic(membership: Membership, clinic: Clinic): Promise<Membership> {
+export async function saveClinic(membership: Membership, clinic: Clinic,branding?:{logo:string;favicon:string}): Promise<Membership> {
+  if(branding&&(!validBrandImage(branding.logo,'logo')||!validBrandImage(branding.favicon,'favicon')))throw new Error('INVALID_BRAND_IMAGE')
   const validation = validateClinic(clinic)
   if (validation) throw new Error(validation)
-  const { data, error } = await database().rpc('save_clinic_settings', {
+  const { data, error } = await database().rpc(branding?'save_clinic_profile':'save_clinic_settings', {
     p_clinic_id: membership.clinicId, p_expected_version: membership.version, p_settings: clinic,
+    ...(branding?{p_logo:branding.logo,p_favicon:branding.favicon}:{}),
   })
   if (error) throw error
   return { ...membership, clinic: readClinic(data.settings), version: data.version }

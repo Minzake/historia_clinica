@@ -183,6 +183,8 @@ No hace falta cambiar el proyecto ni migrar el frontend a otro alojamiento.
 
 ## Base de datos y seguridad
 
+El logo y el favicon se pueden configurar en **Consultorio → Identidad visual**. Requiere la migración `202610230007_branding.sql`. Ver [formatos, permisos e identidad por consultorio](docs/identidad-visual.md).
+
 | Tabla | Contenido |
 |---|---|
 | `clinics` | Configuración del consultorio y contador de historias |

@@ -24,6 +24,7 @@ async function backend(page:Page,staff:boolean,open=true,options:{slug?:string;m
     else if(url.pathname==='/rest/v1/clinic_members')data=staff?[{clinic_id:clinic,role:'owner',active:true,clinics:{settings:{name:'Consultorio de Podología',professional:'Profesional de prueba',address:'Dirección del consultorio',phone:'1112345678',email:'',license:''},version:1}}]:[]
     else if(url.pathname==='/rest/v1/patients'){data=[];headers['content-range']='*/0'}
     else if(url.pathname==='/rest/v1/evolutions'){data=[];headers['content-range']='*/0'}
+    else if(url.pathname==='/rest/v1/rpc/get_clinic_branding')data=null
     else if(url.pathname==='/rest/v1/rpc/list_my_memberships')data=staff?[{clinicId:clinic,role:'owner',clinic:{name:'Consultorio de Podología',professional:'Profesional de prueba',address:'Dirección del consultorio',phone:'1112345678',email:'',license:''},version:1,specialties:access}]:[]
     else if(url.pathname==='/rest/v1/rpc/get_clinic_dashboard'||url.pathname==='/rest/v1/rpc/list_clinical_patients')data={patients:[],count:0,evolutions:0}
     else if(url.pathname==='/rest/v1/rpc/get_booking_configuration')data={settings,hours,practitioners,pages:[{...settings}],services:[{id:serviceId,clinic_id:clinic,specialty_id:'podologia',name:'Consulta de podología',duration_minutes:options.minutes||30,active:true,version:1,legacy_default:true}]}

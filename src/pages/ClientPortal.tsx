@@ -1,3 +1,4 @@
+import { BrandLogo,BrandName } from '../components/Branding'
 import { formatDate } from '../core/format'
 import { useCallback,useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
@@ -19,7 +20,7 @@ export function ClientPortal({session}:{session:Session}) {
   const [notice,setNotice]=useState(()=>typeof location.state?.notice==='string'?location.state.notice:'')
   if(location.pathname!=='/mis-turnos')return <Navigate to="/mis-turnos" replace/>
   async function logout(){const {error}=await database().auth.signOut({scope:'local'});if(error)setLogoutError('No se pudo cerrar la sesión. Intentá nuevamente.')}
-  return <div className="patient-layout"><header className="patient-topbar"><Link className="brand" to="/mis-turnos"><span className="brand-mark"><img src="/logo.svg" alt=""/></span>Mi consultorio</Link><div className="button-row"><button className="secondary-button" onClick={()=>setEdit(true)} disabled={!profile.data}><UserRound size={15}/>Mis datos</button><button className="secondary-button" onClick={logout}><LogOut size={15}/>Salir</button></div></header>
+  return <div className="patient-layout"><header className="patient-topbar"><Link className="brand" to="/mis-turnos"><BrandLogo/><BrandName fallback="Mi consultorio"/></Link><div className="button-row"><button className="secondary-button" onClick={()=>setEdit(true)} disabled={!profile.data}><UserRound size={15}/>Mis datos</button><button className="secondary-button" onClick={logout}><LogOut size={15}/>Salir</button></div></header>
     <main className="booking-workspace">{logoutError&&<Notice>{logoutError}</Notice>}{profile.loading?<Loading/>:profile.error?<Notice>{bookingError(profile.error)} <button className="text-button" onClick={profile.reload}>Reintentar</button></Notice>:!profile.data?<section className="panel onboarding-panel"><p className="eyebrow">BIENVENIDO/A</p><h1>Completá tu cuenta</h1><ClientProfileForm session={session} onSaved={profile.reload}/></section>:<>
       <div className="page-heading"><div><p className="eyebrow">PORTAL DEL PACIENTE</p><h1>Hola, {profile.data.full_name}</h1><p className="page-description">Un turno futuro confirmado por profesional. Podés reprogramar o cancelar el existente.</p></div><Link className="primary-button" to="/reservar"><Plus size={17}/>Reservar turno</Link></div>
       {notice&&<Notice kind="success">{notice}</Notice>}<ClientAppointments onChanged={()=>setNotice('')}/>

@@ -22,10 +22,13 @@ import { ClientPortal } from './pages/ClientPortal'
 import { PatientDirectory } from './pages/PatientDirectory'
 import { canReadClinical } from './core/access'
 import './App.css'
+import { BrandingProvider,BrandLogo } from './components/Branding'
+import { useBranding } from './branding-context'
 
 const recoveryRequested = passwordSetupRequested(window.location.pathname, window.location.hash)
 
-function App() {
+function App(){return <BrandingProvider><AppContent/></BrandingProvider>}
+function AppContent() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(Boolean(supabase))
   const [recovery, setRecovery] = useState(recoveryRequested)
@@ -62,6 +65,7 @@ function App() {
 }
 
 function Workspace({ session }: { session: Session }) {
+  const {activateClinic}=useBranding()
   const navigate=useNavigate()
   const [membership, setMembership] = useState<Membership | null>(null)
   const [memberships,setMemberships]=useState<Membership[]>([])
@@ -69,6 +73,7 @@ function Workspace({ session }: { session: Session }) {
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [signingOut, setSigningOut] = useState(false)
+  useEffect(()=>{activateClinic(membership?.clinicId||null);return ()=>activateClinic(null)},[membership?.clinicId,activateClinic])
   const unsaved = useRef(false)
   const switchingClinic=useRef(false)
   const setUnsaved = useCallback((value: boolean) => { unsaved.current = value }, [])
@@ -95,7 +100,7 @@ function Workspace({ session }: { session: Session }) {
   if (!membership&&error) return <main className="setup-page"><h1>Tu acceso al consultorio</h1><Notice>{error}</Notice><div className="button-row"><button className="primary-button" onClick={() => { setLoading(true); setError(''); setAttempt(attempt + 1) }}>Reintentar</button><button className="secondary-button" disabled={signingOut} onClick={signOut}>Cerrar sesión</button></div></main>
   if(!membership)return <ClientPortal session={session}/>
   return <ClinicContext.Provider key={membership.clinicId} value={{ membership, setMembership, setUnsaved,userId:session.user.id,refreshAccess }}>
-    <div className="app-shell"><a className="skip-link" href="#main-content">Ir al contenido</a><header className="topbar"><Link className="brand" to="/"><span className="brand-mark"><img src="/logo.svg" alt="" /></span><span>{membership.clinic.name || 'Consultorio de podología'}</span></Link>
+    <div className="app-shell"><a className="skip-link" href="#main-content">Ir al contenido</a><header className="topbar"><Link className="brand" to="/"><BrandLogo/><span>{membership.clinic.name || 'Consultorio de podología'}</span></Link>
       <div className="topbar-actions">{memberships.length>1&&<label className="clinic-switcher"><span>Consultorio</span><select aria-label="Consultorio activo" value={membership.clinicId} onChange={event=>changeClinic(event.target.value)}>{memberships.map(item=><option key={item.clinicId} value={item.clinicId}>{item.clinicId===membership.clinicId?membership.clinic.name||'Consultorio':item.clinic.name||'Consultorio'}</option>)}</select></label>}<span className="privacy-label"><ShieldCheck size={15} />Acceso privado</span><span className="account-email" title={session.user.email}>{session.user.email}</span><button className="icon-button" type="button" disabled={signingOut} onClick={signOut}><LogOut size={16} /><span>{signingOut ? 'Saliendo…' : 'Salir'}</span></button></div>
     </header>
     <nav className="main-navigation" aria-label="Navegación principal"><NavLink to="/" end><House size={17} />Inicio</NavLink><NavLink to="/agenda"><CalendarDays size={17}/>Agenda</NavLink><NavLink to="/pacientes"><Users size={17}/>Pacientes</NavLink>{canReadClinical(membership)&&<NavLink to="/historias"><FileText size={17} />Historias clínicas</NavLink>}{membership.role==='owner'&&<NavLink to="/equipo"><Users size={17}/>Usuarios</NavLink>}<NavLink to="/consultorio"><Settings2 size={17} />Consultorio</NavLink><span>GESTIÓN · CONSULTORIO</span></nav>

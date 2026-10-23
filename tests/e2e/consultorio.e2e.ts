@@ -9,6 +9,7 @@ const patientId = '30000000-0000-4000-8000-000000000001'
 
 async function fakeBackend(page: Page) {
   let saved: SavedRecord | null = null
+  let branding:{clinicId:string;name:string;logo:string;favicon:string}|null=null,version=1
   const clinic = { ...blankClinic(), name: 'Consultorio de Podología', professional: 'Profesional de prueba', license: 'MP 12345' }
   const user = { id: userId, aud: 'authenticated', role: 'authenticated', email: 'titular@example.com', email_confirmed_at:new Date().toISOString(), created_at: new Date().toISOString(), app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: {} }
   const payload = Buffer.from(JSON.stringify({ sub: userId, role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')
@@ -22,7 +23,9 @@ async function fakeBackend(page: Page) {
     else if (url.pathname === '/auth/v1/user') body = user
     else if (url.pathname === '/auth/v1/logout') { await route.fulfill({ status: 204 }); return }
     else if (url.pathname === '/rest/v1/clinic_members') body = [{ clinic_id: '20000000-0000-4000-8000-000000000001', role: 'owner', clinics: { settings: clinic, version: 1 } }]
-    else if (url.pathname === '/rest/v1/rpc/list_my_memberships') body=[{clinicId:'20000000-0000-4000-8000-000000000001',role:'owner',clinic,version:1,specialties:[{specialtyId:'podologia',name:'Podología',canRead:true,canWrite:true,canExport:true,scope:'all'}]}]
+    else if (url.pathname === '/rest/v1/rpc/get_clinic_branding') body=branding
+    else if (url.pathname === '/rest/v1/rpc/save_clinic_profile') {const args=request.postDataJSON();Object.assign(clinic,args.p_settings);version++;branding={clinicId:args.p_clinic_id,name:clinic.name,logo:args.p_logo,favicon:args.p_favicon};body={settings:clinic,version}}
+    else if (url.pathname === '/rest/v1/rpc/list_my_memberships') body=[{clinicId:'20000000-0000-4000-8000-000000000001',role:'owner',clinic,version,specialties:[{specialtyId:'podologia',name:'Podología',canRead:true,canWrite:true,canExport:true,scope:'all'}]}]
     else if (url.pathname === '/rest/v1/rpc/get_clinic_dashboard' || url.pathname === '/rest/v1/rpc/list_clinical_patients') body={patients:saved?[{id:saved.id,full_name:saved.patient.fullName,history_number:saved.patient.historyNumber,dni:saved.patient.dni,updated_at:saved.updatedAt}]:[],count:saved?1:0,evolutions:saved?.evolutions.length||0}
     else if (url.pathname === '/rest/v1/rpc/list_chart_versions') body=[]
     else if (url.pathname === '/rest/v1/patients') {
@@ -96,6 +99,45 @@ test('login, patient creation, persistence, search, continuous PDF and logout', 
   await page.getByRole('button', { name: 'Salir', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible()
   expect(errors).toEqual([])
+})
+
+test('the owner previews, saves and restores branding across reload, login and mobile',async({page},testInfo)=>{
+  await fakeBackend(page);await login(page)
+  const png=Buffer.from(await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=300;canvas.height=100;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#294d8a';ctx.fillRect(0,0,300,100);ctx.fillStyle='#fff';ctx.font='40px sans-serif';ctx.fillText('Centro',30,65);return canvas.toDataURL('image/png').split(',')[1]}),'base64')
+  await page.getByRole('navigation').getByRole('link',{name:'Consultorio',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Identidad visual',exact:true})).toBeVisible()
+  await page.getByLabel('Nombre del consultorio').fill('Centro de prueba')
+  await page.getByLabel('Cargar logo',{exact:true}).setInputFiles({name:'logo.png',mimeType:'image/png',buffer:png})
+  await expect(page.getByAltText('Vista previa del logo')).toHaveAttribute('src',/^data:image\/png;base64,/)
+  await page.getByLabel('Cargar favicon',{exact:true}).setInputFiles({name:'icono.png',mimeType:'image/png',buffer:png})
+  const logo=await page.getByAltText('Vista previa del logo').getAttribute('src')
+  const icon=await page.getByAltText('Vista previa del favicon').getAttribute('src')
+  await expect(page.locator('.topbar .brand-mark img')).toHaveAttribute('src','/logo.svg')
+  await page.getByRole('button',{name:'Guardar datos',exact:true}).click()
+  await expect(page.getByText('Los datos del consultorio quedaron guardados.',{exact:true})).toBeVisible()
+  await expect(page.locator('.topbar .brand-mark img')).toHaveAttribute('src',logo!)
+  await expect(page).toHaveTitle('Centro de prueba')
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href',icon!)
+  await page.reload()
+  await expect(page.getByAltText('Vista previa del logo')).toHaveAttribute('src',logo!)
+  await page.getByLabel('Cargar logo',{exact:true}).setInputFiles({name:'script.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>')})
+  await expect(page.getByRole('alert')).toContainText('PNG, JPG o WebP')
+  await expect(page.getByAltText('Vista previa del logo')).toHaveAttribute('src',logo!)
+  await page.setViewportSize({width:375,height:812})
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true)
+  await page.screenshot({path:testInfo.outputPath('identidad-visual-mobile.png'),fullPage:true})
+  await page.getByRole('button',{name:'Salir',exact:true}).click()
+  await expect(page.locator('.auth-brand .brand-mark img')).toHaveAttribute('src',logo!)
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href',icon!)
+  await login(page)
+  await page.getByRole('navigation').getByRole('link',{name:'Consultorio',exact:true}).click()
+  await page.getByRole('button',{name:'Usar predeterminado',exact:true}).first().click()
+  await page.getByRole('button',{name:'Usar predeterminado',exact:true}).first().click()
+  await page.getByRole('button',{name:'Guardar datos',exact:true}).click()
+  await expect(page.locator('.topbar .brand-mark img')).toHaveAttribute('src','/logo.svg')
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href','/favicon.svg')
+  await page.reload()
+  await expect(page.getByAltText('Vista previa del logo')).toHaveAttribute('src','/logo.svg')
 })
 
 test('mobile forms and navigation stay within the viewport', async ({ page }, testInfo) => {
