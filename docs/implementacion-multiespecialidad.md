@@ -51,6 +51,8 @@ La matrícula actual es una cadena por profesional/especialidad. Se conserva el 
 
 Para una segunda especialidad se necesitan su ficha, validación SQL, editor, PDF, registro de esquema/módulo y pruebas acordadas con un profesional. Insertar solo una fila de catálogo no la vuelve operativa. Sedes, salas, equipamiento compartido, resumen interdisciplinario y filtros por esas dimensiones quedan para las siguientes etapas del plan.
 
+La [propuesta de odontología](propuesta-odontologia.md) define una ficha para adultos y niños con odontograma por paciente, dentición permanente/temporal/mixta y controles fechados. Incluye una [maqueta interactiva](prototipo-odontograma.html) de carga y versiones de prueba; todavía no instala el módulo ni guarda datos clínicos reales.
+
 ## Verificación local
 
 ```sh
