@@ -7,7 +7,7 @@ Disponible en `develop` con la migración `202610230006_odontology.sql`. Reutili
 1. Un administrador entra en **Usuarios → Acceso clínico → Odontología** y configura lectura, escritura, exportación y alcance para cada cuenta. Habilitar acceso o atención activa la especialidad en ese consultorio; la migración no otorga permisos automáticamente.
 2. Si el profesional atiende, habilitar su perfil de odontología y completar nombre público y matrícula. Los perfiles de atención de las dos especialidades son independientes.
 3. Desde **Pacientes**, abrir o crear la ficha odontológica del paciente existente. **Nueva historia** también permite elegir especialidad cuando hay más de una disponible.
-4. Completar antecedentes, seleccionar una pieza y pintar sus caras. Hay dentición permanente, temporal y mixta: 32 piezas permanentes y 20 temporales. Cambiar la vista no borra registros.
+4. Completar antecedentes, seleccionar una pieza y pintar directamente sobre el gráfico. Para los registros de pieza completa, elegir una opción en **Más símbolos y tratamientos** y tocar cualquier cara del diente ampliado. Hay dentición permanente, temporal y mixta: 32 piezas permanentes y 20 temporales. Cambiar la vista no borra registros.
 5. Guardar la historia. Cada control conserva fecha, autor y leyenda; queda en modo lectura. Para otra evaluación, agregar un nuevo control. El borrador permite borrar por cara y deshacer.
 6. Registrar indicaciones en el plan y su estado pendiente, en curso o realizado; agregar evoluciones fechadas. **Versiones y PDF** permite exportar la historia actual o un snapshot anterior con autorización vigente.
 

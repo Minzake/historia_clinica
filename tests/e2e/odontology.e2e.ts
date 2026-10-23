@@ -137,6 +137,29 @@ test('dental painting stays usable on mobile and invalid controls remain editabl
   await page.screenshot({path:testInfo.outputPath('odontograma-mobile.png'),fullPage:true})
 })
 
+test('whole-tooth symbols are painted on the graphic without manual face selection or Apply',async({page})=>{
+  const state=await backend(page)
+  await login(page);await page.goto(`/historias/nueva?paciente=${patientId}&especialidad=odontologia`)
+  await page.getByRole('tab',{name:'Odontograma',exact:true}).click()
+  await brush(page,'Caries');await face(page,36,'Oclusal').click()
+  await page.getByRole('button',{name:/^Pieza 37:/}).click()
+  await page.getByText('Más símbolos y tratamientos',{exact:true}).click()
+  await page.getByRole('button',{name:/Clínicamente ausente/}).click()
+  await face(page,37,'Oclusal').press('Enter')
+  await expect(page.getByRole('button',{name:'Quitar Clínicamente ausente de la pieza 37',exact:true})).toBeVisible()
+  await page.getByRole('button',{name:'Deshacer última marca',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Quitar Clínicamente ausente de la pieza 37',exact:true})).toHaveCount(0)
+  await face(page,37,'Mesial').press('Space')
+  await expect(page.getByRole('group',{name:'Caras de la pieza',exact:true})).toHaveCount(0)
+  await expect(page.getByLabel('Hallazgo o tratamiento',{exact:true})).toHaveCount(0)
+  await expect(page.getByRole('button',{name:/^Aplicar a la pieza/})).toHaveCount(0)
+  await page.getByRole('button',{name:'Guardar historia y control',exact:true}).click()
+  await expect(page.getByText(/Control guardado · solo lectura/)).toBeVisible()
+  const marks=state.record!.clinical.odontograms[0].marks
+  expect(marks.find(m=>m.tooth===37)).toMatchObject({condition:'absent',faces:['all']})
+  expect(marks.find(m=>m.tooth===36)).toMatchObject({condition:'caries',faces:['center']})
+})
+
 test('read-only and reception accounts cannot write or export dentistry',async({page})=>{
   const state=await backend(page,'read',true)
   await login(page);await page.goto(`/historias/${patientId}?especialidad=odontologia`)
