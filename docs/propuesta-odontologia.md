@@ -14,15 +14,19 @@ La página enumera estados dentales y tratamientos existentes o indicados. Eso e
 
 Abrir [prototipo-odontograma.html](prototipo-odontograma.html) en un navegador. Es un documento autónomo, sin dependencias ni llamadas de red para funcionar.
 
-1. Seleccionar una pieza o una cara del mapa. La numeración se muestra desde la perspectiva del paciente.
-2. Seleccionar una o varias caras, o la pieza completa. Elegir el hallazgo/tratamiento y agregar detalle si corresponde.
-3. Aplicar la marca al borrador. Cada marca aparece en el dibujo y en una lista accesible.
+1. Seleccionar una pieza del mapa. La numeración se muestra desde la perspectiva del paciente y se abre una vista ampliada de sus cinco caras.
+2. Elegir un pincel con su leyenda: rojo/caries, azul/resina o negro/amalgama en esta propuesta. Tocar cada cara para pintarla. Una misma pieza puede tener distintos colores en caras diferentes.
+3. Para los demás registros, elegir el hallazgo/tratamiento y una o varias caras, o la pieza completa, y Aplicar. Cada marca aparece en el dibujo y en una lista accesible. La leyenda definitiva se acuerda con el profesional.
 4. Cargar fecha y observaciones. Guardar una **versión de prueba**.
 5. Abrir Historial para consultar versiones anteriores en modo lectura, sin reemplazar el borrador.
 6. Cambiar entre vista permanente, temporal y mixta. No se borran las marcas de las piezas que dejan de verse.
 7. La pestaña Ficha completa explica las otras secciones propuestas.
 
 Los datos y versiones de la maqueta están solo en memoria de esa vista y se pierden al cerrarla. No es un guardado clínico ni una cuenta de paciente real. No contiene datos ni credenciales del sistema y no envía emails.
+
+El borrador admite **borrado por cara** y **deshacer la última marca**. Repintar una cara reemplaza solo su marca de superficie actual y mantiene las demás caras y piezas. Si una marca abarca varias caras, modificar una separa ese registro para conservar las restantes. Los registros del mismo tipo y detalle se agrupan, y las versiones ya guardadas no se reescriben. Los símbolos de pieza completa se quitan desde su registro, no con el borrador de una cara.
+
+La pintura también se puede operar con teclado: enfocar una cara del diente ampliado y activar con Enter o espacio. La selección de caras y el botón Aplicar siguen disponibles como alternativa.
 
 ## Funciones de la ficha integrada
 
@@ -45,6 +49,7 @@ La propuesta usa numeración FDI de dos dígitos como en la referencia:
 - Una pieza sin registros se muestra como **sin evaluar**, nunca como sana por defecto.
 - Mesial/distal se orientan hacia/lejos de la línea media según el cuadrante. Las caras internas se denominan palatina arriba y lingual abajo; la cara central, incisal u oclusal según la posición.
 - El registro conserva código, nombre, categoría, pieza y caras. La representación no depende únicamente del color.
+- Cada cara guarda su marca de superficie por separado. Por ejemplo, una pieza puede conservar rojo en oclusal, azul en mesial y negro en distal, y reproducir esos colores en el mapa y en las versiones históricas.
 
 Catálogo inicial de referencia: sano, caries, resina, amalgama, corona adaptada/desadaptada, prótesis existente/indicada, sellante existente/indicado, endodoncia, necrosis pulpar, extracción indicada, recesión gingival y clínicamente ausente. Los códigos y dibujos de la maqueta son una propuesta de interfaz; no son diagnósticos automáticos.
 
@@ -67,7 +72,7 @@ ClinicalEnvelope<OdontologyData>
 
   data.clinical:
     odontogramas[]:
-      id, fechaControl
+      id, fechaControl, versionLeyenda
       registros[]:
         id, piezaFDI, caras[], codigoCatalogo
         categoria: hallazgo | tratamientoExistente | indicacion
@@ -83,6 +88,8 @@ ClinicalEnvelope<OdontologyData>
 ```
 
 Los identificadores reales de paciente, ficha y consultorio, autor y fechas del servidor se verifican/derivan en el backend. No confiar en un autor o permiso enviado por el formulario.
+
+La ficha integrada debe conservar la versión de la leyenda con cada control para reproducir sus colores y significados originales, aunque se revise el catálogo más adelante.
 
 Cada guardado clínico conserva su versión completa; los controles guardados se consultan sin reescribir sus copias históricas. Las correcciones se reflejan en una versión nueva. Controlar por separado la versión de identidad administrativa y la versión de ficha, como en la base actual.
 
@@ -116,7 +123,7 @@ No modificar migraciones ya aplicadas. No ejecutar migraciones remotas ni reasig
 
 ## Verificación de la propuesta
 
-La maqueta permite comprobar: selección de piezas/caras, catálogo, prevención de duplicados, pieza sana incompatible con caries, historial independiente y de solo lectura, observaciones históricas y cambio de dentición sin pérdida de marcas. También se verifica el ancho en escritorio/celular.
+La maqueta permite comprobar: selección de piezas/caras, colores simultáneos por cara, repintado parcial, borrado y deshacer, manejo de registros que abarcan varias caras, teclado, catálogo, prevención de duplicados, pieza sana incompatible con caries, historial independiente y de solo lectura, observaciones históricas y cambio de dentición sin pérdida de marcas. También se verifica el ancho en escritorio/celular.
 
 Para el módulo integrado faltan sus pruebas de modelo, SQL y navegador: separar permisos de podología/odontología, impedir lecturas de recepción, reutilizar una identidad en ambas fichas, aislamiento entre consultorios, concurrencia, autorización de versiones/PDF y persistencia real del odontograma.
 
