@@ -58,9 +58,6 @@
 .staff-appointment-form .appointment-extra-options{border-bottom:0;padding-bottom:0}
 .staff-appointment-form .appointment-extra-options .field textarea{min-height:68px}
 .staff-appointment-form .dialog-actions{margin-top:18px;padding:14px 0 2px;border-top:1px solid #e2eae4;box-shadow:0 -8px 14px #fff}
-.agenda-week-strip{padding:0 22px 18px;border-bottom:1px solid #e2eae4}
-.agenda-week-strip .schedule-week{max-width:650px}
-.agenda-week-strip .schedule-week-heading{margin-top:0}
 .modal.appointment-dialog{width:min(860px,calc(100% - 40px));border-radius:12px}
 .modal.appointment-dialog--block{width:min(580px,calc(100% - 32px))}
 .appointment-dialog .appointment-fields{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:start;column-gap:26px;row-gap:20px}
@@ -103,7 +100,6 @@
   .agenda-row-time strong{font-size:13px}.agenda-row-status{gap:5px}.agenda-row-status .status-badge{font-size:9px;padding:5px 7px}.agenda-row-status>svg{display:none}
   .agenda-minimal .agenda-day-heading{gap:8px}.agenda-day-heading>div{gap:5px}.agenda-day-heading small{font-size:10px}
   .appointment-date-duration{grid-template-columns:1fr;gap:10px}.appointment-duration-choice{display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .agenda-week-strip{padding:0 16px 16px}
   .modal.appointment-dialog{width:100%;max-width:100%;max-height:96dvh;margin:auto auto 0;padding:18px 18px 12px;border-radius:16px 16px 0 0;border-bottom:0}
   .appointment-dialog .dialog-heading{position:sticky;top:-18px;z-index:3;margin:-1px 0 18px;padding:12px 0;background:#fff;border-bottom:1px solid #e6ede7}
   .appointment-dialog .staff-appointment-form>.appointment-save-bar{bottom:-12px;display:grid;grid-template-columns:1fr;gap:12px;padding:14px 0 max(20px,env(safe-area-inset-bottom))}

@@ -8,12 +8,9 @@ import type { Appointment } from '../lib/booking'
 import { useRemote } from '../hooks/useRemote'
 import { Field,Loading,Notice,SelectField } from '../components/ui'
 import { StaffAppointmentModal } from '../components/StaffAppointmentModal'
-import { WeekDays } from '../components/DayPicker'
-import { useNow } from '../hooks/useNow'
 import './agenda.css'
 
 export function Agenda() {
-  const now=useNow()
   const {membership}=useClinic()
   const config=useRemote(`agenda-config:${membership.clinicId}`,()=>getBookingSettings(membership.clinicId))
   const [day,setDay]=useState(()=>dateInZone()),[view,setView]=useState<'day'|'week'>('day')
@@ -60,7 +57,6 @@ export function Agenda() {
           </details>
         </div>
       </div>
-      {view==='day'&&<div className="agenda-week-strip"><WeekDays value={day} onChange={setDay} today={dateInZone(new Date(now),timezone)}/></div>}
       {agenda.loading?<Loading label="Cargando turnos…"/>:agenda.error?<div className="panel-content"><Notice>{bookingError(agenda.error)} <button className="text-button" onClick={agenda.reload}>Reintentar</button></Notice></div>:<div className={`agenda-days ${view==='week'?'week-view':''}`}>
         {days.map(date=>{
           const weekday=new Intl.DateTimeFormat('es-AR',{weekday:'short',timeZone:'UTC'}).format(new Date(`${date}T12:00:00Z`))

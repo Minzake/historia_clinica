@@ -2,7 +2,7 @@
 
 La vista principal muestra las consultas en filas compactas, con hora, paciente, prestación y estado. Permite elegir día o semana y filtrar profesional cuando hay varios. **Nuevo turno** es la acción principal; **Agregar turno** dentro de un día ya carga esa fecha.
 
-En la vista diaria, la tira semanal permite cambiar de día sin abrir el calendario. En celular, la vista semanal presenta los días uno debajo del otro, sin desplazar una tabla horizontal.
+La vista **Día** muestra únicamente la fecha elegida y sus turnos, sin una tira semanal adicional. Las flechas avanzan o retroceden un día. La vista **Semana** muestra los siete días y sus flechas avanzan o retroceden una semana. En celular, la vista semanal presenta los días uno debajo del otro, sin desplazar una tabla horizontal.
 
 ## Asignar un turno
 
