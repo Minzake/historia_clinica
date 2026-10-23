@@ -21,7 +21,7 @@ El servidor valida piezas, caras, solapamientos, fechas, longitudes, estados, id
 
 Recepción conserva acceso administrativo y a turnos, sin contenido clínico. La asignación de una ficha no amplía las capacidades generales de especialidad. Leer, editar y exportar son permisos separados. Ni el rol administrador ni el acceso previo a podología conceden acceso odontológico automáticamente.
 
-El PDF incluye antecedentes, dibujos vectoriales con los colores por cara, leyenda, controles y autores, plan y evoluciones. Antes de exportar la versión actual se vuelve a consultar autorización y versión. La firma y el sello se completan en papel; no se incorpora firma electrónica.
+El PDF incluye antecedentes, dibujos vectoriales con los colores por cara, controles y autores, plan y evoluciones. La leyenda contiene únicamente los símbolos usados en los controles exportados, sin repetirlos ni agregar estados del catálogo que no se registraron; si no hay marcas, se omite. Antes de exportar la versión actual se vuelve a consultar autorización y versión. La firma y el sello se completan en papel; no se incorpora firma electrónica.
 
 ## Entornos y comprobaciones
 

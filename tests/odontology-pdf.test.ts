@@ -15,6 +15,34 @@ function record():SavedDentalRecord {
   return result
 }
 describe('dental PDF',()=>{
+  it('includes only the legend entries actually recorded instead of the full condition catalogue',async()=>{
+    const value=record(),before=structuredClone(value)
+    const pdf=(await buildDentalPdf(value,blankClinic())).output()
+    for(const label of ['Caries','Resina','Amalgama'])expect(pdf).toContain(label)
+    for(const label of ['evaluado sin hallazgos','Corona adaptada','Corona desadaptada','Sellante','Con endodoncia','Necrosis pulpar','Clínicamente ausente'])expect(pdf).not.toContain(label)
+    expect(value).toEqual(before)
+  })
+  it('keeps symbols used in earlier controls and deduplicates repeated legend entries',async()=>{
+    const value=record(),next=blankOdontogram()
+    next.marks=paintMark(paintMark([],37,'crown_fit',['all']),36,'caries',['center'])
+    value.clinical.odontograms.push(next)
+    const doc=await buildDentalPdf(value,blankClinic())
+    doc.setPage(1)
+    const page=doc.internal.pages[1].join('\n')
+    for(const label of ['Caries','Resina','Amalgama','Corona adaptada'])expect(page).toContain(label)
+    expect(page.match(/\(Caries\)/g)).toHaveLength(1)
+    expect(page).not.toContain('Corona desadaptada')
+  })
+  it('omits the legend when the chart has no marks, including controls containing only observations',async()=>{
+    const value=record()
+    value.clinical.odontograms=[]
+    expect((await buildDentalPdf(value,blankClinic())).output()).not.toContain('Leyenda 1')
+    const control=blankOdontogram();control.notes='Control sin marcas'
+    value.clinical.odontograms.push(control)
+    const pdf=(await buildDentalPdf(value,blankClinic())).output()
+    expect(pdf).not.toContain('(Leyenda 1)')
+    expect(pdf).toContain('Control sin marcas')
+  })
   it('rejects denied exports, unknown schemas and malformed records',async()=>{
     const value=record(),clinic=blankClinic()
     await expect(buildDentalPdf({...value,canExport:false},clinic)).rejects.toThrow('EXPORT_NOT_ALLOWED')
