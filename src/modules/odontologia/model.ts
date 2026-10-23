@@ -47,6 +47,11 @@ export type DentalRecord = {
 export type SavedDentalRecord = DentalRecord&ClinicalMetadata&{id:string;version:number;updatedAt:string}
 export const blankDentalRecord = ():DentalRecord=>({patient:{...blankIdentity(),date:today(),reason:'',allergies:'',medication:'',medicalNotes:'',dentalNotes:''},clinical:{odontograms:[],treatmentPlan:[]},evolutions:[]})
 export const blankOdontogram = ():Odontogram=>({id:crypto.randomUUID(),date:today(),legendVersion:1,view:'mixed',notes:'',marks:[]})
+export function continueOdontogram(previous?:Odontogram):Odontogram {
+  const next=blankOdontogram()
+  return previous?{...next,view:previous.view,notes:previous.notes,marks:structuredClone(previous.marks)}:next
+}
+export const odontogramContent=(control:Odontogram)=>JSON.stringify({date:control.date,notes:control.notes,marks:control.marks})
 export const conditionInfo = (id:Condition)=>conditions.find(c=>c.id===id)!
 export const expandFaces = (faces:Face[])=>faces.includes('all')?surfaceKeys.slice():faces.slice()
 export function faceLabel(face:Face,tooth:number) { return {all:'Pieza completa',vestibular:'Vestibular',inner:[1,2,5,6].includes(Math.floor(tooth/10))?'Palatina':'Lingual',mesial:'Mesial',distal:'Distal',center:tooth%10<=3?'Incisal':'Oclusal'}[face] }

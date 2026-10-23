@@ -109,11 +109,11 @@ flowchart TB
     end
     subgraph ODONTOLOGIA["04b · Ficha odontológica de adultos y niños"]
         dental_antecedentes["Ficha inicial: motivo, alergias, medicación y antecedentes"]
-        dental_control["Nuevo control fechado: elegir dentición permanente, temporal o mixta"]
+        dental_control["Continuar el último odontograma: elegir dentición permanente, temporal o mixta"]
         dental_pintar["Elegir pieza y pintar caras: rojo/caries, azul/resina, negro/amalgama.<br/>Leyenda, símbolos, detalle, borrar por cara y deshacer"]
         dental_plan["Plan: pendiente, en curso o realizado; evoluciones fechadas"]
         dental_guardar["Validar y guardar con autor del servidor y versión concurrente"]
-        dental_lectura["Control guardado en lectura: consultar o agregar otro control,<br/>sin alterar el anterior"]
+        dental_lectura["Continuar el estado actual o consultar el historial en lectura,<br/>conservando cada guardado anterior"]
         dental_pdf["Revalidar autorización: PDF actual o versión anterior,<br/>con colores, leyenda, controles, plan y evoluciones"]
         dental_antecedentes --> dental_control --> dental_pintar --> dental_plan --> dental_guardar
         dental_guardar --> historias_validar

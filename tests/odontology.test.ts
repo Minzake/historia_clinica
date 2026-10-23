@@ -1,7 +1,23 @@
 import { describe,expect,it } from 'vitest'
-import { blankDentalRecord,blankOdontogram,paintMark,removeFaces,teeth,validateDentalRecord,validateOdontogram } from '../src/modules/odontologia/model'
+import { blankDentalRecord,blankOdontogram,continueOdontogram,odontogramContent,paintMark,removeFaces,teeth,validateDentalRecord,validateOdontogram } from '../src/modules/odontologia/model'
 
 describe('odontogram surfaces and validation',()=>{
+  it('continues the latest state as an independent update, preserving marks and omitting old author metadata',()=>{
+    const previous={...blankOdontogram(),date:'2026-01-02',view:'permanent' as const,notes:'Seguimiento',authorId:crypto.randomUUID(),authorName:'Anterior',recordedAt:'2026-01-02T12:00:00Z'}
+    previous.marks=paintMark(paintMark([],36,'caries',['center']),55,'amalgam',['distal'])
+    const before=structuredClone(previous),next=continueOdontogram(previous)
+    expect(next.id).not.toBe(previous.id)
+    expect(next.view).toBe('permanent');expect(next.notes).toBe(previous.notes)
+    expect(next.marks).toEqual(previous.marks);expect(next.marks).not.toBe(previous.marks)
+    expect(next).not.toHaveProperty('authorId');expect(next).not.toHaveProperty('authorName');expect(next).not.toHaveProperty('recordedAt')
+    const baseline=odontogramContent(next)
+    expect(odontogramContent({...next,view:'temporary'})).toBe(baseline)
+    next.marks=paintMark(next.marks,36,'resin',['center'])
+    expect(odontogramContent(next)).not.toBe(baseline)
+    expect(next.marks.find(mark=>mark.tooth===55)?.condition).toBe('amalgam')
+    expect(previous).toEqual(before)
+    expect(continueOdontogram().marks).toEqual([])
+  })
   it('keeps independent colours, splits whole-tooth surface marks and never mutates a saved control',()=>{
     const control=blankOdontogram();control.marks=paintMark([],36,'caries',['all'])
     const original=structuredClone(control)

@@ -3,7 +3,7 @@ import { PGlite } from '@electric-sql/pglite'
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist'
 import { beforeAll,afterAll,describe,it,expect } from 'vitest'
 import { applyMigration,applyIncrementalMigration } from '../scripts/migrate-db.mjs'
-import { blankDentalRecord,blankOdontogram,paintMark } from '../src/modules/odontologia/model'
+import { blankDentalRecord,blankOdontogram,continueOdontogram,paintMark } from '../src/modules/odontologia/model'
 import type { DentalRecord,SavedDentalRecord } from '../src/modules/odontologia/model'
 import { blankRecord } from '../src/modules/podologia/model'
 import { patientIdentity } from '../src/core/types'
@@ -67,9 +67,12 @@ describe('odontology installation, privacy and immutable controls',()=>{
   const copy=structuredClone(current);copy.clinical.odontograms[0].marks=[]
   await expect(as(owner,()=>save(copy,1))).rejects.toMatchObject({code:'22023'})
   copy.clinical.odontograms=[];await expect(as(owner,()=>save(copy,1))).rejects.toThrow('ODONTOGRAM_IMMUTABLE')
-  const next=structuredClone(current);const fresh=blankOdontogram();fresh.marks=paintMark([],55,'sealant',['center']);fresh.authorId=other;next.clinical.odontograms.push(fresh)
+  const next=structuredClone(current);const fresh=continueOdontogram(current.clinical.odontograms.at(-1));fresh.marks=paintMark(paintMark(fresh.marks,36,'resin',['center']),55,'sealant',['center']);fresh.authorId=other;next.clinical.odontograms.push(fresh)
   await expect(as(owner,()=>save(next,1))).rejects.toMatchObject({code:'22023'});delete fresh.authorId
   current=await as(owner,()=>save(next,1));expect(current.version).toBe(2)
+  expect(current.clinical.odontograms.at(-1)!.marks.find(mark=>mark.condition==='resin')?.faces).toContain('center')
+  expect(current.clinical.odontograms.at(-1)!.marks.some(mark=>mark.condition==='amalgam')).toBe(true)
+  expect(current.clinical.odontograms.at(-1)!.authorId).toBe(owner)
   expect(current.clinical.odontograms[0].marks).toEqual(draft.clinical.odontograms[0].marks)
   const versions=await as(owner,()=>rpc<{id:number;version:number}[]>('list_chart_versions',[patientId,'odontologia',clinic]))
   const first=await as(owner,()=>rpc<SavedDentalRecord>('get_chart_revision',[patientId,versions.find(v=>v.version===1)!.id,clinic]))
