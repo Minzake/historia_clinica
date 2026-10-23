@@ -142,7 +142,7 @@ function Editor({ patientId,identityId }: { patientId?: string;identityId?:strin
   return <>
     <UnsavedChanges dirty={dirty || busy} saving={busy} />
     <Link className="back-link" to="/historias"><ArrowLeft size={15} />Historias clínicas</Link>
-    <div className="page-heading editor-heading"><div><p className="eyebrow">{saved ? `PACIENTE · ${patient.historyNumber}` : 'REGISTRO · NUEVO PACIENTE'}</p><h1>{saved ? patient.fullName : 'Nueva historia clínica'}</h1><p className="page-description">{saved ? `Último guardado: ${formatDate(saved.updatedAt)} · Versión ${saved.version}` : 'La ficha inicial se carga una vez. Después agregás cada consulta.'}</p></div>
+    <div className="page-heading editor-heading"><div><p className="eyebrow">{saved ? `PACIENTE · ${patient.historyNumber}` : 'PODOLOGÍA · NUEVA FICHA'}</p><h1>{saved ? patient.fullName : 'Nueva ficha de podología'}</h1><p className="page-description">{saved ? `Último guardado: ${formatDate(saved.updatedAt)} · Versión ${saved.version}` : 'La ficha inicial se carga una vez. Después agregás cada consulta.'}</p></div>
       <div className="button-row">{saved?.chartId&&membership.role==='owner'&&<button className="secondary-button" type="button" disabled={dirty||busy} onClick={()=>setAccessOpen(true)}>Asignar acceso</button>}{saved && canExport && <button className="secondary-button" type="button" onClick={() => setHistoryOpen(true)}><History size={16} />Versiones anteriores</button>}</div>
     </div>
     {loadError && <Notice>{loadError}</Notice>}

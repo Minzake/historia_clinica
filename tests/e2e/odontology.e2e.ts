@@ -53,7 +53,7 @@ test('specialty choices work with keyboard and touch on dashboard and clinical d
   await choices.getByRole('radio',{name:'Podología',exact:true}).focus()
   await page.keyboard.press('ArrowRight')
   await expect(choices.getByRole('radio',{name:'Odontología',exact:true})).toBeChecked()
-  await expect(page.getByRole('link',{name:'Nuevo paciente',exact:true})).toHaveAttribute('href','/historias/nueva?especialidad=odontologia')
+  await expect(page.getByRole('link',{name:'Nueva ficha',exact:true})).toHaveAttribute('href','/historias/nueva?especialidad=odontologia')
   await page.screenshot({path:testInfo.outputPath('especialidades-desktop.png'),fullPage:true})
   await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('link',{name:'Historias clínicas',exact:true}).click()
   await page.setViewportSize({width:375,height:812})
@@ -62,7 +62,7 @@ test('specialty choices work with keyboard and touch on dashboard and clinical d
   await expect(page.getByRole('link',{name:'Crear historia',exact:true})).toHaveAttribute('href','/historias/nueva?especialidad=odontologia')
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
   await page.screenshot({path:testInfo.outputPath('especialidades-mobile.png'),fullPage:true})
-  await page.getByRole('link',{name:'Nuevo paciente',exact:true}).click()
+  await page.getByRole('link',{name:'Nueva ficha',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Nueva ficha odontológica',exact:true})).toBeVisible()
 })
 

@@ -20,6 +20,6 @@ export function NewChartActions({specialties,value,onChange}:Props) {
         <span><Check size={14} aria-hidden="true"/><span>{specialty.name}</span></span>
       </label>)}</div>
     </fieldset>}
-    <Link className="primary-button" to={newChartUrl(value)}><Plus size={17} aria-hidden="true"/>Nuevo paciente</Link>
+    <Link className="primary-button" to={newChartUrl(value)}><Plus size={17} aria-hidden="true"/>Nueva ficha</Link>
   </div>
 }
