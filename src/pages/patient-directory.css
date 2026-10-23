@@ -1,0 +1,19 @@
+.patient-directory-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.patient-chart-action { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 9px 13px; border: 1px solid #ccdfd7; border-radius: 8px; background: #f2f7f4; color: #2f6552; text-decoration: none; }
+.patient-chart-action span { display: grid; gap: 3px; }
+.patient-chart-action strong { font-size: 12px; font-weight: 600; }
+.patient-chart-action small { font-size: 11px; font-weight: 400; color: #617c70; }
+.patient-chart-action--create { border-style: dashed; background: #fff; color: #60766b; }
+.patient-chart-action:hover { background: #e9f2ec; border-color: #87b09d; }
+.patient-more-action, .patient-edit-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 10px; border: 1px solid #dce5e1; border-radius: 8px; background: #fff; color: #526f62; cursor: pointer; font: inherit; }
+.patient-more-action:hover, .patient-more-action[aria-expanded="true"], .patient-edit-action:hover { background: #edf4ef; border-color: #a5c1b3; }
+.patient-actions-popover { position: fixed; inset: auto; margin: 0; width: 260px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; padding: 6px; border: 1px solid #d7e3dc; border-radius: 10px; box-shadow: 0 12px 36px #21483726; background: #fff; color: #345847; }
+.patient-actions-popover button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 6px; text-align: left; background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.patient-actions-popover button:hover { background: #edf4ef; }
+.patient-actions-popover svg { flex-shrink: 0; }
+.patient-actions-popover p { margin: 6px 6px 2px; padding: 12px 6px 4px; border-top: 1px solid #e5ece7; color: #788a80; font-size: 10px; }
+.patient-chart-action:focus-visible, .patient-more-action:focus-visible, .patient-edit-action:focus-visible, .patient-actions-popover button:focus-visible { outline: 2px solid #34765b; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .patient-directory-table .patient-directory-actions { padding-top: 6px; }
+  .patient-chart-action { flex: 1 1 120px; }
+}
