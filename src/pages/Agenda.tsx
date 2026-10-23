@@ -8,9 +8,12 @@ import type { Appointment } from '../lib/booking'
 import { useRemote } from '../hooks/useRemote'
 import { Field,Loading,Notice,SelectField } from '../components/ui'
 import { StaffAppointmentModal } from '../components/StaffAppointmentModal'
+import { WeekDays } from '../components/DayPicker'
+import { useNow } from '../hooks/useNow'
 import './agenda.css'
 
 export function Agenda() {
+  const now=useNow()
   const {membership}=useClinic()
   const config=useRemote(`agenda-config:${membership.clinicId}`,()=>getBookingSettings(membership.clinicId))
   const [day,setDay]=useState(()=>dateInZone()),[view,setView]=useState<'day'|'week'>('day')
@@ -57,12 +60,13 @@ export function Agenda() {
           </details>
         </div>
       </div>
+      {view==='day'&&<div className="agenda-week-strip"><WeekDays value={day} onChange={setDay} today={dateInZone(new Date(now),timezone)}/></div>}
       {agenda.loading?<Loading label="Cargando turnos…"/>:agenda.error?<div className="panel-content"><Notice>{bookingError(agenda.error)} <button className="text-button" onClick={agenda.reload}>Reintentar</button></Notice></div>:<div className={`agenda-days ${view==='week'?'week-view':''}`}>
         {days.map(date=>{
           const weekday=new Intl.DateTimeFormat('es-AR',{weekday:'short',timeZone:'UTC'}).format(new Date(`${date}T12:00:00Z`))
           const items=(agenda.data||[]).filter(item=>(showCancelled||item.status!=='cancelled')&&(!providerFilter||item.provider_id===providerFilter)&&dateInZone(item.starts_at,timezone)<=date&&dateInZone(item.ends_at,timezone)>=date&&Date.parse(item.ends_at)>Date.parse(zonedInstant(`${date}T00:00`,timezone))).sort((a,b)=>Date.parse(a.starts_at)-Date.parse(b.starts_at))
           return <section className="agenda-day" key={date} aria-label={`Turnos del ${formatDate(date)}`}>
-            <div className="agenda-day-heading"><div><span className="agenda-weekday">{weekday}</span><h2>{formatDate(date)}</h2><small>{items.length?`${items.length} ${items.length===1?'registro':'registros'}`:'Sin turnos'}</small></div><button className="text-button" aria-label={`Agregar turno el ${formatDate(date)}`} onClick={()=>open('consultation',date)}><Plus size={14}/>Agregar turno</button></div>
+            <div className="agenda-day-heading"><div><span className="agenda-weekday">{weekday}</span><h2>{formatDate(date)}</h2><small>{items.length?`${items.filter(item=>item.kind==='consultation').length} turnos${items.some(item=>item.kind==='block')?` · ${items.filter(item=>item.kind==='block').length} bloqueos`:''}`:'Sin turnos'}</small></div><button className="text-button" aria-label={`Agregar turno el ${formatDate(date)}`} onClick={()=>open('consultation',date)}><Plus size={14}/>Agregar turno</button></div>
             {!items.length?view==='week'?null:<div className="agenda-day-empty"><CalendarDays size={25}/><span>Este día está libre</span><button className="text-button" onClick={()=>open('consultation',date)}>Asignar un turno</button></div>:items.map(item=>{
               const person=config.data?.practitioners.find(p=>p.user_id===item.provider_id),service=config.data?.services?.find(s=>s.id===item.service_id)
               return <button key={item.id} className={`agenda-appointment agenda-row ${item.kind} ${item.status}`} onClick={()=>open(item.kind,date,item)}>

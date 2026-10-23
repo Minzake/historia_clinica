@@ -5,6 +5,7 @@ import { CalendarDays,FileText, House, LogOut, Settings2, ShieldCheck,Users } fr
 import { supabase, database, errorMessage } from './lib/supabase'
 import { getMemberships } from './lib/api'
 import { passwordSetupRequested } from './lib/auth-links'
+import { bookingReturn } from './lib/booking-navigation'
 import type { Membership } from './lib/model'
 import { ClinicContext } from './context'
 import { Loading, Notice } from './components/ui'
@@ -30,7 +31,7 @@ function App() {
   const [recovery, setRecovery] = useState(recoveryRequested)
   const [error, setError] = useState('')
   const navigate = useNavigate()
-  const {pathname}=useLocation()
+  const {pathname,search}=useLocation()
   useEffect(() => {
     if (!supabase) return
     let active = true
@@ -53,7 +54,8 @@ function App() {
   if (loading) return <Loading label="Verificando sesión…" />
   if (session&&recovery) return <AuthPage recovery onRecovered={() => { setRecovery(false); navigate('/', { replace: true }) }} />
   if(session&&!session.user.email_confirmed_at)return <main className="setup-page"><h1>Verificá tu correo</h1><Notice kind="info">Abrí el enlace de verificación o invitación que recibiste antes de continuar.</Notice><button className="secondary-button" onClick={()=>database().auth.signOut({scope:'local'})}>Cerrar sesión</button></main>
-  if(pathname==='/reservar'||pathname.startsWith('/reservar/'))return <Booking key={session?.user.id||'guest'} session={session} slug={pathname.split('/')[2]||''}/>
+  if(session&&['/','/registro','/mis-turnos'].includes(pathname)&&bookingReturn(search))return <Navigate to={bookingReturn(search)} replace/>
+  if(pathname==='/reservar'||pathname.startsWith('/reservar/'))return <Booking key={`${session?.user.id||'guest'}:${pathname}:${search}`} session={session} slug={pathname.split('/')[2]||''}/>
   if (!session) return <>{error && <Notice>{error}</Notice>}<AuthPage key={pathname==='/registro'?'register':'login'} register={pathname==='/registro'} /></>
   if(pathname==='/mis-turnos')return <ClientPortal key={session.user.id} session={session}/>
   return <Workspace key={session.user.id} session={session} />

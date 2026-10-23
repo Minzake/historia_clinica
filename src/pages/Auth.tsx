@@ -5,8 +5,11 @@ import { Link } from 'react-router-dom'
 import { database } from '../lib/supabase'
 import { Field, Notice, Form } from '../components/ui'
 import { dniError,normalizeDni,validateClientProfile,validEmail } from '../lib/validation'
+import { bookingReturn } from '../lib/booking-navigation'
 
 export function AuthPage({ recovery = false, register = false, onRecovered }: { recovery?: boolean; register?: boolean; onRecovered?: () => void }) {
+  const destination=bookingReturn(window.location.search)
+  const authQuery=destination?`?${new URLSearchParams({volver:destination,consultorio:destination.split('?')[0].split('/')[2]||''})}`:''
   const [forgot, setForgot] = useState(false)
   const [verification,setVerification]=useState(false)
   const [email, setEmail] = useState('')
@@ -71,7 +74,7 @@ export function AuthPage({ recovery = false, register = false, onRecovered }: { 
       <button className="primary-button auth-submit" type="submit" disabled={busy}>{busy ? 'Procesando…' : recovery ? 'Guardar contraseña' : verification?'Enviar verificación':forgot ? 'Enviar enlace' : register ? 'Crear mi cuenta' : 'Iniciar sesión'}<ArrowRight size={17} /></button>
       {!recovery && <button className="text-button" type="button" disabled={busy} onClick={() => { setForgot(verification?false:!forgot);setVerification(false); setError(''); setMessage(''); setPassword('');setConfirmation('') }}>{(forgot||verification) && <ArrowLeft size={14} />}{forgot||verification ? 'Volver al inicio de sesión' : '¿Olvidaste tu contraseña?'}</button>}
       {!recovery&&!verification&&!forgot&&<button className="text-button" type="button" disabled={busy} onClick={()=>{setVerification(true);setError('');setMessage('');setPassword('');setConfirmation('')}}>No recibí el correo de verificación</button>}
-      {!recovery&&<div className="auth-extra-links"><Link to={register?'/':'/registro'}>{register?'Ya tengo cuenta · Ingresar':'Soy paciente · Crear cuenta'}</Link><Link to="/reservar">Ver horarios y reservar</Link></div>}
+      {!recovery&&<div className="auth-extra-links"><Link to={`${register?'/':'/registro'}${authQuery}`}>{register?'Ya tengo cuenta · Ingresar':'Soy paciente · Crear cuenta'}</Link><Link to={destination||'/reservar'}>{destination?'Volver al horario elegido':'Ver horarios y reservar'}</Link></div>}
       {recovery && <button className="text-button" type="button" disabled={busy} onClick={async () => { await database().auth.signOut({ scope: 'local' }); window.location.assign('/') }}>Cancelar y volver al login</button>}
       <p className="auth-footnote">Información clínica confidencial. Si usás un dispositivo compartido, cerrá la sesión al terminar.</p>
     </Form></section>

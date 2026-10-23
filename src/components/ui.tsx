@@ -16,7 +16,7 @@ export function Loading({ label = 'Cargando…' }: { label?: string }) {
   return <div className="loading-state" role="status"><LoaderCircle size={22} className="spin" /><span>{label}</span></div>
 }
 
-export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Modal({ title, onClose, children,className='' }: { title: string; onClose: () => void; children: ReactNode;className?:string }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const dialog = ref.current!
@@ -24,7 +24,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
     dialog.showModal()
     return () => { dialog.close(); previous?.focus() }
   }, [])
-  return <dialog ref={ref} className="modal" aria-label={title} onCancel={(event) => { event.preventDefault(); onClose() }}>
+  return <dialog ref={ref} className={`modal ${className}`} aria-label={title} onCancel={(event) => { event.preventDefault(); onClose() }}>
     <div className="dialog-heading"><h2>{title}</h2><button className="close-button" type="button" aria-label="Cerrar" onClick={onClose}><X size={20} /></button></div>
     {children}
   </dialog>

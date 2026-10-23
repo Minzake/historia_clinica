@@ -1,0 +1,23 @@
+.schedule-date-picker { display: grid; gap: 14px; min-width: 0; }
+.schedule-date-input { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; }
+.schedule-date-input>.field { flex: 1; min-width: 150px; }
+.schedule-shortcuts { display: flex; gap: 4px; padding-bottom: 2px; }
+.schedule-shortcuts button { min-height: 40px; padding: 8px 10px; border: 0; border-radius: 6px; background: #f1f6f3; color: #3c6a55; font: inherit; font-size: 12px; cursor: pointer; }
+.schedule-week { min-width: 0; }
+.schedule-week-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: #637d6f; font-size: 12px; text-transform: capitalize; }
+.schedule-week-heading>div { display: flex; gap: 4px; }
+.schedule-week-heading button { display: grid; place-items: center; min-width: 36px; min-height: 36px; padding: 6px; border: 1px solid #dee8e1; border-radius: 6px; background: #fff; color: #456e59; cursor: pointer; }
+.schedule-week-days { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 5px; }
+.schedule-week-days button { position: relative; display: grid; justify-items: center; align-content: center; gap: 5px; min-height: 62px; padding: 8px 2px 11px; border: 1px solid #e0e8e2; border-radius: 8px; background: #fff; color: #52705f; cursor: pointer; font: inherit; }
+.schedule-week-days button>span { font-size: 10px; text-transform: capitalize; }
+.schedule-week-days button>strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.schedule-week-days button>i { position: absolute; bottom: 5px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.schedule-week-days button:hover:not(:disabled),.schedule-shortcuts button:hover:not(:disabled) { background: #edf5ef; border-color: #9cbeaa; }
+.schedule-week .schedule-week-days button[aria-pressed="true"] { background: #246f5c; border-color: #246f5c; color: #fff; }
+.schedule-week button:disabled,.schedule-shortcuts button:disabled { opacity: .35; cursor: default; }
+.schedule-week button:focus-visible,.schedule-shortcuts button:focus-visible { outline: 2px solid #246f5c; outline-offset: 2px; }
+.schedule-time-periods { display: flex; flex-wrap: wrap; gap: 6px; }
+.schedule-time-periods button { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 12px; border: 1px solid #d9e5dd; border-radius: 7px; background: #fff; color: #52735e; font: inherit; font-size: 12px; cursor: pointer; }
+.schedule-time-periods button small { color: inherit; opacity: .75; }
+.schedule-time-periods button[aria-pressed="true"] { background: #e9f3ee; border-color: #8eb59e; color: #24614a; }
+.schedule-time-periods button:focus-visible { outline: 2px solid #246f5c; outline-offset: 2px; }

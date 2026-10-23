@@ -151,6 +151,142 @@ test('public page remains closed until availability is configured',async({page})
   await expect(page.getByRole('link',{name:'Crear mi cuenta',exact:true})).toBeVisible()
 })
 
+test('a guest keeps the chosen day and time through login and confirms explicitly on mobile',async({page},testInfo)=>{
+  await page.setViewportSize({width:375,height:812})
+  await backend(page,false)
+  let reservations=0
+  page.on('request',request=>{if(request.url().endsWith('/rpc/book_appointment'))reservations++})
+  await page.goto('/reservar/consultorio')
+  await page.getByLabel('Día de la consulta').fill(formatDate(day))
+  const chosenDay=page.getByRole('group',{name:'Elegir un día',exact:true}).getByRole('button',{name:new RegExp(formatDate(day))})
+  await chosenDay.focus();await page.keyboard.press('Enter')
+  await expect(chosenDay).toHaveAttribute('aria-pressed','true')
+  await page.getByRole('button',{name:'09:30',exact:true}).click()
+  await page.screenshot({path:testInfo.outputPath('reserva-publica-mobile.png'),fullPage:true})
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true)
+  await page.getByRole('link',{name:'Ya tengo cuenta',exact:true}).click()
+  await expect(page).toHaveURL(/volver=/)
+  await page.getByRole('link',{name:'Soy paciente · Crear cuenta',exact:true}).click()
+  await page.getByRole('link',{name:'Ya tengo cuenta · Ingresar',exact:true}).click()
+  await page.getByLabel('Correo electrónico').fill('patient@example.com')
+  await page.getByLabel('Contraseña',{exact:true}).fill('safe-testing-password')
+  await page.getByRole('button',{name:'Iniciar sesión',exact:true}).click()
+  await expect(page).toHaveURL(/\/reservar\/consultorio\?/)
+  await expect(page.getByLabel('Día de la consulta')).toHaveValue(formatDate(day))
+  await expect(page.getByRole('button',{name:'09:30',exact:true})).toHaveAttribute('aria-pressed','true')
+  const confirm=page.getByRole('button',{name:'Confirmar turno',exact:true})
+  await expect(confirm).toBeEnabled()
+  expect(reservations).toBe(0)
+  await confirm.click()
+  await expect(page).toHaveURL(/\/mis-turnos$/)
+  await expect(page.getByText('09:30–10:00',{exact:true})).toBeVisible()
+  expect(reservations).toBe(1)
+})
+
+test('a restored time that became occupied is cleared before confirmation',async({page})=>{
+  await backend(page,false)
+  let occupied=false,reservations=0
+  await page.route('**/rpc/get_booking_slots',async route=>{
+    if(!occupied){await route.fallback();return}
+    const date=route.request().postDataJSON().p_date
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([`${date}T13:00:00+00:00`])})
+  })
+  page.on('request',request=>{if(request.url().endsWith('/rpc/book_appointment'))reservations++})
+  await page.goto('/reservar/consultorio')
+  await page.getByLabel('Día de la consulta').fill(formatDate(day))
+  await page.getByRole('button',{name:'09:30',exact:true}).click()
+  await page.getByRole('link',{name:'Ya tengo cuenta',exact:true}).click()
+  occupied=true
+  await page.getByLabel('Correo electrónico').fill('patient@example.com')
+  await page.getByLabel('Contraseña',{exact:true}).fill('safe-testing-password')
+  await page.getByRole('button',{name:'Iniciar sesión',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Confirmar turno',exact:true})).toBeDisabled()
+  await expect(page.getByText('Elegí un horario para continuar',{exact:true})).toBeVisible()
+  await expect(page.getByText('El horario que habías elegido ya no está disponible. Elegí otro.',{exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'09:30',exact:true})).toHaveCount(0)
+  expect(reservations).toBe(0)
+  await page.getByRole('button',{name:'10:00',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Confirmar turno',exact:true})).toBeEnabled()
+})
+
+test('empty dates offer the following day and quick navigation respects the booking range',async({page})=>{
+  await backend(page,false)
+  await page.route('**/rpc/get_booking_slots',async route=>{
+    if(route.request().postDataJSON().p_date!==day){await route.fallback();return}
+    await route.fulfill({status:200,contentType:'application/json',body:'[]'})
+  })
+  await page.goto('/reservar/consultorio')
+  const date=page.getByLabel('Día de la consulta')
+  await expect(page.getByRole('button',{name:'Ver semana anterior',exact:true})).toBeDisabled()
+  await date.fill(formatDate(day))
+  await page.getByRole('button',{name:'Ver día siguiente',exact:true}).click()
+  await expect(date).toHaveValue(formatDate(new Date(Date.parse(`${day}T12:00:00Z`)+86400000).toISOString().slice(0,10)))
+  await expect(page.getByRole('button',{name:'09:00',exact:true})).toBeVisible()
+  const max=await date.getAttribute('max')
+  await date.fill(formatDate(max!))
+  await expect(page.getByRole('button',{name:'Ver semana siguiente',exact:true})).toBeDisabled()
+  await page.getByRole('button',{name:'Hoy',exact:true}).click()
+  await expect(date).toHaveValue(formatDate((await date.getAttribute('min'))!))
+})
+
+test('a last-second booking conflict refreshes the choices instead of offering the occupied time again',async({page})=>{
+  await backend(page,false)
+  let taken=false
+  await page.route('**/rpc/book_appointment',async route=>{
+    taken=true
+    await route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({code:'23P01',message:'SLOT_UNAVAILABLE'})})
+  })
+  await page.route('**/rpc/get_booking_slots',async route=>{
+    if(!taken){await route.fallback();return}
+    const date=route.request().postDataJSON().p_date
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([`${date}T13:00:00Z`])})
+  })
+  await login(page,false)
+  await page.goto('/reservar/consultorio')
+  await page.getByLabel('Día de la consulta').fill(formatDate(day))
+  await page.getByRole('button',{name:'09:30',exact:true}).click()
+  await page.getByRole('button',{name:'Confirmar turno',exact:true}).click()
+  await expect(page.getByRole('alert')).toBeVisible()
+  await expect(page.getByRole('button',{name:'09:30',exact:true})).toHaveCount(0)
+  await expect(page.getByRole('button',{name:'Confirmar turno',exact:true})).toBeDisabled()
+  await page.getByRole('button',{name:'10:00',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Confirmar turno',exact:true})).toBeEnabled()
+})
+
+test('staff chooses an afternoon slot directly and the weekly agenda fits mobile without a sideways table',async({page},testInfo)=>{
+  await backend(page,true,true,{single:true})
+  let saved:Record<string,any>|undefined
+  page.on('request',request=>{if(request.url().endsWith('/rpc/save_staff_appointment'))saved=request.postDataJSON().p_data})
+  await login(page,true);await page.goto('/agenda')
+  await page.getByLabel('Fecha de la agenda').fill(formatDate(day))
+  await page.getByRole('button',{name:'Nuevo turno',exact:true}).click()
+  const dialog=page.getByRole('dialog')
+  await dialog.getByLabel('Buscar paciente por nombre o DNI').fill('Ana')
+  await dialog.getByRole('button',{name:'Ana Paciente · DNI 22334455',exact:true}).click()
+  await dialog.getByRole('button',{name:'Horarios de tarde',exact:true}).click()
+  await dialog.getByRole('button',{name:'13:00',exact:true}).click()
+  const nextDay=new Date(Date.parse(`${day}T12:00:00Z`)+86400000).toISOString().slice(0,10)
+  await dialog.getByLabel('Día del turno').fill(formatDate(nextDay))
+  await expect(dialog.getByRole('button',{name:'13:00',exact:true})).toHaveAttribute('aria-pressed','true')
+  await expect(dialog.getByText('Turno de 13:00 a 13:30',{exact:true})).toBeVisible()
+  await page.screenshot({path:testInfo.outputPath('asignacion-pc.png'),fullPage:true})
+  await page.setViewportSize({width:375,height:812})
+  await dialog.getByRole('button',{name:'Guardar turno',exact:true}).scrollIntoViewIfNeeded()
+  await expect(dialog.getByRole('button',{name:'Guardar turno',exact:true})).toBeInViewport({ratio:1})
+  await expect(dialog.getByText('Turno de 13:00 a 13:30',{exact:true})).toBeInViewport({ratio:1})
+  expect(await dialog.locator('.appointment-save-bar').evaluate(element=>parseFloat(getComputedStyle(element).paddingBottom))).toBeGreaterThanOrEqual(20)
+  expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true)
+  await page.screenshot({path:testInfo.outputPath('asignacion-mobile.png'),fullPage:true})
+  await dialog.getByRole('button',{name:'Guardar turno',exact:true}).click()
+  await expect(dialog).toHaveCount(0)
+  expect(saved).toMatchObject({name:'Ana Paciente',starts_at:`${nextDay}T16:00:00.000Z`,duration_minutes:30})
+  await page.getByLabel('Fecha de la agenda').fill(formatDate(nextDay))
+  await page.getByRole('button',{name:'Semana',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Ana Paciente',exact:true})).toBeVisible()
+  expect(await page.locator('.week-view').evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true)
+  await page.screenshot({path:testInfo.outputPath('semana-mobile.png'),fullPage:true})
+})
+
 test('invalid booking rules and reversed blocks stay editable and never reach the server', async ({page}) => {
   await backend(page,true,false)
   let saves=0

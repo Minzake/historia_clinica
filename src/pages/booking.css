@@ -1,0 +1,44 @@
+.booking-page .booking-info { position: sticky; top: 24px; }
+.booking-page .booking-form { overflow: visible; }
+.booking-page .booking-form h2 { margin-bottom: 8px; }
+.booking-form-intro { margin: 0 0 24px; color: #718575; font-size: 12px; line-height: 1.6; }
+.booking-rules summary { min-height: 30px; color: #416a54; font-size: 12px; cursor: pointer; }
+.booking-address-details { display: none; }
+.booking-time-group { margin-top: 20px; }
+.booking-time-group h3 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; color: #3e6751; font-size: 12px; }
+.booking-time-group h3 small { color: #809185; font-size: 10px; font-weight: 400; }
+.slot-picker .slot-button { min-height: 46px; border-radius: 7px; }
+.slot-picker .slot-button:focus-visible { outline: 2px solid #246f5c; outline-offset: 3px; }
+.booking-no-slots { display: grid; justify-items: start; gap: 8px; }
+.booking-checkout { margin-top: 24px; padding: 18px; border: 1px solid #d8e6dd; border-radius: 10px; background: #f4f8f5; }
+.booking-selection { display: flex; align-items: center; gap: 12px; color: #3b6b54; }
+.booking-selection>div { display: grid; flex: 1; gap: 6px; min-width: 0; }
+.booking-selection strong { font-size: 14px; overflow-wrap: anywhere; }
+.booking-selection span { color: #718375; font-size: 11px; line-height: 1.5; }
+.booking-checkout .booking-auth-prompt { margin: 12px 0 0; padding: 0; background: transparent; }
+.booking-auth-prompt p { line-height: 1.7; }
+.booking-auth-prompt .button-row>* { flex: 1; justify-content: center; }
+.booking-limit-note { margin-top: 18px; line-height: 1.6; }
+@media(max-width:760px) {
+  .booking-page .booking-info { position: static; }
+  .booking-page .booking-info .eyebrow { margin-top: 0; margin-bottom: 10px; }
+  .booking-page .booking-info h2 { margin-bottom: 12px; }
+  .booking-page .booking-info>p:not(.eyebrow) { margin: 8px 0; }
+}
+@media(max-width:560px) {
+  .booking-page .booking-workspace { padding-top: 20px; }
+  .booking-page .page-heading { margin-bottom: 20px; }
+  .booking-page .booking-info { padding: 16px; }
+  .booking-page .booking-info .eyebrow { display: none; }
+  .booking-page .booking-info h2 { margin-bottom: 8px; font-size: 19px; }
+  .booking-page .booking-info>p:not(.eyebrow) { margin: 6px 0; line-height: 1.4; font-size: 11px; }
+  .booking-page .booking-info>.booking-address { display: none; }
+  .booking-page .booking-address-details { display: block; }
+  .booking-page .booking-rules { margin-top: 10px; padding-top: 10px; }
+  .booking-page .booking-rules summary { min-height: 22px; font-size: 11px; }
+  .booking-page .booking-form { padding: 20px 16px; }
+  .booking-checkout { position: sticky; bottom: 8px; z-index: 2; padding: 14px; background: #f5f9f6; box-shadow: 0 6px 24px #24463614; }
+  .booking-checkout .booking-confirm { min-height: 48px; margin-top: 14px; }
+  .booking-checkout .booking-auth-prompt .button-row { flex-wrap: wrap; }
+  .booking-checkout .booking-auth-prompt .button-row>* { min-height: 44px; padding-inline: 12px; }
+}

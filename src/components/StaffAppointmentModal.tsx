@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useClinic } from '../context'
-import { bookingError, displayTime, getAgenda, localDateTime, plusDays, saveStaffAppointment, searchRegisteredPatients, zonedInstant } from '../lib/booking'
+import { bookingError, dateInZone, displayTime, getAgenda, localDateTime, plusDays, saveStaffAppointment, searchRegisteredPatients, zonedInstant } from '../lib/booking'
 import type { Appointment, AppointmentStatus, BookingSettings, OpeningHours, Practitioner, Service, StaffAppointmentInput } from '../lib/booking'
 import { appointmentOverlap, eligiblePractitioners, initialAppointmentService, initialAppointmentTime, suggestedAppointmentTimes } from '../lib/agenda-ui'
 import { useRemote } from '../hooks/useRemote'
@@ -13,6 +13,8 @@ import { UnsavedChanges } from './UnsavedChanges'
 import { canReadClinical, specialtyAccess } from '../core/access'
 import { dniError, normalizeDni } from '../lib/validation'
 import { listPatientIdentities } from '../core/patients'
+import { DayPicker } from './DayPicker'
+import { Check, Clock, Search, Sun, Sunset, UserRound } from 'lucide-react'
 
 type Props = {
   initial: Appointment | null; kind: 'consultation' | 'block'; day: string; timezone: string
@@ -50,6 +52,7 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   const [status, setStatus] = useState<AppointmentStatus>(initial?.status || 'confirmed')
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [allTimes, setAllTimes] = useState(false)
   const [more, setMore] = useState(false),[manualTime,setManualTime]=useState(Boolean(initial)),[durationOpen,setDurationOpen]=useState(false)
+  const [period,setPeriod]=useState<'morning'|'afternoon'>(()=>time<'12:00'?'morning':'afternoon')
   const [baseline, setBaseline] = useState(() => JSON.stringify({ provider, dateTime, service, duration, until, name, dni, email, phone, notes, accountId, status }))
   const autoSelected = useRef(Boolean(initial))
   const dirty = baseline !== JSON.stringify({ provider, dateTime, service, duration, until, name, dni, email, phone, notes, accountId, status })
@@ -68,7 +71,10 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   const conflictMessage = conflict ? `Se superpone con ${conflict.kind === 'block' ? 'un bloqueo' : 'otro turno'} de ${displayTime(conflict.starts_at, timezone)} a ${displayTime(conflict.ends_at, timezone)}. Elegí otro horario.` : ''
   const configuredHours = provider === settings.provider_id && service === settings.service_id && hours.length ? hours : undefined
   const times = start ? suggestedAppointmentTimes(date, timezone, minutes, provider, occupancy.data || [], configuredHours, now, initial?.id) : []
-  const firstTime = times[0] || ''
+  const morning=times.filter(time=>time<'12:00'),afternoon=times.filter(time=>time>='12:00')
+  const activePeriod=period==='morning'?(morning.length?'morning':'afternoon'):(afternoon.length?'afternoon':'morning')
+  const visibleTimes=activePeriod==='morning'?morning:afternoon
+  const firstTime = times.includes(time)?time:visibleTimes[0]||''
   useEffect(()=>{if(!findPatient)return;const timer=setTimeout(()=>setPatientSearch(patientQuery.trim()),300);return ()=>clearTimeout(timer)},[patientQuery,findPatient])
   useEffect(() => {
     if (block || autoSelected.current || occupancy.loading || occupancy.error || !provider || !firstTime) return
@@ -110,19 +116,19 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
       await saveStaffAppointment(membership.clinicId, initial, data); onSaved()
     } catch (err) { setError(bookingError(err)); setMore(true); occupancy.reload() } finally { setBusy(false) }
   }
-  return <Modal title={block ? initial ? 'Editar bloqueo' : 'Bloquear horario' : initial ? 'Editar turno' : 'Nuevo turno'} onClose={close}>
+  return <Modal className={`appointment-dialog ${block?'appointment-dialog--block':''}`} title={block ? initial ? 'Editar bloqueo' : 'Bloquear horario' : initial ? 'Editar turno' : 'Nuevo turno'} onClose={close}>
     <UnsavedChanges dirty={dirty} saving={busy}/>
     <Form className="staff-appointment-form" onSubmit={submit}>
-      <fieldset disabled={busy} className="settings-fields">
+      <fieldset disabled={busy} className="settings-fields appointment-fields">
         {!block&&<section className="appointment-form-section">
-          <h3>Paciente</h3>
+          <h3><UserRound size={17} aria-hidden="true"/>Paciente</h3>
           {findPatient&&!useAccount?<>
             <Field label="Buscar paciente por nombre o DNI" type="search" placeholder="Escribí un nombre o DNI" value={patientQuery} onChange={setPatientQuery} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();searchPatients()}}}/>
             {patientQuery.trim().length>=2&&((patientSearch!==patientQuery.trim()||patients.loading)?<p className="appointment-search-status" role="status">Buscando pacientes…</p>:patients.error?<Notice>{bookingError(patients.error)}</Notice>:<div className="patient-appointment-results" role="group" aria-label="Pacientes encontrados">
-              {patients.data?.patients.map(patient=><button type="button" className="secondary-button" key={patient.id} onClick={()=>{setName(patient.full_name);setDni(patient.dni);setPhone(patient.details.mobile||patient.details.phone||'');setEmail('');setCompactPatient(Boolean(patient.dni));setFindPatient(false)}}>{patient.full_name} · DNI {patient.dni||'no informado'}</button>)}
+              {patients.data?.patients.map(patient=><button type="button" className="secondary-button appointment-patient-result" key={patient.id} aria-label={`${patient.full_name} · DNI ${patient.dni||'no informado'}`} onClick={()=>{setName(patient.full_name);setDni(patient.dni);setPhone(patient.details.mobile||patient.details.phone||'');setEmail('');setCompactPatient(Boolean(patient.dni));setFindPatient(false)}}><UserRound size={18} aria-hidden="true"/><span><strong>{patient.full_name}</strong><small>DNI {patient.dni||'no informado'}</small></span><Check size={16} aria-hidden="true"/></button>)}
               {!patients.data?.patients.length&&<p className="section-subtitle">No encontramos coincidencias. Podés cargar sus datos.</p>}
             </div>)}
-            <button type="button" className="text-button" onClick={()=>{setCompactPatient(false);setFindPatient(false)}}>{name?'Volver a los datos del paciente':'Cargar un paciente nuevo'}</button>
+            <button type="button" className="secondary-button appointment-new-patient" onClick={()=>{setCompactPatient(false);setFindPatient(false)}}>{name?'Volver a los datos del paciente':'Cargar un paciente nuevo'}</button>
           </>:<>
             {compactPatient?<div className="appointment-selected-patient"><div><strong>{name}</strong><span>DNI {dni}</span></div><button type="button" className="text-button" onClick={()=>setCompactPatient(false)}>Ver datos</button></div>:<>
             <div className="field-grid patient-appointment-fields">
@@ -130,13 +136,13 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
               <Field label="DNI" validationMessage={dniError(dni,future&&status==='confirmed'&&!useAccount)} inputMode="numeric" maxLength={16} required={future&&status==='confirmed'&&!useAccount} value={dni} onChange={setDni} readOnly={useAccount}/>
             </div>
             </>}
-            {!useAccount&&!initial&&<button type="button" className="text-button" onClick={()=>setFindPatient(true)}>Buscar otro paciente</button>}
+            {!useAccount&&!initial&&<button type="button" className="text-button" onClick={()=>setFindPatient(true)}><Search size={14} aria-hidden="true"/>Buscar otro paciente</button>}
             {useAccount&&<p className="section-subtitle">Vinculado a su cuenta del portal de pacientes.</p>}
           </>}
         </section>}
 
         <section className="appointment-form-section">
-          <h3>{block?'Horario a bloquear':'Día y horario'}</h3>
+          <h3><Clock size={17} aria-hidden="true"/>{block?'Horario a bloquear':'Día y horario'}</h3>
           {!block&&availableServices.length>1&&<SelectField label="Prestación del turno" required value={service} onChange={event=>changeService(event.target.value)}>{availableServices.map(item=><option value={item.id} key={item.id}>{item.name} · {item.duration_minutes} min</option>)}</SelectField>}
           {eligible.length>1?<SelectField label="Profesional" required value={provider} onChange={event=>{autoSelected.current=Boolean(initial);setProvider(event.target.value);setAllTimes(false)}}><option value="">Seleccionar profesional</option>{eligible.map(person=><option key={person.user_id} value={person.user_id}>{person.display_name||person.email}</option>)}</SelectField>:eligible.length===1&&<p className="appointment-assignee"><span>Profesional</span><strong>{eligible[0].display_name||eligible[0].email}</strong></p>}
           {!eligible.length&&<Notice>No hay profesionales habilitados para esta prestación. Revisá sus permisos en Usuarios.</Notice>}
@@ -148,7 +154,7 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
             <Field label="Motivo del bloqueo (interno)" value={name} onChange={setName}/>
           </>:<>
             <div className="appointment-date-duration">
-              <Field label="Día del turno" type="date" required min="0001-01-01" max="9999-12-30" value={date} onChange={value=>{autoSelected.current=Boolean(initial);setDateTime(`${value}T${time}`);setAllTimes(false)}}/>
+              <DayPicker label="Día del turno" max="9999-12-30" value={date} today={dateInZone(new Date(now),timezone)} onChange={value=>{autoSelected.current=Boolean(initial);setDateTime(`${value}T${time}`);setAllTimes(false)}}/>
               <div className="appointment-duration-choice"><span>{duration||'—'} minutos{selectedService&&availableServices.length===1?` · ${selectedService.name}`:''}</span><button type="button" className="text-button" aria-expanded={durationOpen} onClick={()=>setDurationOpen(!durationOpen)}>{durationOpen?'Listo':'Cambiar duración'}</button></div>
             </div>
             {durationOpen&&<div className="appointment-duration">
@@ -158,16 +164,16 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
             {provider&&<div className="appointment-time-picker">
               <strong>Horarios disponibles</strong>
               {occupancy.loading?<p className="appointment-search-status" role="status">Consultando horarios…</p>:occupancy.error?<Notice>No pudimos consultar la disponibilidad. <button className="text-button" type="button" onClick={occupancy.reload}>Reintentar</button></Notice>:<>
-                <div className="appointment-times">{(allTimes?times:times.slice(0,8)).map(value=><button type="button" className="secondary-button" aria-pressed={time===value} key={value} onClick={()=>{autoSelected.current=true;setDateTime(`${date}T${value}`)}}>{value}</button>)}</div>
+                {morning.length>0&&afternoon.length>0&&<div className="schedule-time-periods" role="group" aria-label="Franja horaria"><button type="button" aria-label="Horarios de mañana" aria-pressed={activePeriod==='morning'} onClick={()=>{setPeriod('morning');setAllTimes(false)}}><Sun size={15} aria-hidden="true"/>Mañana<small>{morning.length}</small></button><button type="button" aria-label="Horarios de tarde" aria-pressed={activePeriod==='afternoon'} onClick={()=>{setPeriod('afternoon');setAllTimes(false)}}><Sunset size={15} aria-hidden="true"/>Tarde<small>{afternoon.length}</small></button></div>}
+                <div className="appointment-times">{(allTimes?visibleTimes:visibleTimes.slice(0,8)).map(value=><button type="button" className="secondary-button" aria-pressed={time===value} key={value} onClick={()=>{autoSelected.current=true;setDateTime(`${date}T${value}`)}}>{value}</button>)}</div>
                 {!times.length&&<p className="section-subtitle">No hay horarios sugeridos. Elegí otro día o ingresá una hora.</p>}
-                {times.length>8&&<button type="button" className="text-button" aria-expanded={allTimes} onClick={()=>setAllTimes(!allTimes)}>{allTimes?'Ver menos horarios':'Ver todos los horarios'}</button>}
+                {visibleTimes.length>8&&<button type="button" className="text-button" aria-expanded={allTimes} onClick={()=>setAllTimes(!allTimes)}>{allTimes?'Ver menos horarios':'Ver todos los horarios'}</button>}
               </>}
             </div>}
             <button type="button" className="text-button" aria-expanded={manualTime} onClick={()=>setManualTime(!manualTime)}>{manualTime?'Ocultar hora manual':'Ingresar otra hora'}</button>
             {manualTime&&<Field label="Hora de inicio" type="time" required value={time} validationMessage={conflictMessage} onChange={value=>{autoSelected.current=true;setDateTime(`${date}T${value}`)}}/>}
           </>}
           {conflictMessage&&<Notice>{conflictMessage}</Notice>}
-          {end&&<div className="appointment-summary" aria-live="polite"><strong>{block?'Bloqueo':'Turno'} de {displayTime(start,timezone)} a {displayTime(end,timezone)}</strong><span>{formatDate(start,timezone)} · {minutes} minutos</span></div>}
         </section>
 
         {!block&&<section className="appointment-form-section appointment-extra-options">
@@ -188,7 +194,7 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
       </fieldset>
       {initial?.contact_dni&&!block&&canReadClinical(membership)&&<p className="section-subtitle"><Link to={`/historias?q=${encodeURIComponent(initial.contact_dni)}`}>Buscar su ficha clínica por DNI</Link></p>}
       {error&&<Notice>{error}</Notice>}
-      <div className="dialog-actions"><button className="secondary-button" type="button" disabled={busy} onClick={close}>Cancelar</button><button className="primary-button" type="submit" disabled={busy||!eligible.length||occupancy.loading}>{busy?'Guardando…':block?'Guardar bloqueo':'Guardar turno'}</button></div>
+      <div className="dialog-actions appointment-save-bar"><div className="appointment-save-summary" aria-live="polite">{end?<><strong>{block?'Bloqueo':'Turno'} de {displayTime(start,timezone)} a {displayTime(end,timezone)}</strong><span>{formatDate(start,timezone)} · {minutes} minutos{!block&&name?` · ${name}`:''}</span></>:<span>Completá el día y el horario.</span>}</div><div className="button-row"><button className="secondary-button" type="button" disabled={busy} onClick={close}>Cancelar</button><button className="primary-button" type="submit" disabled={busy||!eligible.length||occupancy.loading}>{busy?'Guardando…':block?'Guardar bloqueo':'Guardar turno'}</button></div></div>
     </Form>
   </Modal>
 }

@@ -1,5 +1,5 @@
 import { formatDate } from '../core/format'
-import { useState } from 'react'
+import { useCallback,useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { Link,Navigate,useLocation } from 'react-router-dom'
 import { CalendarDays,LogOut,Plus,UserRound } from 'lucide-react'
@@ -33,17 +33,20 @@ function ClientAppointments({onChanged}:{onChanged:()=>void}) {
   const now=useNow()
   const [selected,setSelected]=useState<{appointment:MyAppointment;mode:'cancel'|'reschedule'}|null>(null)
   const [date,setDate]=useState(()=>dateInZone()),[slot,setSlot]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false)
+  const [slotAvailable,setSlotAvailable]=useState(false)
+  const [slotNotice,setSlotNotice]=useState(''),[availabilityAttempt,setAvailabilityAttempt]=useState(0)
+  const selectSlot=useCallback((value:string,reason?:'unavailable')=>{setSlot(value);setSlotNotice(reason?'El horario que habías elegido ya no está disponible. Elegí otro.':'')},[])
   async function save() {
-    if(!selected||busy)return
+    if(!selected||busy||(selected.mode==='reschedule'&&!slotAvailable))return
     setBusy(true);setError('')
     try {await changeMyAppointment(selected.appointment,selected.mode==='cancel'?null:slot);setSelected(null);onChanged();appointments.reload()}
-    catch(err){setError(bookingError(err));appointments.reload()}
+    catch(err){setError(bookingError(err));selectSlot('');setAvailabilityAttempt(current=>current+1);appointments.reload()}
     finally{setBusy(false)}
   }
   function choose(appointment:MyAppointment,mode:'cancel'|'reschedule'){
     const today=dateInZone(new Date(now),appointment.timezone),max=plusDays(today,appointment.advance_days)
     const original=dateInZone(appointment.starts_at,appointment.timezone)
-    setError('');setSlot('');setDate(original>=today&&original<=max?original:today);setSelected({appointment,mode})
+    setError('');selectSlot('');setDate(original>=today&&original<=max?original:today);setSelected({appointment,mode})
   }
   const ordered=[...(appointments.data||[])].sort((a,b)=>{
     const aFuture=isActiveAppointment(a,now),bFuture=isActiveAppointment(b,now)
@@ -54,6 +57,6 @@ function ClientAppointments({onChanged}:{onChanged:()=>void}) {
       const changeable=appointment.status==='confirmed'&&Date.parse(appointment.starts_at)>now+appointment.cancel_hours*3600000
       return <article className={`my-appointment ${appointment.status}`} key={appointment.id}><div className="appointment-date"><strong>{formatDate(appointment.starts_at,appointment.timezone)}</strong><span>{displayTime(appointment.starts_at,appointment.timezone)}–{displayTime(appointment.ends_at,appointment.timezone)}</span></div><div className="appointment-copy"><span className={`status-badge ${appointment.status}`}>{statusLabels[appointment.status]}</span><h3>{appointment.clinic_name||'Consultorio'}</h3><p>{appointment.provider_name}</p><p>{appointment.address}</p>{appointment.notification_state&&appointment.notification_state!=='sent'&&appointment.status==='confirmed'&&<small>El aviso por email está pendiente. Tu turno ya está confirmado.</small>}{(!changeable||!appointment.can_reschedule)&&isActiveAppointment(appointment,now)&&<small>Para reprogramar esta reserva, contactá al consultorio{appointment.phone?`: ${appointment.phone}`:'.'}</small>}</div><div className="appointment-actions">{changeable&&<>{appointment.can_reschedule&&<button className="secondary-button" onClick={()=>choose(appointment,'reschedule')}>Reprogramar</button>}<button className="text-button cancel-link" onClick={()=>choose(appointment,'cancel')}>Cancelar turno</button></>}</div></article>
     })}</div>}
-    {selected&&<Modal title={selected.mode==='cancel'?'¿Cancelar este turno?':'Reprogramar turno'} onClose={()=>{if(!busy)setSelected(null)}}>{selected.mode==='cancel'?<p>El horario quedará libre para otra persona y se registrará el aviso de cancelación.</p>:<SlotPicker disabled={busy} page={{slug:selected.appointment.slug,timezone:selected.appointment.timezone,advance_days:selected.appointment.advance_days}} date={date} onDate={setDate} selected={slot} onSelect={setSlot}/>}<p className="section-subtitle">Cambios permitidos hasta {selected.appointment.cancel_hours} horas antes del turno actual.</p>{error&&<Notice>{error}</Notice>}<div className="dialog-actions"><button className="secondary-button" disabled={busy} onClick={()=>setSelected(null)}>Volver</button><button className={selected.mode==='cancel'?'danger-button':'primary-button'} disabled={busy||(selected.mode==='reschedule'&&!slot)} onClick={save}>{busy?'Guardando…':selected.mode==='cancel'?'Confirmar cancelación':'Confirmar nuevo horario'}</button></div></Modal>}
+    {selected&&<Modal title={selected.mode==='cancel'?'¿Cancelar este turno?':'Reprogramar turno'} onClose={()=>{if(!busy)setSelected(null)}}>{selected.mode==='cancel'?<p>El horario quedará libre para otra persona y se registrará el aviso de cancelación.</p>:<SlotPicker key={`${selected.appointment.id}:${availabilityAttempt}`} disabled={busy} page={{slug:selected.appointment.slug,timezone:selected.appointment.timezone,advance_days:selected.appointment.advance_days}} date={date} onDate={setDate} selected={slot} onSelect={selectSlot} onAvailabilityChange={setSlotAvailable}/>}<p className="section-subtitle">Cambios permitidos hasta {selected.appointment.cancel_hours} horas antes del turno actual.</p>{slotNotice&&<Notice kind="info">{slotNotice}</Notice>}{error&&<Notice>{error}</Notice>}<div className="dialog-actions"><button className="secondary-button" disabled={busy} onClick={()=>setSelected(null)}>Volver</button><button className={selected.mode==='cancel'?'danger-button':'primary-button'} disabled={busy||(selected.mode==='reschedule'&&(!slot||!slotAvailable))} onClick={save}>{busy?'Guardando…':selected.mode==='cancel'?'Confirmar cancelación':'Confirmar nuevo horario'}</button></div></Modal>}
   </section>
 }

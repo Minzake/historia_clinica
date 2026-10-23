@@ -58,6 +58,42 @@
 .staff-appointment-form .appointment-extra-options{border-bottom:0;padding-bottom:0}
 .staff-appointment-form .appointment-extra-options .field textarea{min-height:68px}
 .staff-appointment-form .dialog-actions{margin-top:18px;padding:14px 0 2px;border-top:1px solid #e2eae4;box-shadow:0 -8px 14px #fff}
+.agenda-week-strip{padding:0 22px 18px;border-bottom:1px solid #e2eae4}
+.agenda-week-strip .schedule-week{max-width:650px}
+.agenda-week-strip .schedule-week-heading{margin-top:0}
+.modal.appointment-dialog{width:min(860px,calc(100% - 40px));border-radius:12px}
+.modal.appointment-dialog--block{width:min(580px,calc(100% - 32px))}
+.appointment-dialog .appointment-fields{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:start;column-gap:26px;row-gap:20px}
+.appointment-dialog .appointment-form-section{align-content:start;gap:16px}
+.appointment-dialog .appointment-form-section h3{display:flex;align-items:center;gap:9px}
+.appointment-dialog .appointment-form-section:nth-child(2){grid-column:2;grid-row:1 / span 3}
+.appointment-dialog .appointment-form-section:first-child,.appointment-dialog .appointment-extra-options{grid-column:1}
+.appointment-dialog .appointment-fields>.field{grid-column:1}
+.appointment-dialog .appointment-date-duration{grid-template-columns:1fr;gap:14px}
+.appointment-dialog .appointment-duration-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0}
+.appointment-dialog .appointment-duration-choice .text-button{flex-shrink:0;font-size:11px}
+.appointment-dialog .patient-appointment-fields{grid-template-columns:1fr}
+.appointment-dialog .appointment-new-patient{justify-content:center;min-height:44px;width:100%;border-style:dashed;font-size:12px}
+.appointment-dialog .appointment-patient-result{display:flex;align-items:center;gap:10px;min-height:60px;padding:12px;text-align:left;background:#f7faf8}
+.appointment-patient-result>span{display:grid;flex:1;gap:5px;min-width:0}
+.appointment-patient-result strong{font-size:12px;overflow-wrap:anywhere}.appointment-patient-result small{font-size:11px;font-weight:400;color:#7c8c81}.appointment-patient-result>svg:last-child{opacity:0}.appointment-patient-result:hover>svg:last-child{opacity:1}
+.appointment-dialog .appointment-times .secondary-button{min-height:44px}
+.appointment-dialog .schedule-time-periods button[aria-pressed=true]{background:#e9f3ee;color:#24614a;border-color:#8eb59e}
+.appointment-dialog .staff-appointment-form>.appointment-save-bar{justify-content:space-between;align-items:center;gap:16px;padding:16px 0 14px;bottom:-25px}
+.appointment-save-summary{display:grid;flex:1;gap:5px;min-width:0;color:#355f49;line-height:1.5}
+.appointment-save-summary strong{font-size:13px;font-weight:600}.appointment-save-summary span{font-size:11px;color:#798a7d;overflow-wrap:anywhere}
+.appointment-dialog--block .appointment-fields{grid-template-columns:1fr}
+.appointment-dialog--block .appointment-form-section{grid-column:1;grid-row:auto}
+@media(max-width:760px){
+  .appointment-dialog .appointment-fields{grid-template-columns:1fr}
+  .appointment-dialog .appointment-form-section:nth-child(2){grid-column:1;grid-row:auto}
+  .agenda-minimal .week-view{grid-template-columns:1fr;overflow:visible}
+  .agenda-minimal .week-view .agenda-day{padding:18px 16px;border-right:0;border-bottom:1px solid #e4ebe5}
+  .agenda-minimal .week-view .agenda-day-heading{flex-direction:row;align-items:center;margin-bottom:10px}
+  .agenda-minimal .week-view .agenda-row{grid-template-columns:55px minmax(0,1fr) auto;gap:10px;padding:12px}
+  .agenda-minimal .week-view .agenda-row-time{display:grid;gap:4px}
+  .agenda-minimal .week-view .agenda-row-status{gap:6px}
+}
 @media(max-width:760px){.agenda-toolbar-actions{flex:1;justify-content:flex-end}.agenda-professional-filter{max-width:180px}.agenda-minimal .agenda-toolbar{padding:16px}}
 @media(max-width:560px){
   .agenda-date-nav{width:100%;gap:6px;justify-content:space-between}.agenda-date-nav>.field{width:144px}.agenda-date-nav>.secondary-button{min-height:46px;padding-inline:9px}
@@ -67,4 +103,10 @@
   .agenda-row-time strong{font-size:13px}.agenda-row-status{gap:5px}.agenda-row-status .status-badge{font-size:9px;padding:5px 7px}.agenda-row-status>svg{display:none}
   .agenda-minimal .agenda-day-heading{gap:8px}.agenda-day-heading>div{gap:5px}.agenda-day-heading small{font-size:10px}
   .appointment-date-duration{grid-template-columns:1fr;gap:10px}.appointment-duration-choice{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .agenda-week-strip{padding:0 16px 16px}
+  .modal.appointment-dialog{width:100%;max-width:100%;max-height:96dvh;margin:auto auto 0;padding:18px 18px 12px;border-radius:16px 16px 0 0;border-bottom:0}
+  .appointment-dialog .dialog-heading{position:sticky;top:-18px;z-index:3;margin:-1px 0 18px;padding:12px 0;background:#fff;border-bottom:1px solid #e6ede7}
+  .appointment-dialog .staff-appointment-form>.appointment-save-bar{bottom:-12px;display:grid;grid-template-columns:1fr;gap:12px;padding:14px 0 max(20px,env(safe-area-inset-bottom))}
+  .appointment-save-bar>.button-row{display:grid;grid-template-columns:1fr 1.5fr;width:100%}
+  .appointment-save-bar .button-row>button{justify-content:center;min-height:48px}
 }
