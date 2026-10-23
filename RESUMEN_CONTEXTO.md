@@ -1,6 +1,22 @@
 # Resumen para continuar en un nuevo chat
 
-Actualizado: 21 de octubre de 2026.
+Actualizado: 22 de octubre de 2026.
+
+## Entorno de pruebas disponible
+
+- Opción elegida después: **entorno local**, porque Supabase rechazó Branching nativo con HTTP 402 (requiere Pro o superior). Solo quedó registrada la rama predeterminada `main`; no se creó una Preview nativa.
+- Ejecutar `npm run local` con Docker Desktop activo. Web `http://localhost:5173`, Studio `http://127.0.0.1:54323`, correo local `http://127.0.0.1:54324`. Detalles en `docs/entorno-local.md`.
+- Proyecto Docker `historia-clinica-local`, red ligada a loopback, PostgreSQL 17, Auth, REST, Studio y Mailpit; migraciones 001–005 aplicadas. Variables en `.env.testing.local`, ignorado por Git; modo Vite `testing` bloquea destinos remotos y envío externo de email.
+- El usuario autorizó expresamente copiar **solo las cuentas del equipo** para conservar las credenciales iniciales. Se copiaron los dos usuarios activos y sus hashes a Auth local, conservando UUID y roles; no se copiaron pacientes, sesiones ni claves remotas. Los cambios de contraseña posteriores no se sincronizan.
+- Verificado contra el stack local real: registro, correo capturado, login y APIs autenticadas; 146 pruebas unitarias/SQL, lint, TypeScript y build testing aprobados. Los avisos externos de turnos siguen deshabilitados; los correos Auth se consultan en Mailpit.
+- El entorno remoto separado descrito a continuación sigue existiendo; no se borró ni se cambió producción. La importación autorizada de cuentas se hizo al entorno local.
+
+- `develop` tiene base propia: proyecto Supabase `historia-clinica-develop`, referencia `mhddieetrmniazjrrkzg`, São Paulo. La referencia de producción sigue siendo `yzqcvnqrwgkxpztpqmrt`.
+- Preview estable: https://historia-clinica-git-develop-minzakes-projects.vercel.app. Variables Vercel con destino Preview y rama develop; no se modificaron las variables Production.
+- Migraciones 001–005 aplicadas y registradas en el proyecto de pruebas. Se verificaron login, membresía, guardado/lectura/exportación autorizada y denegación clínica a recepción contra Supabase real, con usuarios/datos temporales eliminados después.
+- Administrador de pruebas: `axelfiol12@gmail.com`, cuenta independiente sin copiar contraseña de producción; usar recuperación de contraseña para definirla. No se enviaron correos durante la preparación. Consultorio de pruebas vacío, podología habilitada, agenda pública cerrada y sin horarios.
+- Credenciales locales en `.env.develop.local`, ignorado por Git. Para Vite: `npm run dev -- --mode develop`. No asumir que `npm run db:migrate` apunta a develop: carga `.env.local`.
+- Detalles operativos: `docs/entorno-develop.md`. El resto de este resumen incluye contexto histórico anterior; para el modelo modular, consultar `docs/implementacion-multiespecialidad.md`.
 
 ## Proyecto y objetivo
 

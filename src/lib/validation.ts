@@ -54,15 +54,15 @@ export function validateBookingSettings(settings: BookingSettings, hours: Openin
   if (settings.provider_name.length > 120) return 'El nombre público no puede superar los 120 caracteres.'
   if (settings.enabled && (!settings.provider_id || !settings.provider_name.trim() || !hours.length)) return 'Antes de habilitar reservas elegí a la profesional, completá su nombre público y agregá al menos una franja horaria.'
   if (hours.length > 28) return 'Podés configurar hasta 28 franjas horarias.'
-  return Object.values(openingHourErrors(hours))[0] || ''
+  return Object.values(openingHourErrors(hours,settings.duration_minutes||30))[0] || ''
 }
 
-export function openingHourErrors(hours: OpeningHours[]): Record<number, string> {
+export function openingHourErrors(hours: OpeningHours[],minimumMinutes=30): Record<number, string> {
   const errors: Record<number, string> = {}
   const minute = (time: string) => /^\d{2}:\d{2}$/.test(time) && Number(time.slice(0, 2)) < 24 && Number(time.slice(3)) < 60 ? Number(time.slice(0, 2)) * 60 + Number(time.slice(3)) : Number.NaN
   for (const [index, hour] of hours.entries()) {
     const opens = minute(hour.opens), closes = minute(hour.closes)
-    if (!Number.isInteger(hour.weekday) || hour.weekday < 0 || hour.weekday > 6 || !Number.isFinite(opens) || !Number.isFinite(closes) || closes - opens < 30) errors[index] = 'Cada franja debe tener un día válido y durar al menos 30 minutos, sin cruzar la medianoche.'
+    if (!Number.isInteger(hour.weekday) || hour.weekday < 0 || hour.weekday > 6 || !Number.isFinite(opens) || !Number.isFinite(closes) || closes - opens < minimumMinutes) errors[index] = `Cada franja debe tener un día válido y durar al menos ${minimumMinutes} minutos, sin cruzar la medianoche.`
     else if (hours.slice(0, index).some(other => other.weekday === hour.weekday && minute(other.opens) < closes && opens < minute(other.closes))) errors[index] = 'Las franjas horarias del mismo día no pueden superponerse.'
   }
   return errors

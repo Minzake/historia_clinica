@@ -22,6 +22,9 @@ async function fakeBackend(page: Page) {
     else if (url.pathname === '/auth/v1/user') body = user
     else if (url.pathname === '/auth/v1/logout') { await route.fulfill({ status: 204 }); return }
     else if (url.pathname === '/rest/v1/clinic_members') body = [{ clinic_id: '20000000-0000-4000-8000-000000000001', role: 'owner', clinics: { settings: clinic, version: 1 } }]
+    else if (url.pathname === '/rest/v1/rpc/list_my_memberships') body=[{clinicId:'20000000-0000-4000-8000-000000000001',role:'owner',clinic,version:1,specialties:[{specialtyId:'podologia',name:'Podología',canRead:true,canWrite:true,canExport:true,scope:'all'}]}]
+    else if (url.pathname === '/rest/v1/rpc/get_clinic_dashboard' || url.pathname === '/rest/v1/rpc/list_clinical_patients') body={patients:saved?[{id:saved.id,full_name:saved.patient.fullName,history_number:saved.patient.historyNumber,dni:saved.patient.dni,updated_at:saved.updatedAt}]:[],count:saved?1:0,evolutions:saved?.evolutions.length||0}
+    else if (url.pathname === '/rest/v1/rpc/list_chart_versions') body=[]
     else if (url.pathname === '/rest/v1/patients') {
       body = saved ? [{ id: saved.id, full_name: saved.patient.fullName, history_number: saved.patient.historyNumber, dni: saved.patient.dni, updated_at: saved.updatedAt }] : []
       headers['content-range'] = saved ? '0-0/1' : '*/0'
@@ -33,7 +36,7 @@ async function fakeBackend(page: Page) {
       saved = { ...args.p_record, id: patientId, version: args.p_expected_version + 1, updatedAt: new Date().toISOString() }
       saved.patient.historyNumber ||= 'HC-000001'
       body = saved
-    } else if (url.pathname === '/rest/v1/rpc/get_patient_record') body = saved
+    } else if (url.pathname === '/rest/v1/rpc/get_patient_record' || url.pathname === '/rest/v1/rpc/get_clinical_chart') body = saved
     else if (url.pathname === '/rest/v1/clinical_record_versions') body = []
     else throw new Error(`Unexpected mocked endpoint: ${url.pathname}`)
     await route.fulfill({ status: 200, headers, body: request.method() === 'HEAD' ? '' : JSON.stringify(body) })
@@ -54,7 +57,7 @@ test('login, patient creation, persistence, search, continuous PDF and logout', 
   await fakeBackend(page)
   await login(page)
   await page.screenshot({ path: testInfo.outputPath('inicio.png'), fullPage: true })
-  await page.getByRole('link', { name: 'Nuevo paciente', exact: true }).click()
+  await page.getByRole('link', { name: 'Nueva ficha', exact: true }).click()
   await page.getByLabel('Apellido y nombre *').fill('María Paciente de prueba')
   await page.getByLabel('DNI', { exact: true }).fill('12345678')
   await page.getByRole('button', { name: 'Guardar historia', exact: true }).click()
@@ -101,7 +104,7 @@ test('mobile forms and navigation stay within the viewport', async ({ page }, te
   await page.goto('/')
   await page.screenshot({ path: testInfo.outputPath('login-mobile.png'), fullPage: true })
   await login(page)
-  await page.getByRole('link', { name: 'Nuevo paciente', exact: true }).click()
+  await page.getByRole('link', { name: 'Nueva ficha', exact: true }).click()
   await page.getByLabel('Apellido y nombre *').fill('Paciente móvil')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('ficha-mobile.png'), fullPage: true })

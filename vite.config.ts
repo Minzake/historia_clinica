@@ -1,13 +1,16 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
+import { assertLocalEnvironment } from './scripts/local-environment.mjs'
 
 // https://vite.dev/config/
-export default defineConfig(({mode}) => ({
+export default defineConfig(({mode}) => {
+  const env={...loadEnv(mode,process.cwd(),''),...process.env,NODE_ENV:'development'}
+  if(mode==='testing')assertLocalEnvironment(env)
+  return ({
   plugins: [react(), {
     name: 'local-server-api',
     configureServer(server) {
       // Server-only: never inject this object with define/envPrefix into browser code.
-      const env={...loadEnv(mode,process.cwd(),''),...process.env,NODE_ENV:'development'}
       server.middlewares.use(async (req,res,next) => {
         const path=req.url?.split('?')[0]
         if(path!=='/api/team'&&path!=='/api/notifications')return next()
@@ -18,4 +21,4 @@ export default defineConfig(({mode}) => ({
       })
     },
   }],
-}))
+})})

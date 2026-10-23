@@ -6,6 +6,8 @@
 .brand-mark { width: 40px; height: 40px; display: grid; flex: 0 0 auto; place-items: center; overflow: hidden; padding: 2px; border-radius: 8px; background: var(--brand-beige); }
 .brand-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .topbar-actions { display: flex; align-items: center; gap: 20px; }
+.clinic-switcher { display:grid;gap:3px;font-size:10px; }
+.clinic-switcher select { width:190px;max-width:100%;min-height:38px;padding:7px;border:1px solid #83ae9f;border-radius:4px;background:#fff;color:#193a38; }
 .privacy-label { display: inline-flex; align-items: center; gap: 7px; color: #f0f7f3; font-size: 11px; white-space: nowrap; }
 .account-email { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 .icon-button, .download-button, .primary-button, .secondary-button, .close-button, .danger-button { font: inherit; cursor: pointer; text-decoration: none; }
@@ -32,6 +34,25 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .text-button, .text-link { display: inline-flex; align-items: center; gap: 6px; padding: 0; color: #246f5c; border: 0; background: transparent; text-decoration: none; font: 600 12px var(--sans); cursor: pointer; }
 .text-button:hover, .text-link:hover { text-decoration: underline; }
 .button-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.new-chart-actions { display:flex; align-items:flex-end; gap:12px; flex-shrink:0; }
+.specialty-choice { min-width:0; margin:0; padding:0; border:0; }
+.specialty-choice legend { margin-bottom:7px; padding:0; color:#60766c; font-size:11px; font-weight:600; }
+.specialty-options { display:flex; gap:3px; padding:4px; border:1px solid #d7e2db; border-radius:9px; background:#eaf0ec; }
+.specialty-option { position:relative; flex:1; cursor:pointer; }
+.specialty-option > span { display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:0 12px; border:1px solid transparent; border-radius:6px; color:#5b7065; font-size:12px; font-weight:600; white-space:nowrap; transition:background .15s,color .15s,box-shadow .15s; }
+.specialty-option svg { flex-shrink:0; visibility:hidden; }
+.specialty-option:hover > span { color:#1c6551; background:#f4f8f5; }
+.specialty-option input:checked + span { color:#1c6551; background:#fff; border-color:#cdded4; box-shadow:0 1px 3px #1e4a3610; }
+.specialty-option input:checked + span svg { visibility:visible; }
+.specialty-option input:focus-visible + span { outline:2px solid #246f5c; outline-offset:2px; }
+.new-chart-actions > .primary-button { min-height:46px; border-radius:7px; }
+@media (max-width:900px) {
+  .page-heading:has(.new-chart-actions) { flex-wrap:wrap; }
+}
+@media (max-width:600px) {
+  .new-chart-actions { width:100%; flex-direction:column; align-items:stretch; gap:10px; }
+  .specialty-option > span { min-height:42px; padding-inline:10px; font-size:13px; }
+}
 .notice { margin: 12px 0; padding: 12px 15px; border: 1px solid #e9c8bf; border-left: 3px solid #ad5941; border-radius: 3px; color: #7f3a27; background: #fff7f3; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .notice-success { border-color: #c9dfd0; border-left-color: #438761; color: #235d3d; background: #f2f9f3; }
 .notice-info { border-color: #cdded9; border-left-color: #648f81; color: #3e6659; background: #f7fbf8; }
@@ -134,6 +155,12 @@ input, select, textarea, [tabindex="-1"] { scroll-margin-block: 90px; }
 .field .short-notes { min-height: 65px; }
 .field input:focus, .field textarea:focus, .field select:focus, .notes-input:focus { border-color: #529387; box-shadow: 0 0 0 3px rgba(61, 133, 119, .12); }
 .field input::placeholder, .field textarea::placeholder { color: #71847c; }
+.date-input-control { position:relative;min-width:0; }
+.field .date-input-control>input:first-child { padding-right:42px; }
+.date-calendar-button { position:absolute;right:1px;top:1px;bottom:1px;width:38px;display:grid;place-items:center;border:0;border-radius:3px;background:transparent;color:#466c5d;cursor:pointer; }
+.date-calendar-button:hover:not(:disabled) { background:#edf3ef; }
+.date-calendar-button:focus-visible { outline:2px solid #246f5c;outline-offset:1px; }
+.field .date-calendar-input { position:absolute;bottom:0;right:0;width:1px;min-height:0;height:1px;padding:0;border:0;opacity:0;pointer-events:none; }
 .personal-grid .field:nth-child(3), .personal-grid .field:nth-child(4), .personal-grid .field:nth-child(12) { grid-column: span 2; }
 .health-table { width: 100%; border-collapse: collapse; min-width: 390px; border: 1px solid #d8e4d9; text-align: left; }
 .health-table thead th { padding: 11px 12px; color: #617868; background: #f3f7f1; font-size: 10px; font-weight: 600; }
@@ -395,7 +422,39 @@ input, select, textarea, [tabindex="-1"] { scroll-margin-block: 90px; }
 .toggle-field { display:flex; align-items:center; gap:10px; padding:16px; background:#f2f7ec; border:1px solid #d8e6ce; border-radius:4px; color:#49673f; font-size:12px; font-weight:600; }
 .toggle-field input { accent-color:#246f5c; width:18px; height:18px; }
 .opening-hours { display:grid; gap:12px; }
+.agenda-config-navigation { margin-bottom:20px; }
+.agenda-config-navigation .button-row { align-items:end; }
+.service-list { display:grid;gap:8px;margin:16px 0 22px; }
 .registered-account-picker { display:grid; gap:12px; }
+.public-link-card { display:grid; gap:14px; padding:20px; border:1px solid #cedfca; border-radius:6px; background:#f6faf2; min-width:0; }
+.public-link-card h3, .public-link-card p { margin:0; }
+.public-link-card p { font-size:12px; line-height:1.6; color:#647a5f; }
+.public-link-url { overflow-wrap:anywhere; color:#246f5c; font-weight:600; font-size:14px; user-select:all; }
+.agenda-day-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:18px; }
+.agenda-day-heading h2 { margin:0; font-size:13px; text-transform:capitalize; }
+.agenda-day-heading .text-button { display:flex; align-items:center; gap:4px; }
+.week-view .agenda-day-heading { align-items:start; flex-direction:column; gap:6px; }
+.staff-appointment-form .settings-fields { gap:20px; }
+.appointment-form-section { display:grid; gap:16px; padding-bottom:20px; border-bottom:1px solid #e0e9da; min-width:0; }
+.appointment-form-section h3 { margin:0; font-size:14px; color:#355d43; }
+.appointment-form-section > .text-button { justify-self:start; text-align:left; }
+.patient-appointment-results { display:grid; gap:8px; max-height:220px; overflow:auto; }
+.patient-appointment-results button { text-align:left; overflow-wrap:anywhere; }
+.patient-appointment-fields { grid-template-columns:1.6fr 1fr; }
+.appointment-duration { display:grid; gap:12px; }
+.appointment-duration .field { max-width:190px; }
+.appointment-time-picker > strong { font-size:12px; }
+.appointment-times { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+.appointment-times .secondary-button { justify-content:center; padding:8px; }
+.staff-appointment-form button[aria-pressed="true"] { color:#fff; background:#337458; border-color:#337458; }
+.appointment-summary { display:grid; gap:6px; padding:16px; background:#eef6e9; border-radius:5px; font-size:13px; }
+.appointment-summary span { font-size:12px; }
+.staff-appointment-form > .dialog-actions { position:sticky; bottom:-25px; z-index:1; padding:16px 0 0; background:#fff; box-shadow:0 -10px 12px #fff; }
+@media(max-width:540px) {
+  .patient-appointment-fields { grid-template-columns:1fr; }
+  .public-link-card { padding:16px; }
+  .staff-appointment-form > .dialog-actions { bottom:-18px; padding-bottom:8px; }
+}
 .account-search { display:flex; gap:10px; align-items:end; }
 .account-search .field { flex:1; }
 .opening-hour { display:grid; grid-template-columns:1.4fr 1fr 1fr 36px; gap:14px; align-items:end; padding:15px; border:1px solid #dce6d5; border-radius:4px; background:#fafcf7; }
@@ -475,6 +534,9 @@ input, select, textarea, [tabindex="-1"] { scroll-margin-block: 90px; }
 /* Comfortable targets and readable controls on touch screens. */
 @media (max-width: 560px) {
   .main-navigation { display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0; padding-inline: 6px; overflow: visible; }
+  .topbar { flex-wrap:wrap; }
+  .clinic-switcher select { width:160px;font-size:16px; }
+  .topbar-actions { flex-wrap:wrap; }
   .main-navigation a { flex-direction: column; justify-content: center; gap: 4px; min-height: 62px; padding: 7px 2px; text-align: center; font-size: 10px; }
   .main-navigation a svg { width: 18px; height: 18px; }
   .main-navigation > span { display: none; }
@@ -504,3 +566,4 @@ input, select, textarea, [tabindex="-1"] { scroll-margin-block: 90px; }
   .history-table .table-actions { flex-wrap: wrap; justify-content: flex-start; gap: 12px; }
   .history-table .table-actions a { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; }
 }
+.environment-banner { padding: 8px 16px; background: #fff3cd; color: #594313; text-align: center; font-size: 13px; font-weight: 600; }

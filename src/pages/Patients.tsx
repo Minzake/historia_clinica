@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Plus, Search, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Search, Users } from 'lucide-react'
 import { useClinic } from '../context'
 import { listPatients } from '../lib/api'
 import type { PatientSummary } from '../lib/model'
 import { errorMessage } from '../lib/supabase'
 import { Loading, Notice } from '../components/ui'
 import { PatientList } from '../components/PatientList'
+import { NewChartActions } from '../components/NewChartActions'
+import { canReadClinical } from '../core/access'
+import { newChartUrl,writableSpecialties } from '../core/specialties'
 
 export function Patients() {
+  const {membership}=useClinic()
+  return canReadClinical(membership)?<ClinicalPatients/>:<Notice>Tu cuenta no tiene acceso al archivo clínico. Podés gestionar los datos personales desde Pacientes.</Notice>
+}
+function ClinicalPatients() {
   const { membership } = useClinic()
+  const available=writableSpecialties(membership)
+  const [selectedSpecialty,setSpecialty]=useState<string>(available[0]?.id||'podologia')
+  const specialty=available.find(item=>item.id===selectedSpecialty)?.id||available[0]?.id||'podologia'
+  const creationUrl=newChartUrl(specialty)
   const [params, setParams] = useSearchParams()
   const query = params.get('q') || ''
   const [page, setPage] = useState(0)
@@ -30,9 +41,9 @@ export function Patients() {
     return () => { active = false; window.clearTimeout(timeout) }
   }, [membership.clinicId, query, page, key])
   return <>
-    <div className="page-heading"><div><p className="eyebrow">PACIENTES · ARCHIVO CLÍNICO</p><h1>Historias clínicas</h1><p className="page-description">Encontrá la primera hoja y continuá el seguimiento de cada paciente.</p></div><Link className="primary-button" to="/historias/nueva"><Plus size={17} />Nuevo paciente</Link></div>
+    <div className="page-heading"><div><p className="eyebrow">PACIENTES · ARCHIVO CLÍNICO</p><h1>Historias clínicas</h1><p className="page-description">Encontrá la primera hoja y continuá el seguimiento de cada paciente.</p></div><NewChartActions specialties={available} value={specialty} onChange={setSpecialty}/></div>
     <section className="panel"><div className="list-toolbar"><label className="list-search"><Search size={18} /><span className="sr-only">Buscar por nombre, DNI o número de historia</span><input type="search" maxLength={100} value={query} placeholder="Nombre, DNI o n.º de historia clínica" onChange={(event) => { setPage(0); setParams(event.target.value ? { q: event.target.value } : {}, { replace: true }) }} /></label><span className="result-count" role="status">{loading ? 'Buscando…' : `${count} ${count === 1 ? 'paciente' : 'pacientes'}`}</span></div>
-      {error ? <div className="panel-content"><Notice>{error}</Notice><button className="secondary-button" onClick={() => setAttempt(attempt + 1)}>Reintentar</button></div> : loading ? <Loading label="Buscando historias…" /> : patients.length ? <PatientList patients={patients} /> : <div className="empty-state"><Users size={30} /><h3>{query ? 'No encontramos coincidencias' : 'Todavía no hay pacientes'}</h3><p>{query ? 'Probá con otro nombre, DNI o número de historia.' : 'Creá una historia para empezar a registrar consultas.'}</p>{query ? <button className="secondary-button" onClick={() => { setPage(0); setParams({}) }}>Limpiar búsqueda</button> : <Link className="primary-button" to="/historias/nueva">Crear historia</Link>}</div>}
+      {error ? <div className="panel-content"><Notice>{error}</Notice><button className="secondary-button" onClick={() => setAttempt(attempt + 1)}>Reintentar</button></div> : loading ? <Loading label="Buscando historias…" /> : patients.length ? <PatientList patients={patients} /> : <div className="empty-state"><Users size={30} /><h3>{query ? 'No encontramos coincidencias' : 'Todavía no hay pacientes'}</h3><p>{query ? 'Probá con otro nombre, DNI o número de historia.' : 'Creá una historia para empezar a registrar consultas.'}</p>{query ? <button className="secondary-button" onClick={() => { setPage(0); setParams({}) }}>Limpiar búsqueda</button> : <Link className="primary-button" to={creationUrl}>Crear historia</Link>}</div>}
       {!loading && !error && count > pageSize && <div className="list-pagination"><span>Página {page + 1} de {Math.ceil(count / pageSize)}</span><div className="button-row"><button className="secondary-button" disabled={page === 0} onClick={() => setPage(page - 1)}><ArrowLeft size={14} />Anterior</button><button className="secondary-button" disabled={(page + 1) * pageSize >= count} onClick={() => setPage(page + 1)}>Siguiente<ArrowRight size={14} /></button></div></div>}
     </section>
   </>

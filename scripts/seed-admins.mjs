@@ -92,7 +92,9 @@ export async function seedAdmins(client, options, projectUrl) {
   const users = await findUsers(client, options.emails)
   const missing = options.emails.filter((email) => !users.has(email))
   const ids = [...users.values()].map((user) => user.id)
-  const memberships = ids.length ? failed(await client.from('clinic_members').select('user_id,clinic_id,role,active').in('user_id', ids), 'MEMBERSHIPS', 'No se pudieron comprobar las asignaciones existentes.') : []
+  const allMemberships = ids.length ? failed(await client.from('clinic_members').select('user_id,clinic_id,role,active').in('user_id', ids), 'MEMBERSHIPS', 'No se pudieron comprobar las asignaciones existentes.') : []
+  // An explicit center scopes this run; memberships in other centers are preserved.
+  const memberships = options.clinicId ? allMemberships.filter(member=>member.clinic_id===options.clinicId) : allMemberships
   const assignedClinics = [...new Set(memberships.map((member) => member.clinic_id))]
   if (!options.apply) return {
     mode: 'check', schema: 'ready', ready: missing.length === 0 && assignedClinics.length === 1 && memberships.every((member) => member.role === 'owner'&&member.active!==false)

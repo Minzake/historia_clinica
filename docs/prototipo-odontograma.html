@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Propuesta de ficha odontológica por paciente</title>
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;color:var(--foreground,#293d35);font:14px/1.55 var(--font-sans,system-ui,sans-serif)}h1{font-size:25px;line-height:1.2;margin:0 0 8px;font-weight:650}h2{font-size:18px;margin:0}h3{font-size:13px;margin:0 0 9px}p{margin:0}button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.55}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--ring,#4e8d70);outline-offset:3px}.intro,.muted{color:var(--muted-foreground,#687b70)}.intro{margin-bottom:18px}.demo-note{border-left:3px solid var(--warning,#b28e49);padding-left:12px;font-size:12px;color:var(--muted-foreground,#687b70);margin-bottom:20px}.patient-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--border,#d5e2d8);margin-bottom:18px}.eyebrow{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--muted-foreground,#687b70);margin-bottom:5px}.patient-head strong{font-size:16px}.patient-head small{display:block;color:var(--muted-foreground,#687b70);font-size:11px}.tag{align-self:center;font-size:11px;padding:6px 10px;border:1px solid var(--border,#d5e2d8);border-radius:20px}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}.tabs button,.secondary{border:1px solid var(--border,#d5e2d8);background:var(--card,#fff);border-radius:7px;padding:9px 12px;font-size:12px}.tabs button[aria-selected=true]{background:var(--primary,#2f6e54);border-color:var(--primary,#2f6e54);color:var(--primary-foreground,#fff)}.panel[hidden]{display:none}.card{border:1px solid var(--border,#d5e2d8);border-radius:var(--radius,9px);background:var(--card,#f7faf6);padding:18px;margin-bottom:18px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:6px;align-content:start;font-size:12px}.field>span{font-weight:600}.field small{font-size:11px;color:var(--muted-foreground,#687b70)}input,select,textarea{width:100%;min-width:0;padding:10px 11px;min-height:42px;border:1px solid var(--input,var(--border,#c9dace));border-radius:6px;background:var(--background,#fff);font-size:13px}textarea{resize:vertical;min-height:85px}.chart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:20px 0 8px}.chart-head span{font-size:11px;color:var(--muted-foreground,#687b70)}.patient-sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:10px;color:var(--muted-foreground,#687b70);margin-bottom:10px}.patient-sides span:last-child{text-align:right}.quadrants{display:grid;grid-template-columns:1fr 1fr;gap:12px}.quadrant{border:1px solid var(--border,#d5e2d8);border-radius:7px;padding:12px 9px;min-width:0}.quadrant h3{font-size:10px;font-weight:600;color:var(--muted-foreground,#687b70);margin:0 0 8px}.teeth{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:2px}.teeth.temporary{grid-template-columns:repeat(5,minmax(0,1fr));max-width:210px;margin-inline:auto}.tooth{display:grid;justify-items:center;align-content:start;gap:2px;background:transparent;border:1px solid transparent;border-radius:6px;min-width:0;padding:2px 0;min-height:64px}.tooth.selected{border-color:var(--ring,#4e8d70);background:var(--secondary,#edf5ec)}.tooth .number{font-size:11px;font-weight:650;line-height:1.6}.tooth svg{width:100%;max-width:44px;height:auto;overflow:visible}.tooth .dot{font-size:9px;line-height:1;color:var(--muted-foreground,#687b70);min-height:10px}.chart-hint{font-size:11px;color:var(--muted-foreground,#687b70);margin:12px 0 18px}.editor{border-top:1px solid var(--border,#d5e2d8);padding-top:18px;margin-top:18px}.editor-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.editor-heading h2{font-size:16px}.faces{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 15px}.faces button{padding:8px 10px;min-height:38px;border:1px solid var(--border,#c9dace);background:transparent;border-radius:5px;font-size:11px}.faces button[aria-pressed=true]{border-color:var(--primary,#2f6e54);background:var(--primary,#2f6e54);color:var(--primary-foreground,#fff)}.faces button:disabled{opacity:.6}.action-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px}.primary{font-size:12px;font-weight:600;min-height:42px;padding:10px 15px;border:1px solid var(--primary,#2f6e54);background:var(--primary,#2f6e54);color:var(--primary-foreground,#fff);border-radius:6px}.status{font-size:11px;color:var(--muted-foreground,#687b70)}.message{padding:12px 14px;font-size:12px;line-height:1.6;border:1px solid var(--border,#d5e2d8);border-radius:6px;background:var(--secondary,#eff5ee);margin:12px 0}.message.error{border-color:#ba6363;color:var(--destructive,#ae3030)}.legend{margin-top:20px;border-top:1px solid var(--border,#d5e2d8);padding-top:14px}.legend summary{font-size:12px;font-weight:600;cursor:pointer}.legend-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px}.legend-grid button{display:flex;align-items:center;gap:7px;padding:8px;border:1px solid var(--border,#d5e2d8);border-radius:6px;background:transparent;text-align:left;font-size:10px}.legend-grid button[aria-pressed=true]{outline:1px solid var(--ring,#4e8d70)}.symbol{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;border:1px solid currentColor;border-radius:5px;font-size:11px;font-weight:750;background:var(--background,#fff)}.records{display:grid;gap:8px;margin-top:14px}.record{display:flex;gap:14px;align-items:start;justify-content:space-between;padding:12px;border:1px solid var(--border,#d5e2d8);border-radius:6px;background:var(--card,#f7faf6)}.record-body{display:flex;gap:10px;min-width:0}.record strong{display:block;font-size:12px}.record p,.record small{display:block;font-size:11px;color:var(--muted-foreground,#687b70);overflow-wrap:anywhere}.remove{font-size:11px;border:0;background:transparent;text-decoration:underline;flex:0 0 auto;padding:3px}.empty{font-size:12px;color:var(--muted-foreground,#687b70);padding:18px 0}.footer-save{border-top:1px solid var(--border,#d5e2d8);padding-top:18px;margin-top:18px}.subtle{font-size:11px;color:var(--muted-foreground,#687b70);margin-top:12px}.history-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border,#d5e2d8)}.history-item strong{display:block;font-size:13px}.history-item p{font-size:11px;color:var(--muted-foreground,#687b70)}.readonly{border:1px solid var(--ring,#4e8d70);border-radius:7px;padding:12px;margin-bottom:16px;display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:12px}.workflow{display:grid;gap:10px}.workflow li{margin-bottom:10px}.workflow p{font-size:12px;color:var(--muted-foreground,#687b70)}a{color:var(--accent,var(--primary,#2f6e54))}.print-header{display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:500px){h1{font-size:22px}.quadrants{grid-template-columns:1fr}.card{padding:16px}.legend-grid{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.tooth{min-height:69px}.tooth svg{max-width:42px}.tabs button{flex:1;padding:8px 7px;font-size:11px}.record{gap:7px;padding:10px}.patient-sides{display:none}.editor-heading{align-items:start}.action-row .primary{flex:1}}
+@media print{body{font-size:11px;color:#111}.demo-note,.tabs,.editor,.legend,.footer-save,.chart-hint,.subtle,#message,.remove,.readonly,.action-row,.intro,.patient-head .tag,#panel-historial,#panel-integracion{display:none!important}#panel-odontograma[hidden]{display:block!important}.print-header{display:block;font-size:11px;margin:12px 0}.card,.quadrant,.record{background:white;border-color:#bbb;break-inside:avoid}.quadrants{grid-template-columns:1fr 1fr}.tooth.selected{background:white;border-color:transparent}.field>select{appearance:none;border:0;padding:0}.patient-head,.chart-head{color:#111}.record p,.record small{color:#333}.teeth{gap:2px}.node{color:#111}h1{font-size:20px}.record{padding:8px}.form-grid input,.form-grid select{border-color:#aaa;color:#111}.status{color:#333}}
+.paint-workspace{display:grid;grid-template-columns:190px minmax(0,1fr);gap:24px;align-items:center;margin:14px 0 18px;padding:18px;border:1px solid var(--border,#d5e2d8);border-radius:8px;background:var(--card,#f7faf6)}.paint-tooth svg{display:block;width:180px;height:180px;max-width:100%;margin:auto}.paint-tooth .paintable{cursor:crosshair}.paint-tooth .paintable:hover{filter:brightness(.87)}.paint-tooth .paintable:focus-visible{outline:none;stroke:#d79d22;stroke-width:2}.paint-tooth .paintable[aria-disabled=true]{cursor:default}.paint-caption{text-align:center;font-size:11px;color:var(--muted-foreground,#687b70);margin-top:9px}.paint-tools{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}.paint-tools button{display:flex;align-items:center;gap:7px;text-align:left;padding:10px;min-height:44px;border:1px solid var(--border,#d5e2d8);border-radius:6px;background:var(--background,#fff);font-size:11px}.paint-tools button[aria-pressed=true]{border-color:var(--ring,#4e8d70);box-shadow:0 0 0 1px var(--ring,#4e8d70)}.paint-swatch{width:15px;height:15px;flex-shrink:0;border-radius:50%;border:1px solid #8d9992}.paint-tools strong{font-size:11px}.paint-tools small{display:block;font-size:10px;color:var(--muted-foreground,#687b70)}.paint-tools .erase-swatch{background:repeating-linear-gradient(135deg,#fff,#fff 3px,#b8c1bb 3px,#b8c1bb 5px)}.paint-help{font-size:11px;color:var(--muted-foreground,#687b70);margin:9px 0}.paint-active{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600}.paint-undo{min-height:38px;padding:8px 10px}
+.symbol{background:#fff}
+@media(max-width:500px){.paint-workspace{grid-template-columns:1fr;padding:16px;gap:14px}.paint-tooth svg{width:190px;height:190px}.paint-tools{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<h1>Ficha odontológica por paciente</h1>
+<p class="intro">Odontograma editable, registros por pieza y un historial de controles fechado.</p>
+<p class="demo-note">
+<strong>Maqueta funcional con datos ficticios.</strong> Esta propuesta todavía no está conectada a la base clínica. Las versiones de prueba duran mientras esta vista permanezca abierta.</p>
+<div class="patient-head">
+<div>
+<p class="eyebrow">ODONTOLOGÍA · PACIENTE DE EJEMPLO</p>
+<strong>Paciente de demostración</strong>
+<small>Identidad compartida con el directorio · Ficha clínica con permisos propios.</small>
+</div>
+<span class="tag">Sin profesional asignado · Demo</span>
+</div>
+<div class="tabs" role="tablist" aria-label="Secciones de la ficha">
+<button type="button" role="tab" aria-selected="true" aria-controls="panel-odontograma" id="tab-odontograma" tabindex="0" data-tab="odontograma">Odontograma</button>
+<button type="button" role="tab" aria-selected="false" aria-controls="panel-historial" id="tab-historial" tabindex="-1" data-tab="historial">Historial <span id="history-count">(0)</span>
+</button>
+<button type="button" role="tab" aria-selected="false" aria-controls="panel-integracion" id="tab-integracion" tabindex="-1" data-tab="integracion">Ficha completa</button>
+</div>
+<div id="message" role="status" aria-live="polite" hidden>
+</div>
+<section class="panel" id="panel-odontograma" role="tabpanel" aria-labelledby="tab-odontograma">
+<div id="readonly" class="readonly" hidden>
+<strong id="readonly-label">
+</strong>
+<button class="secondary" type="button" id="back-draft">Volver al borrador</button>
+</div>
+<div class="print-header">MUESTRA DE DISEÑO · Datos ficticios · Sin firma ni profesional asignado.</div>
+<div class="print-header" id="print-notes" style="white-space:pre-wrap">
+</div>
+<div class="form-grid">
+<label class="field">
+<span>Fecha del odontograma</span>
+<input type="date" id="chart-date" required>
+<small>Se conserva en cada versión de ejemplo.</small>
+</label>
+<label class="field">
+<span>Dentición visible</span>
+<select id="dentition">
+<option value="mixed">Mixta · permanentes y temporales</option>
+<option value="permanent">Permanente · 32 piezas</option>
+<option value="temporary">Temporal · 20 piezas</option>
+</select>
+<small>La vista conserva las marcas de ambas denticiones.</small>
+</label>
+</div>
+<div class="chart-head">
+<h2>Mapa dental</h2>
+<span id="chart-summary">Sin registros</span>
+</div>
+<div class="patient-sides">
+<span>← Derecha del paciente</span>
+<span>Izquierda del paciente →</span>
+</div>
+<div class="quadrants" id="chart">
+</div>
+<p class="chart-hint">Seleccioná una pieza y pintá sus caras en la vista ampliada. Podés combinar colores en un mismo diente. Una pieza sin marcas está <strong>sin evaluar</strong>; no se presume sana.</p>
+<section class="editor" id="editor" aria-labelledby="editor-title">
+<div class="editor-heading">
+<h2 id="editor-title" tabindex="-1">Pieza 36</h2>
+<button class="secondary" type="button" id="choose-tooth">Elegir otra pieza</button>
+</div>
+<p class="status" id="selection-label">
+</p>
+<div class="paint-workspace">
+<div><div id="paint-tooth" class="paint-tooth"></div><p class="paint-caption" id="paint-caption"></p></div>
+<div><h3>Pintar cada cara</h3><p class="paint-active" id="paint-active"></p><div class="paint-tools" id="paint-tools" role="group" aria-label="Pinceles y borrador"></div><button class="secondary paint-undo" type="button" id="undo-paint" disabled>Deshacer última marca</button><p class="paint-help">Elegí un pincel y tocá la cara del diente ampliado. Cada cara conserva su color. Otro pincel reemplaza solo esa cara del borrador; las versiones guardadas se mantienen.</p><p class="paint-help" id="paint-instruction" aria-live="polite"></p></div>
+</div>
+<div class="field">
+<span>Caras de la pieza</span>
+<div class="faces" id="faces" role="group" aria-label="Seleccionar caras">
+</div>
+</div>
+<div class="form-grid">
+<label class="field">
+<span>Hallazgo o tratamiento</span>
+<select id="condition">
+</select>
+<small id="condition-help">
+</small>
+</label>
+<label class="field">
+<span>Detalle del registro (opcional)</span>
+<input type="text" id="record-note" maxlength="500" placeholder="Detalle observado o aclaración">
+<small>Hasta 500 caracteres. El símbolo no genera un diagnóstico automático.</small>
+</label>
+</div>
+<div class="action-row">
+<span class="status">La marca se aplica después de confirmar.</span>
+<button class="primary" type="button" id="apply">Aplicar a la pieza 36</button>
+</div>
+</section>
+<details class="legend">
+<summary>Leyenda de símbolos propuesta</summary>
+<p class="subtle">Adaptación visual de la referencia. La simbología y los colores definitivos se acuerdan con el odontólogo. Cada registro conserva también su nombre y las caras afectadas.</p>
+<div class="legend-grid" id="legend">
+</div>
+</details>
+<section aria-labelledby="records-title">
+<div class="chart-head">
+<h2 id="records-title">Registros del odontograma</h2>
+<span id="record-count">0 registros</span>
+</div>
+<div class="records" id="records">
+</div>
+</section>
+<div class="footer-save">
+<label class="field">
+<span>Observaciones generales</span>
+<textarea id="chart-notes" maxlength="2000" rows="3" placeholder="Especificaciones del odontograma y observaciones del control">
+</textarea>
+<small>Hasta 2.000 caracteres.</small>
+</label>
+<div class="action-row">
+<span class="status" id="dirty-status">Sin cambios</span>
+<div>
+<button class="secondary" type="button" id="new-chart">Nuevo odontograma</button> <button class="primary" type="button" id="save-version">Guardar versión de prueba</button>
+</div>
+</div>
+</div>
+</section>
+<section class="panel" id="panel-historial" role="tabpanel" aria-labelledby="tab-historial" hidden>
+<div class="card">
+<h2>Controles y versiones</h2>
+<p class="subtle">Cada guardado de prueba conserva una copia independiente. Abrir una versión permite consultarla sin modificarla. En el sistema real se registrarían también el paciente, consultorio, profesional autor y fecha/hora del guardado.</p>
+<div id="history">
+</div>
+</div>
+<button class="secondary" type="button" id="print-chart">Imprimir el odontograma visible</button>
+</section>
+<section class="panel" id="panel-integracion" role="tabpanel" aria-labelledby="tab-integracion" hidden>
+<div class="card">
+<h2>Una ficha clínica de odontología</h2>
+<ol class="workflow">
+<li>
+<strong>Paciente e identidad</strong>
+<p>Reutilizar al paciente del directorio, con su nombre, DNI y contacto. Una misma persona puede tener ficha de podología y odontología.</p>
+</li>
+<li>
+<strong>Anamnesis odontológica</strong>
+<p>Motivo de consulta, antecedentes, alergias, medicación y observaciones propias de esta especialidad. Sus preguntas se definen con el profesional.</p>
+</li>
+<li>
+<strong>Odontogramas fechados</strong>
+<p>Piezas y caras, registros con leyenda, observaciones, versiones anteriores y autor. Se consulta la evolución sin reemplazar los controles previos.</p>
+</li>
+<li>
+<strong>Plan de tratamiento</strong>
+<p>Indicación por pieza o caras, procedimiento, estado pendiente/en curso/realizado y fecha. Un tratamiento indicado se distingue de uno ya realizado.</p>
+</li>
+<li>
+<strong>Consultas y evolución</strong>
+<p>Fecha, evaluación, práctica realizada y observaciones del profesional. Las modificaciones conservan sus versiones.</p>
+</li>
+<li>
+<strong>PDF y permisos</strong>
+<p>Exportar ficha y odontograma guardados. Lectura, escritura y exportación independientes de podología; recepción administra contacto y agenda sin leer estos datos.</p>
+</li>
+</ol>
+</div>
+<p class="subtle">Para integrarlo hacen falta el módulo clínico, esquema y validación en la base, editor, PDF y pruebas. Esta maqueta permite acordar primero la carga y representación gráfica.</p>
+<p class="subtle">Referencia: <a href="https://goujana.co/clase_simbolos_odontograma" target="_blank" rel="noreferrer">GouJana · símbolos e historial de odontogramas</a>.</p>
+</section>
+<script>
+(function(){
+'use strict';
+var catalog=[
+{id:'healthy',label:'Sano · evaluado sin hallazgos',symbol:'✓',color:'#2b8753',target:'tooth',kind:'Hallazgo'},
+{id:'caries',label:'Caries',symbol:'C',color:'#cc4242',target:'surface',kind:'Hallazgo'},
+{id:'resin',label:'Resina',symbol:'R',color:'#405ed6',target:'surface',kind:'Tratamiento existente'},
+{id:'amalgam',label:'Amalgama',symbol:'A',color:'#252525',target:'surface',kind:'Tratamiento existente'},
+{id:'crown_fit',label:'Corona adaptada',symbol:'CA',color:'#405ed6',target:'tooth',kind:'Tratamiento existente'},
+{id:'crown_unfit',label:'Corona desadaptada',symbol:'CD',color:'#cc4242',target:'tooth',kind:'Hallazgo'},
+{id:'prosthesis',label:'Prótesis',symbol:'P',color:'#405ed6',target:'tooth',kind:'Tratamiento existente'},
+{id:'prosthesis_plan',label:'Prótesis indicada',symbol:'PI',color:'#cc4242',target:'tooth',kind:'Indicación pendiente'},
+{id:'sealant',label:'Sellante',symbol:'S',color:'#405ed6',target:'surface',kind:'Tratamiento existente'},
+{id:'sealant_plan',label:'Sellante indicado',symbol:'SI',color:'#cc4242',target:'surface',kind:'Indicación pendiente'},
+{id:'endodontic',label:'Con endodoncia',symbol:'E',color:'#405ed6',target:'tooth',kind:'Tratamiento existente'},
+{id:'necrosis',label:'Necrosis pulpar',symbol:'NP',color:'#cc4242',target:'tooth',kind:'Hallazgo'},
+{id:'extraction_plan',label:'Extracción indicada',symbol:'XI',color:'#cc4242',target:'tooth',kind:'Indicación pendiente'},
+{id:'recession',label:'Recesión gingival',symbol:'RG',color:'#bc6680',target:'tooth',kind:'Hallazgo'},
+{id:'absent',label:'Clínicamente ausente',symbol:'×',color:'#888f97',target:'tooth',kind:'Hallazgo'}
+];
+var quadrants=[
+{n:1,arch:'Superior derecha · permanente',ids:[18,17,16,15,14,13,12,11]},
+{n:2,arch:'Superior izquierda · permanente',ids:[21,22,23,24,25,26,27,28]},
+{n:5,arch:'Superior derecha · temporal',ids:[55,54,53,52,51]},
+{n:6,arch:'Superior izquierda · temporal',ids:[61,62,63,64,65]},
+{n:8,arch:'Inferior derecha · temporal',ids:[85,84,83,82,81]},
+{n:7,arch:'Inferior izquierda · temporal',ids:[71,72,73,74,75]},
+{n:4,arch:'Inferior derecha · permanente',ids:[48,47,46,45,44,43,42,41]},
+{n:3,arch:'Inferior izquierda · permanente',ids:[31,32,33,34,35,36,37,38]}
+];
+var validTeeth=quadrants.flatMap(function(q){return q.ids});
+var today=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Argentina/Buenos_Aires'});
+var draft={date:today,view:'mixed',notes:'',records:[]}, baseline=JSON.stringify(draft), versions=[], viewed=null,selected=36,faces=['center'],counter=0,paintMode='paint',undoStack=[];
+var surfaceKeys=['vestibular','inner','mesial','distal','center'];
+function el(id){return document.getElementById(id)}
+function current(){return viewed===null?draft:versions[viewed].chart}
+function info(id){return catalog.find(function(c){return c.id===id})}
+function escape(value){return String(value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function surfaceLabel(key,tooth){var upper=[1,2,5,6].includes(Math.floor(tooth/10));return {all:'Pieza completa',vestibular:'Vestibular',inner:upper?'Palatina':'Lingual',mesial:'Mesial',distal:'Distal',center:tooth%10<=3?'Incisal':'Oclusal'}[key]}
+function faceList(list,tooth){return list.map(function(key){return surfaceLabel(key,tooth)}).join(', ')}
+function say(text,error){el('message').hidden=false;el('message').className='message'+(error?' error':'');el('message').setAttribute('role',error?'alert':'status');el('message').textContent=text}
+function clearMessage(){el('message').hidden=true}
+function dirty(){return JSON.stringify(draft)!==baseline}
+function updateDirty(){el('dirty-status').textContent=dirty()?'Cambios sin guardar en la versión de prueba':'Sin cambios en el borrador'}
+function showTab(tab,focus){document.querySelectorAll('[data-tab]').forEach(function(b){var on=b.dataset.tab===tab;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;el('panel-'+b.dataset.tab).hidden=!on;if(on&&focus)b.focus()});if(tab==='historial')renderHistory()}
+function toothSvg(tooth,items,interactive){
+var q=Math.floor(tooth/10),upper=[1,2,5,6].includes(q),right=[1,4,5,8].includes(q);
+var points={top:'M9.4 9.4 A22 22 0 0 1 40.6 9.4 L32 18 A10 10 0 0 0 18 18 Z',bottom:'M40.6 40.6 A22 22 0 0 1 9.4 40.6 L18 32 A10 10 0 0 0 32 32 Z',left:'M9.4 40.6 A22 22 0 0 1 9.4 9.4 L18 18 A10 10 0 0 0 18 32 Z',right:'M40.6 9.4 A22 22 0 0 1 40.6 40.6 L32 32 A10 10 0 0 0 32 18 Z',center:'M35 25 A10 10 0 1 0 15 25 A10 10 0 1 0 35 25 Z'};
+var map={top:upper?'vestibular':'inner',bottom:upper?'inner':'vestibular',left:right?'distal':'mesial',right:right?'mesial':'distal',center:'center'};
+var tool=info(el('condition').value),enabled=interactive&&viewed===null&&(paintMode==='erase'||tool.target==='surface');
+var svg='<svg viewBox="0 0 50 50" '+(interactive?'role="group" aria-label="Caras de la pieza '+tooth+'"':'aria-hidden="true"')+'>';
+Object.keys(points).forEach(function(position){
+var surface=map[position],mark=items.filter(function(r){return info(r.condition).target==='surface'&&(r.faces.includes('all')||r.faces.includes(surface))}).at(-1);
+var fill=mark?info(mark.condition).color:'#fff';
+var detail=surfaceLabel(surface,tooth)+' · '+(mark?info(mark.condition).label:'sin marca');
+var action=paintMode==='erase'?'Borrar esta cara':'Pintar '+tool.label;
+var attrs=interactive?' class="paintable" data-paint-face="'+surface+'" role="button" tabindex="'+(enabled?'0':'-1')+'" aria-disabled="'+String(!enabled)+'" aria-label="'+escape(detail+'. '+action)+'"':'';
+svg+='<path data-surface="'+surface+'"'+attrs+' d="'+points[position]+'" fill="'+fill+'" stroke="#718478" stroke-width=".8"><title>'+escape(detail)+'</title></path>';
+if(interactive){var xy={top:[25,12],bottom:[25,41],left:[10,27],right:[40,27],center:[25,27]},short={vestibular:'V',inner:upper?'P':'L',mesial:'M',distal:'D',center:tooth%10<=3?'I':'O'};svg+='<text pointer-events="none" x="'+xy[position][0]+'" y="'+xy[position][1]+'" text-anchor="middle" font-size="5" font-weight="600" fill="'+(mark?'#fff':'#374a40')+'">'+short[surface]+'</text>'}
+});
+svg+='<circle pointer-events="none" cx="25" cy="25" r="22" fill="none" stroke="#718478" stroke-width="1"/>';
+items.filter(function(r){return info(r.condition).target==='tooth'}).forEach(function(r){
+var c=info(r.condition),col=c.color;
+if(c.id==='healthy')svg+='<path d="M14 25L22 33L37 17" fill="none" stroke="'+col+'" stroke-width="4"/>';
+else if(c.id==='absent')svg+='<circle cx="25" cy="25" r="20" fill="'+col+'"/><path d="M14 25H36" stroke="white" stroke-width="3"/>';
+else if(c.id==='extraction_plan')svg+='<path d="M10 10L40 40M40 10L10 40" fill="none" stroke="'+col+'" stroke-width="3"/>';
+else if(c.id==='crown_fit'||c.id==='crown_unfit')svg+='<path d="M8 19L14 28L25 16L36 28L42 19L39 37L11 37Z" fill="none" stroke="'+col+'" stroke-width="2.5"/>';
+else if(c.id==='endodontic'||c.id==='necrosis')svg+='<path d="M14 39L36 11" stroke="'+col+'" stroke-width="3" fill="none"/>';
+else if(c.id==='prosthesis'||c.id==='prosthesis_plan')svg+='<path d="M9 22H41M9 29H41" stroke="'+col+'" stroke-width="2.5"/>';
+else svg+='<text x="25" y="30" fill="'+col+'" text-anchor="middle" font-size="12" font-weight="bold">'+escape(c.symbol)+'</text>';
+});
+return svg.replace(/<path d=/g,'<path pointer-events="none" d=').replace(/<circle cx=/g,'<circle pointer-events="none" cx=').replace(/<text x=/g,'<text pointer-events="none" x=')+'</svg>';
+}
+function renderChart(){
+var chart=current(),visible=quadrants.filter(function(q){return chart.view==='mixed'||(chart.view==='permanent'?q.n<5:q.n>4)});
+el('chart').innerHTML=visible.map(function(q){return '<section class="quadrant" aria-label="'+q.arch+'"><h3>'+q.arch+'</h3><div class="teeth'+(q.n>4?' temporary':'')+'">'+q.ids.map(function(t){
+var items=chart.records.filter(function(r){return r.tooth===t});
+var label='Pieza '+t+': '+(items.length?items.map(function(r){return info(r.condition).label+' en '+faceList(r.faces,t)}).join('; '):'sin evaluar');
+return '<button type="button" class="tooth'+(t===selected?' selected':'')+'" data-tooth="'+t+'" aria-pressed="'+String(t===selected)+'" aria-label="'+escape(label)+'"><span class="number">'+t+'</span>'+toothSvg(t,items)+'<span class="dot">'+(items.length?items.length+' reg.':'·')+'</span></button>';
+}).join('')+'</div></section>'}).join('');
+var count=new Set(chart.records.map(function(r){return r.tooth})).size;
+el('chart-summary').textContent=(count?count+' pieza'+(count===1?'':'s')+' con registros':'Sin registros')+' · '+visible.reduce(function(n,q){return n+q.ids.length},0)+' piezas visibles';
+el('chart-date').value=chart.date;el('dentition').value=chart.view;el('chart-notes').value=chart.notes;
+el('chart-date').disabled=viewed!==null;el('dentition').disabled=viewed!==null;el('chart-notes').disabled=viewed!==null;
+el('readonly').hidden=viewed===null;el('readonly-label').textContent=viewed===null?'':'Versión de prueba '+(viewed+1)+' · Solo lectura';
+el('editor').hidden=viewed!==null;document.querySelector('.footer-save .action-row').hidden=viewed!==null;el('print-notes').textContent='Observaciones: '+(chart.notes||'Sin observaciones');
+renderRecords();renderEditor();updateDirty();
+}
+function renderEditor(){
+var c=info(el('condition').value);if(c&&c.target==='tooth')faces=['all'];
+el('editor-title').textContent='Pieza '+selected;
+el('selection-label').textContent=faceList(faces,selected);
+el('apply').textContent='Aplicar a la pieza '+selected;
+el('faces').innerHTML=['all','vestibular','inner','mesial','distal','center'].map(function(key){return '<button type="button" data-face="'+key+'" aria-pressed="'+String(faces.includes(key))+'" '+(c&&c.target==='tooth'&&key!=='all'?'disabled':'')+'>'+surfaceLabel(key,selected)+'</button>'}).join('');
+el('condition-help').textContent=c.kind+' · '+(c.target==='tooth'?'Se registra sobre la pieza completa.':'Se registra en una o varias caras.');
+document.querySelectorAll('[data-condition]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.condition===c.id))});
+renderPaintWorkspace();
+}
+function renderRecords(){
+var records=current().records;
+el('record-count').textContent=records.length+' registro'+(records.length===1?'':'s');
+el('records').innerHTML=records.length?records.map(function(r){var c=info(r.condition);return '<article class="record"><div class="record-body"><span class="symbol" style="color:'+c.color+'">'+escape(c.symbol)+'</span><div><strong>Pieza '+r.tooth+' · '+escape(c.label)+'</strong><p>'+escape(faceList(r.faces,r.tooth))+' · '+escape(c.kind)+'</p>'+(r.note?'<small>'+escape(r.note)+'</small>':'')+'</div></div>'+(viewed===null?'<button class="remove" type="button" data-remove="'+r.id+'" aria-label="Quitar '+escape(c.label)+' de la pieza '+r.tooth+'">Quitar</button>':'')+'</article>'}).join(''):'<p class="empty">Todavía no registraste hallazgos ni tratamientos. Seleccioná una pieza para empezar.</p>';
+}
+function renderPaintWorkspace(){
+var c=info(el('condition').value),items=current().records.filter(function(r){return r.tooth===selected});
+el('paint-tooth').innerHTML=toothSvg(selected,items,true);
+el('paint-caption').textContent='Pieza '+selected+' · '+quadrants.find(function(q){return q.ids.includes(selected)}).arch;
+el('paint-active').innerHTML='<span class="paint-swatch'+(paintMode==='erase'?' erase-swatch':'')+'" style="'+(paintMode==='erase'?'':'background:'+c.color)+'"></span>'+escape(paintMode==='erase'?'Borrador de caras':c.label);
+var brushes=[{condition:'caries',color:'Rojo'},{condition:'resin',color:'Azul'},{condition:'amalgam',color:'Negro'}];
+el('paint-tools').innerHTML=brushes.map(function(b){var brush=info(b.condition);return '<button type="button" data-brush="'+b.condition+'" aria-pressed="'+String(paintMode==='paint'&&c.id===b.condition)+'"><span class="paint-swatch" style="background:'+brush.color+'"></span><span><strong>'+b.color+'</strong><small>'+escape(brush.label)+'</small></span></button>'}).join('')+'<button type="button" data-eraser="true" aria-pressed="'+String(paintMode==='erase')+'"><span class="paint-swatch erase-swatch"></span><span><strong>Borrador</strong><small>Solo la cara elegida</small></span></button>';
+el('undo-paint').disabled=viewed!==null||!undoStack.length;
+el('paint-instruction').textContent=paintMode==='erase'?'Tocá una cara para quitar sus marcas del borrador.':c.target==='surface'?'Tocá una cara para pintar con '+c.label+'.':'Este símbolo se aplica a la pieza completa con el botón Aplicar.';
+}
+function rememberRecords(){undoStack.push(JSON.parse(JSON.stringify(draft.records)));if(undoStack.length>30)undoStack.shift()}
+function expandFaces(list){return list.includes('all')?surfaceKeys.slice():list.slice()}
+function withoutSurfaceMarks(records,tooth,remove){
+return records.map(function(r){if(r.tooth!==tooth||info(r.condition).target!=='surface')return r;var keep=expandFaces(r.faces).filter(function(f){return !remove.includes(f)});return keep.length?Object.assign({},r,{faces:keep.sort()}):null}).filter(Boolean);
+}
+function focusPaintFace(face){var target=el('paint-tooth').querySelector('[data-paint-face="'+face+'"]');if(target)target.focus({preventScroll:true})}
+function paintFace(face){
+if(viewed!==null||!surfaceKeys.includes(face))return false;
+faces=[face];
+if(paintMode==='erase'){
+var next=withoutSurfaceMarks(draft.records,selected,[face]);
+if(JSON.stringify(next)===JSON.stringify(draft.records)){say('No hay marcas de superficie para borrar en esta cara. Los símbolos de pieza completa se quitan desde la lista.');return false}
+rememberRecords();draft.records=next;renderChart();say('Marca de '+surfaceLabel(face,selected)+' borrada del borrador. Podés deshacer este cambio.');focusPaintFace(face);return true;
+}
+if(info(el('condition').value).target!=='surface'){say('Este símbolo es de pieza completa. Usá Aplicar o elegí un pincel por cara.');return false}
+var result=applyMark();focusPaintFace(face);return result;
+}
+function undoPaint(){if(viewed!==null||!undoStack.length)return false;draft.records=undoStack.pop();renderChart();say('Último cambio deshecho. Las versiones guardadas siguen intactas.');return true}
+function chooseCondition(id){paintMode='paint';el('condition').value=id;var c=info(id);faces=c.target==='tooth'?['all']:['center'];renderEditor()}
+function applyMark(){
+if(viewed!==null)return;
+var c=info(el('condition').value),note=el('record-note').value.trim();
+if(!validTeeth.includes(selected)||!c||!faces.length){say('Seleccioná una pieza, un registro y al menos una cara.',true);return false}
+if(note.length>500){say('El detalle admite hasta 500 caracteres.',true);return false}
+var sameTooth=draft.records.filter(function(r){return r.tooth===selected});
+if((c.id==='healthy'&&sameTooth.some(function(r){return r.condition!=='healthy'}))||(c.id!=='healthy'&&sameTooth.some(function(r){return r.condition==='healthy'}))){say('La pieza no puede quedar marcada sana y con otro registro a la vez. Revisá y quitá del borrador la marca que corresponda.',true);return false}
+var savedFaces=c.target==='tooth'?['all']:faces.slice().sort();
+if(sameTooth.some(function(r){return r.condition===c.id&&JSON.stringify(r.faces.slice().sort())===JSON.stringify(savedFaces)})){say('Ese registro ya existe en esas caras. Podés quitarlo del borrador para corregirlo.',true);return false}
+if(c.target==='surface'&&expandFaces(savedFaces).every(function(face){return sameTooth.some(function(r){return r.condition===c.id&&r.note===note&&expandFaces(r.faces).includes(face)})})){say('Estas caras ya tienen esa misma marca.');return false}
+rememberRecords();
+if(c.target==='surface'){
+draft.records=withoutSurfaceMarks(draft.records,selected,expandFaces(savedFaces));
+var merge=draft.records.find(function(r){return r.tooth===selected&&r.condition===c.id&&r.note===note});
+if(merge){var combined=[...new Set(expandFaces(merge.faces).concat(expandFaces(savedFaces)))].sort();merge.faces=combined.length===surfaceKeys.length?['all']:combined}
+else draft.records.push({id:'marca-'+(++counter),tooth:selected,condition:c.id,faces:savedFaces,note:note});
+}else draft.records.push({id:'marca-'+(++counter),tooth:selected,condition:c.id,faces:savedFaces,note:note});
+el('record-note').value='';renderChart();say('Marca aplicada al borrador. Las otras caras conservan sus colores. Guardá una versión de prueba para conservar este control.');return true;
+}
+function saveVersion(){
+if(viewed!==null)return false;
+draft.date=el('chart-date').value;draft.notes=el('chart-notes').value;
+if(!/^\d{4}-\d{2}-\d{2}$/.test(draft.date)||draft.date>today||new Date(draft.date+'T12:00:00Z').toISOString().slice(0,10)!==draft.date){say('Ingresá una fecha válida que no sea futura.',true);el('chart-date').focus();return false}
+if(draft.notes.length>2000){say('Las observaciones admiten hasta 2.000 caracteres.',true);el('chart-notes').focus();return false}
+if(!draft.records.length&&!draft.notes.trim()){say('Agregá al menos un registro o una observación antes de guardar la versión de prueba.',true);return false}
+versions.push({savedAt:new Date().toISOString(),chart:JSON.parse(JSON.stringify(draft))});baseline=JSON.stringify(draft);undoStack=[];el('history-count').textContent='('+versions.length+')';renderHistory();renderPaintWorkspace();updateDirty();say('Versión de prueba '+versions.length+' guardada en esta vista. No se modificó ninguna historia clínica real.');return true;
+}
+function renderHistory(){el('history').innerHTML=versions.length?versions.map(function(v,i){return '<article class="history-item"><div><strong>Versión de prueba '+(i+1)+' · '+v.chart.date+'</strong><p>'+v.chart.records.length+' registros · '+new Date(v.savedAt).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+'</p></div><button class="secondary" type="button" data-version="'+i+'">Ver versión '+(i+1)+'</button></article>'}).reverse().join(''):'<p class="empty">Guardá una versión de prueba para verla acá.</p>'}
+function viewVersion(index){viewed=index;showTab('odontograma');renderChart();say('Estás consultando una copia guardada. Volver al borrador conserva lo que estabas editando.')}
+el('condition').innerHTML=catalog.map(function(c){return '<option value="'+c.id+'">'+c.label+'</option>'}).join('');el('condition').value='caries';
+el('legend').innerHTML=catalog.map(function(c){return '<button type="button" data-condition="'+c.id+'" aria-pressed="false"><span class="symbol" style="color:'+c.color+'">'+escape(c.symbol)+'</span><span>'+escape(c.label)+'</span></button>'}).join('');
+el('chart-date').value=today;el('chart-date').max=today;
+el('choose-tooth').addEventListener('click',function(){var button=document.querySelector('[data-tooth="'+selected+'"]');button.focus({preventScroll:true});button.scrollIntoView({behavior:'smooth',block:'center'})});
+el('condition').addEventListener('change',function(){chooseCondition(el('condition').value);clearMessage()});
+el('chart-date').addEventListener('input',function(){if(viewed===null){draft.date=el('chart-date').value;updateDirty()}});
+el('chart-notes').addEventListener('input',function(){if(viewed===null){draft.notes=el('chart-notes').value;updateDirty()}});
+el('dentition').addEventListener('change',function(){if(viewed!==null)return;draft.view=el('dentition').value;var allowed=quadrants.filter(function(q){return draft.view==='mixed'||(draft.view==='permanent'?q.n<5:q.n>4)}).flatMap(function(q){return q.ids});if(!allowed.includes(selected))selected=allowed[0];renderChart()});
+el('apply').addEventListener('click',applyMark);el('save-version').addEventListener('click',saveVersion);
+el('undo-paint').addEventListener('click',undoPaint);
+el('back-draft').addEventListener('click',function(){viewed=null;renderChart();clearMessage()});
+el('new-chart').addEventListener('click',function(){if(dirty()&&!window.confirm('Hay cambios sin guardar en el ejemplo. ¿Querés descartarlos y abrir un odontograma vacío?'))return;draft={date:today,view:draft.view,notes:'',records:[]};baseline=JSON.stringify(draft);undoStack=[];el('record-note').value='';renderChart();say('Nuevo odontograma vacío. Las versiones de prueba anteriores permanecen en Historial.')});
+el('print-chart').addEventListener('click',function(){renderChart();showTab('odontograma');window.print()});
+document.addEventListener('click',function(event){
+var area=event.target.closest('[data-paint-face]');if(area){paintFace(area.dataset.paintFace);return}
+var button=event.target.closest('button');if(!button)return;
+if(button.dataset.tooth){selected=Number(button.dataset.tooth);var hit=event.target.closest('[data-surface]');if(info(el('condition').value).target==='surface')faces=hit?[hit.dataset.surface]:['all'];renderChart();clearMessage();if(viewed===null){el('editor-title').focus({preventScroll:true});var box=el('editor').getBoundingClientRect();if(box.top>innerHeight-180)el('editor').scrollIntoView({behavior:'smooth',block:'start'})}else document.querySelector('[data-tooth="'+selected+'"]').focus({preventScroll:true})}
+if(button.dataset.face){var face=button.dataset.face;if(face==='all')faces=['all'];else{faces=faces.filter(function(f){return f!=='all'});faces=faces.includes(face)?faces.filter(function(f){return f!==face}):faces.concat(face);if(!faces.length)faces=['all']}renderEditor()}
+if(button.dataset.condition){chooseCondition(button.dataset.condition);showTab('odontograma')}
+if(button.dataset.brush){chooseCondition(button.dataset.brush);clearMessage()}
+if(button.dataset.eraser){paintMode='erase';renderPaintWorkspace();clearMessage()}
+if(button.dataset.remove&&viewed===null){rememberRecords();draft.records=draft.records.filter(function(r){return r.id!==button.dataset.remove});renderChart();say('Marca quitada del borrador. Las versiones guardadas se conservan.')}
+if(button.dataset.version!==undefined)viewVersion(Number(button.dataset.version));
+if(button.dataset.tab)showTab(button.dataset.tab);
+});
+document.addEventListener('keydown',function(event){var area=event.target.closest('[data-paint-face]');if(area&&(event.key==='Enter'||event.key===' ')){event.preventDefault();paintFace(area.dataset.paintFace)}});
+var tabButtons=[...document.querySelectorAll('[data-tab]')];tabButtons.forEach(function(button,index){button.addEventListener('keydown',function(e){var next;if(e.key==='ArrowRight')next=(index+1)%tabButtons.length;if(e.key==='ArrowLeft')next=(index+tabButtons.length-1)%tabButtons.length;if(next!==undefined){e.preventDefault();showTab(tabButtons[next].dataset.tab,true)}})});
+renderChart();renderHistory();
+window.dentalDemo={catalog:catalog,validTeeth:validTeeth,chooseCondition:chooseCondition,apply:applyMark,paint:paintFace,undo:undoPaint,save:saveVersion,view:viewVersion,tab:showTab,state:function(){return {draft:JSON.parse(JSON.stringify(draft)),versions:JSON.parse(JSON.stringify(versions)),viewed:viewed,selected:selected,faces:faces.slice(),paintMode:paintMode,undoCount:undoStack.length}}};
+console.assert(validTeeth.length===52&&new Set(validTeeth).size===52,'Cincuenta y dos piezas FDI sin repetición');
+console.assert(document.querySelectorAll('[data-tooth]').length===52,'Vista mixta de 52 piezas');
+console.assert(document.documentElement.scrollWidth<=innerWidth,'Sin desborde horizontal');
+})();
+</script></body></html>

@@ -14,10 +14,18 @@ Aplicación privada con React + TypeScript + Vite, desplegable en Vercel. Supaba
 - PDF completo, ficha inicial, evoluciones o tabla de evolución vacía. Formato continuo Fecha / Procedimiento / Firma del paciente, inspirado en `Historia Clinica hoja 2.pdf`.
 - Usuarios del equipo por invitación, cambio de roles y suspensión de acceso; protección del último administrador.
 - Portal del paciente con nombre, DNI obligatorio, email verificado y celular opcional. La cuenta no se vincula automáticamente a una historia clínica.
-- Agenda diaria/semanal, reservas web de 30 minutos, turnos internos de duración extendida y bloqueos. Confirmación automática, cancelación y reprogramación con reglas configurables.
+- Agenda diaria/semanal y agendas públicas por profesional/prestación. La prestación original conserva 30 minutos; otras permiten duraciones propias. Turnos internos y bloqueos, confirmación automática, cancelación y reprogramación con reglas configurables.
 - Avisos de confirmación, reprogramación y cancelación mediante email transaccional, con outbox y reintentos independientes del guardado del turno.
 
 **No incluye aún** cobros, fotografías, firma electrónica, MFA en la interfaz, WhatsApp automático ni recordatorios previos a la consulta. La autorización registrada no reemplaza el consentimiento firmado. El texto del consentimiento debe revisarse para el uso y la normativa del consultorio.
+
+## Base para otras especialidades
+
+Para probar en esta computadora con base y usuarios locales: **`npm run local`**, luego http://localhost:5173. Requiere Docker Desktop. Ver [entorno local, cuentas y correo de prueba](docs/entorno-local.md).
+
+La [Preview de develop](https://historia-clinica-git-develop-minzakes-projects.vercel.app) usa una base Supabase independiente con las migraciones 001–005 instaladas. Ver [acceso y operación del entorno de pruebas](docs/entorno-develop.md). Crear únicamente pacientes ficticios allí.
+
+Las etapas 1–3 del [plan de reutilización por especialidad y policonsultorio](docs/plan-multiespecialidad.md) están aplicadas en `develop`: módulo de podología separado, identidad administrativa, fichas/permisos por especialidad, recepción, múltiples membresías y agendas por prestación. **Solo está instalada podología.** La [guía de implementación y migración](docs/implementacion-multiespecialidad.md) explica la puesta en marcha, compatibilidad y límites pendientes. Estos cambios requieren las migraciones 004 y 005 además del nuevo frontend/API.
 
 ## Formularios y uso desde el celular
 
@@ -30,7 +38,7 @@ En celular, la navegación principal muestra todas las secciones, los campos tie
 ## 1. Crear y configurar Supabase
 
 1. Creá un proyecto de Supabase. Elegí la región de almacenamiento adecuada antes de cargar datos reales.
-2. En **SQL Editor**, ejecutá una sola vez y en orden los archivos de `supabase/migrations/`: `202610210001_consultorio.sql`, `202610210002_booking.sql` y `202610210003_validation_rules.sql`. El comando `npm run db:migrate` controla versiones y aplica las pendientes sin reinstalar la primera. Si el proyecto ya tiene historias, nunca borres tablas para actualizarlo.
+2. En **SQL Editor**, ejecutá una sola vez y en orden los cinco archivos de `supabase/migrations/`, desde `202610210001_consultorio.sql` hasta `202610210005_service_agendas.sql`. El comando `npm run db:migrate` controla versiones y aplica las pendientes sin reinstalar la primera. Si el proyecto ya tiene historias, nunca borres tablas para actualizarlo. Antes de actualizar datos reales, seguí la guía de migración enlazada arriba.
 3. En **Authentication → Providers / Sign In**, habilitá correo y contraseña y el registro de pacientes. **Exigí confirmación de email** y configurá los límites de intentos/envío. Las nuevas cuentas no reciben ninguna membresía de consultorio ni acceso clínico. No confíes en campos `role` del metadata de registro. Verificá SMTP antes de abrir el registro al público.
 4. En **Authentication → Users**, creá la cuenta del titular con un correo válido y una contraseña fuerte (mínimo recomendado: 12 caracteres). Si la creás manualmente y está verificada por vos, confirmá su correo desde el panel.
 5. Asigná la cuenta al consultorio ejecutando este bloque en SQL Editor. **Reemplazá el correo antes de ejecutar.** Solo debe ejecutarse una vez para el primer titular:
@@ -54,23 +62,13 @@ end;
 $$;
 ```
 
-Una cuenta autenticada **sin asignación no puede leer ni crear historias**. Cada usuario pertenece a un único consultorio en esta primera versión.
+Una cuenta autenticada **sin asignación no puede leer ni crear historias**. Una cuenta puede pertenecer a varios consultorios y elegir el activo. Un administrador nuevo tiene acceso administrativo: para atender o consultar historias debe configurar sus capacidades clínicas y perfil profesional desde **Usuarios**.
 
 ### Agregar otro profesional al mismo consultorio
 
-Creá su cuenta en Authentication y ejecutá, reemplazando ambos correos:
+Desde **Usuarios**, agregá la cuenta existente o enviá una invitación y elegí su rol. La API valida token, rol y consultorio; el navegador no puede escribir membresías directamente. Después revisá **Acceso clínico** y su perfil de atención. Un profesional nuevo tiene alcance asignado: puede crear sus fichas y recibir acceso explícito a otras desde **Asignar acceso** en cada historia.
 
-```sql
-insert into public.clinic_members(user_id, clinic_id, role)
-select u.id, m.clinic_id, 'professional'
-from auth.users u
-cross join public.clinic_members m
-join auth.users titular on titular.id = m.user_id
-where lower(u.email) = lower('profesional@tu-consultorio.com')
-  and lower(titular.email) = lower('titular@tu-consultorio.com');
-```
-
-`owner` y `professional` pueden consultar y editar historias del mismo consultorio; solo `owner` modifica la configuración y el equipo. Un profesional gestiona sus propios turnos; los administradores pueden gestionar la agenda del consultorio. **No asignes estos roles a recepción**: no existe todavía un rol administrativo con acceso clínico restringido. La pantalla **Usuarios** utiliza una API de servidor que valida el token, el rol y el consultorio; el navegador no puede escribir membresías directamente.
+Solo `owner` modifica configuración y equipo. `professional` gestiona sus propios turnos. `reception` gestiona pacientes administrativos y turnos del consultorio, sin historias ni notas privadas. El permiso clínico se concede por separado del rol administrativo y permite distinguir lectura, escritura, exportación y alcance. Las membresías previas conservan sus capacidades históricas durante la migración; revisalas con el titular.
 
 ### Seeder de administradores
 
@@ -99,7 +97,7 @@ Si necesitás ejecutar ese seeder desde un despliegue de Vercel, autorizalo solo
 
 ## Agenda: puesta en marcha
 
-La agenda web empieza **cerrada, sin profesional ni franjas inventadas**. La dueña debe entrar en **Agenda → Horarios**:
+La agenda web empieza **cerrada, sin profesional ni franjas inventadas**. La dueña debe habilitar los perfiles de atención desde **Usuarios → Acceso clínico** y entrar en **Agenda → Horarios**:
 
 1. Seleccionar su propia cuenta como profesional (no la cuenta administrativa técnica).
 2. Completar el nombre público y elegir un identificador para el enlace de reservas.
@@ -107,7 +105,7 @@ La agenda web empieza **cerrada, sin profesional ni franjas inventadas**. La due
 4. Revisar los valores iniciales editables: hasta 30 días de anticipación, mínimo 120 minutos antes, y cambios hasta 12 horas antes. No se aplican públicamente hasta guardar y habilitar las reservas.
 5. Habilitar reservas web y compartir `/reservar` o `/reservar/identificador`.
 
-La web reserva siempre **30 minutos** y confirma en una transacción. Desde **Nuevo turno**, la profesional puede asignar otras duraciones (15 a 480 minutos, en pasos de 15). Los bloqueos permiten ausencias de varios días. La restricción de exclusión de PostgreSQL impide superposiciones, incluso con solicitudes simultáneas. Un turno manual puede estar fuera del horario publicado; igual respeta los bloqueos y otros turnos.
+La prestación original de podología conserva **30 minutos**. Desde **Prestaciones** pueden crearse otras duraciones (15 a 480 minutos, en pasos de 15) y desde **Agregar agenda**, sus profesionales/horarios y enlaces públicos. La web deriva la duración de la prestación en el servidor y confirma en una transacción. Desde **Nuevo turno** se pueden asignar duraciones internas propias. Los bloqueos permiten ausencias de varios días. La restricción de exclusión de PostgreSQL impide superposiciones del mismo profesional, incluso entre consultorios y con solicitudes simultáneas. Un turno manual puede estar fuera del horario publicado; igual respeta los bloqueos y otros turnos.
 
 Cada paciente puede tener **un solo turno futuro confirmado por profesional**, tanto en reservas web como en turnos cargados por el equipo. Puede tener otro turno con una profesional diferente. El DNI es obligatorio para consultas futuras confirmadas sin cuenta vinculada: se usa para controlar duplicados, pero **no vincula automáticamente cuentas ni historias clínicas**. Un bloqueo o un turno cancelado, atendido, ausente o pasado no consume el límite. El control se ejecuta en la base de datos bajo un bloqueo transaccional por paciente/profesional, incluso si llegan dos solicitudes simultáneas.
 
@@ -186,15 +184,17 @@ No hace falta cambiar el proyecto ni migrar el frontend a otro alojamiento.
 | Tabla | Contenido |
 |---|---|
 | `clinics` | Configuración del consultorio y contador de historias |
-| `clinic_members` | Cuentas autorizadas y roles |
-| `patients` | Identificación, ficha inicial y versión actual |
-| `clinical_records` | Antecedentes, vacunas y valores clínicos |
-| `evolutions` | Consultas ordenadas; las quitadas quedan archivadas |
-| `clinical_record_versions` | Copia completa de cada guardado, fecha y autor |
+| `clinic_members` / `member_specialties` | Membresías por centro, roles y capacidades clínicas |
+| `patients` | Identidad administrativa y su versión |
+| `clinical_charts` / `clinical_access_grants` | Fichas por paciente/especialidad y asignaciones |
+| `clinical_encounters` | Consultas ordenadas; las quitadas quedan archivadas |
+| `clinical_chart_versions` | Copia completa de cada guardado, fecha y autor |
 | `patient_accounts` | Datos propios de la cuenta paciente, sin acceso a historias |
-| `booking_settings` / `booking_hours` | Profesional, reglas y disponibilidad pública |
+| `services` / `booking_pages` / `availability_rules` | Prestaciones, profesionales y disponibilidad pública por agenda |
 | `appointments` / `appointment_events` | Agenda, reservas, bloqueos y auditoría |
 | `private.appointment_notifications` | Cola de email; sin acceso directo desde el navegador |
+
+Las tablas clínicas anteriores se conservan como legado sin acceso del navegador. `booking_settings` y `booking_hours` mantienen la agenda original por compatibilidad. Ver detalles y límites de reversión en la guía de implementación.
 
 - Todas las tablas con datos clínicos, personales y de turnos tienen **Row Level Security**. El acceso anónimo se limita a funciones de disponibilidad y datos públicos del consultorio, sin nombres de pacientes ni ocupaciones de la agenda.
 - El navegador tiene permisos de lectura según membresía, **sin permisos directos de escritura**. Los RPC comprueban cuenta, consultorio, datos y versión antes de modificar.
