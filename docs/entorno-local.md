@@ -40,6 +40,8 @@ Una instalación nueva en otra máquina no importa cuentas remotas automáticame
 
 La agenda pública empieza cerrada, sin días/horarios inventados. Quien deba atender puede habilitar su perfil desde **Usuarios → Acceso clínico** y configurar sus horarios. Crear pacientes ficticios para las pruebas.
 
+La migración 006 incorpora [odontología](odontologia.md), aplicada en esta máquina. Para probarla, habilitar los permisos de esa especialidad desde **Usuarios → Acceso clínico → Odontología**. No modifica los accesos ni perfiles de podología.
+
 ## Correo y aislamiento
 
 Los correos de registro, recuperación e invitación de Supabase Auth terminan en Mailpit, el buzón local del puerto 54324. No se envían a destinatarios externos. Los avisos transaccionales de turnos mediante Resend están deshabilitados en este entorno; el guardado y la cola pueden probarse, pero no se acredita entrega externa.

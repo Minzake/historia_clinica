@@ -10,6 +10,7 @@ import { Field,Loading,Notice,Modal, Form, SelectField } from '../components/ui'
 import { UnsavedChanges } from '../components/UnsavedChanges'
 import { openingHourErrors, validateBookingSettings } from '../lib/validation'
 import { isGeneratedBookingSlug, suggestBookingSlug } from '../lib/agenda-ui'
+import { installedSpecialties } from '../core/specialties'
 
 const weekdays=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
 function ServicesDialog({services,onClose,onSaved}:{services:Service[];onClose:()=>void;onSaved:()=>void}) {
@@ -17,9 +18,9 @@ function ServicesDialog({services,onClose,onSaved}:{services:Service[];onClose:(
   const [draft,setDraft]=useState<Partial<Service>&{name:string;duration_minutes:number;active:boolean}>({name:'',duration_minutes:30,active:true})
   const [duration,setDuration]=useState('30'),[busy,setBusy]=useState(false),[error,setError]=useState('')
   async function save(event:FormEvent){event.preventDefault();setBusy(true);setError('');try{await saveService(membership.clinicId,{...draft,duration_minutes:Number(duration)});onSaved()}catch(err){setError(bookingError(err))}finally{setBusy(false)}}
-  return <Modal title="Prestaciones de podología" onClose={()=>{if(!busy)onClose()}}><p>Las prestaciones definen qué atención se reserva y cuánto dura. Cada profesional puede tener su propia agenda.</p>
+  return <Modal title="Prestaciones del consultorio" onClose={()=>{if(!busy)onClose()}}><p>Las prestaciones definen qué atención se reserva y cuánto dura. Cada profesional puede tener su propia agenda.</p>
     <div className="service-list">{services.map(service=><button className="secondary-button" key={service.id} disabled={busy} onClick={()=>{setDraft(service);setDuration(String(service.duration_minutes));setError('')}}>{service.name} · {service.duration_minutes} min{service.active?'':' · Inactiva'}</button>)}<button className="text-button" disabled={busy} onClick={()=>{setDraft({name:'',duration_minutes:30,active:true});setDuration('30');setError('')}}>Crear otra prestación</button></div>
-    <Form key={draft.id||'new'} onSubmit={save}><fieldset className="settings-fields" disabled={busy}><Field label="Nombre de la prestación" required minLength={2} maxLength={120} value={draft.name} onChange={name=>setDraft(current=>({...current,name}))}/><Field label="Duración de la prestación (minutos)" type="number" required min={15} max={480} step={15} readOnly={Boolean(draft.legacy_default)} value={duration} onChange={setDuration} hint="Las reservas existentes conservan su duración. La consulta original de podología mantiene 30 minutos."/>
+    <Form key={draft.id||'new'} onSubmit={save}><fieldset className="settings-fields" disabled={busy}><SelectField label="Especialidad de la prestación" value={draft.specialty_id||'podologia'} disabled={Boolean(draft.id)} onChange={e=>setDraft(current=>({...current,specialty_id:e.target.value}))}>{installedSpecialties.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</SelectField><Field label="Nombre de la prestación" required minLength={2} maxLength={120} value={draft.name} onChange={name=>setDraft(current=>({...current,name}))}/><Field label="Duración de la prestación (minutos)" type="number" required min={15} max={480} step={15} readOnly={Boolean(draft.legacy_default)} value={duration} onChange={setDuration} hint="Las reservas existentes conservan su duración. La consulta original de podología mantiene 30 minutos."/>
     <label className="toggle-field"><input type="checkbox" checked={draft.active} onChange={event=>setDraft(current=>({...current,active:event.target.checked}))}/><span>Prestación activa</span></label></fieldset>{error&&<Notice>{error}</Notice>}<div className="dialog-actions"><button className="secondary-button" type="button" disabled={busy} onClick={onClose}>Cancelar</button><button className="primary-button" disabled={busy}>{busy?'Guardando…':'Guardar prestación'}</button></div></Form>
   </Modal>
 }

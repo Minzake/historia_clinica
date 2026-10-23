@@ -1,6 +1,6 @@
 # Base reutilizable aplicada en develop
 
-La aplicación mantiene podología como único módulo clínico instalado. Esta entrega implementa la base de las etapas 1–3 del [plan](plan-multiespecialidad.md); no habilita una segunda especialidad ni crea centros, cuentas, horarios publicados o datos clínicos de ejemplo en servicios remotos.
+La aplicación instala podología y [odontología](odontologia.md), con identidad administrativa compartida y fichas y permisos independientes. La base implementa las etapas 1–3 del [plan](plan-multiespecialidad.md). Odontología requiere habilitación explícita por consultorio; no se crean cuentas, horarios publicados ni datos clínicos de ejemplo en servicios remotos.
 
 ## Cambios disponibles
 
@@ -34,7 +34,7 @@ La migración no actualiza turnos antiguos para rellenar columnas: evita generar
 
 1. Preparar copia y restauración comprobadas del proyecto real. Ensayar la actualización en un entorno aislado con datos autorizados y comparar IDs, conteos, contenido, versiones y exportaciones. Las pruebas locales usan únicamente datos sintéticos.
 2. Coordinar la migración con el despliegue del frontend/API de esta rama. Evitar que clientes antiguos permanezcan editando durante la transición del modelo clínico.
-3. Ejecutar `npm run db:migrate` en el proyecto de destino configurado, o aplicar los SQL pendientes en orden. Las migraciones nuevas son `202610210004_specialty_core.sql` y `202610210005_service_agendas.sql`. En una base vacía se ejecutan primero 001, 002 y 003. No modificar las migraciones ya aplicadas ni reiniciar tablas.
+3. Ejecutar `npm run db:migrate` en el proyecto de destino configurado, o aplicar los SQL pendientes en orden. Las migraciones nuevas son `202610210004_specialty_core.sql`, `202610210005_service_agendas.sql` y `202610230006_odontology.sql`. En una base vacía se ejecutan primero 001, 002 y 003. No modificar las migraciones ya aplicadas ni reiniciar tablas.
 4. Desplegar frontend y API compatibles con ambos cambios. Una compilación normal no aplica SQL: el despliegue sin migraciones no puede usar estas pantallas nuevas.
 5. Iniciar sesión con el equipo existente y verificar historias, versiones/PDF, directorio, agenda y reserva pública original. Revisar roles y perfiles reales antes de dar nuevas altas. Comprobar que recepción no pueda abrir historias ni notas privadas y que un profesional asignado solo vea las fichas concedidas.
 6. Probar dos agendas y dos profesionales con pacientes de prueba autorizados; comprobar conflictos del mismo profesional entre centros y servicios, cancelación/reprogramación y notificaciones del entorno. La entrega local no configura SMTP ni acredita el funcionamiento de servicios remotos.

@@ -8,7 +8,8 @@ import { resolveSpecialty } from '../modules/registry'
 import { errorMessage } from '../lib/supabase'
 import { Loading, Modal, Notice, PdfActions } from '../components/ui'
 import { PatientList } from '../components/PatientList'
-import { canCreateClinical, canReadClinical } from '../core/access'
+import { specialtyAccess,canReadClinical } from '../core/access'
+import { newChartUrl,writableSpecialties } from '../core/specialties'
 
 export function Dashboard() {
   const {membership}=useClinic()
@@ -16,6 +17,9 @@ export function Dashboard() {
 }
 function ClinicalDashboard() {
   const { membership } = useClinic()
+  const available=writableSpecialties(membership)
+  const [specialty,setSpecialty]=useState(available[0]?.id||'podologia')
+  const creationUrl=newChartUrl(specialty)
   const [data, setData] = useState<Awaited<ReturnType<typeof getDashboard>> | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -32,14 +36,14 @@ function ClinicalDashboard() {
   }, [membership.clinicId, attempt])
   function search(event: FormEvent) { event.preventDefault(); navigate(`/historias?q=${encodeURIComponent(query.trim())}`) }
   return <>
-    <div className="page-heading"><div><p className="eyebrow">{dateLabel}</p><h1>Tu consultorio, al día.</h1><p className="page-description">Un espacio para acompañar a cada paciente.</p></div>{canCreateClinical(membership)&&<Link className="primary-button" to="/historias/nueva"><Plus size={17} />Nuevo paciente</Link>}</div>
+    <div className="page-heading"><div><p className="eyebrow">{dateLabel}</p><h1>Tu consultorio, al día.</h1><p className="page-description">Un espacio para acompañar a cada paciente.</p></div>{available.length>0&&<div className="button-row">{available.length>1&&<label className="field"><span>Especialidad de la nueva ficha</span><select value={specialty} onChange={e=>setSpecialty(e.target.value as typeof specialty)}>{available.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}<Link className="primary-button" to={creationUrl}><Plus size={17} />Nuevo paciente</Link></div>}</div>
     {!membership.clinic.name && !membership.clinic.professional && <Notice kind="info">Antes de imprimir, completá los datos del profesional en <Link to="/consultorio">Consultorio</Link>.</Notice>}
     <form className="dashboard-search" role="search" onSubmit={search}><Search size={21} aria-hidden="true" /><label className="sr-only" htmlFor="dashboard-query">Buscar paciente por nombre, DNI o historia clínica</label><input id="dashboard-query" type="search" value={query} onChange={(event) => setQuery(event.target.value)} maxLength={100} placeholder="Buscá un paciente por nombre, DNI o n.º de historia…" /><button className="primary-button" type="submit">Buscar<ArrowRight size={15} /></button></form>
     <div className="dashboard-shortcuts"><Link to="/agenda"><CalendarDays size={18}/><span>Agenda y turnos</span><ArrowRight size={15}/></Link>{membership.role==='owner'&&<><Link to="/agenda/configuracion"><Clock size={18}/><span>Horarios de reserva web</span><ArrowRight size={15}/></Link><Link to="/equipo"><Users size={18}/><span>Usuarios y equipo</span><ArrowRight size={15}/></Link></>}</div>
     {error && <Notice>{error} <button className="text-button" onClick={() => { setError(''); setData(null); setAttempt(attempt + 1) }}>Reintentar</button></Notice>}
-    <div className="stats-grid"><div className="stat-card"><span className="stat-icon"><Users size={21} /></span><div><span>Historias clínicas</span><strong>{data?.count ?? '—'}</strong></div></div><div className="stat-card"><span className="stat-icon"><ClipboardList size={21} /></span><div><span>Evoluciones guardadas</span><strong>{data?.evolutions ?? '—'}</strong></div></div><button className="stat-card template-card" type="button" onClick={() => setTemplates(true)}><span className="stat-icon"><FileDown size={21} /></span><div><span>Para completar en papel</span><strong>Planillas PDF<ArrowRight size={17} /></strong></div></button></div>
+    <div className="stats-grid"><div className="stat-card"><span className="stat-icon"><Users size={21} /></span><div><span>Historias clínicas</span><strong>{data?.count ?? '—'}</strong></div></div><div className="stat-card"><span className="stat-icon"><ClipboardList size={21} /></span><div><span>Evoluciones guardadas</span><strong>{data?.evolutions ?? '—'}</strong></div></div>{specialtyAccess(membership,'podologia')?.canRead&&<button className="stat-card template-card" type="button" onClick={() => setTemplates(true)}><span className="stat-icon"><FileDown size={21} /></span><div><span>Para completar en papel</span><strong>Planillas PDF<ArrowRight size={17} /></strong></div></button>}</div>
     <section className="panel"><div className="panel-heading"><div><p className="eyebrow">HISTORIAS CLÍNICAS</p><h2>Últimas fichas actualizadas</h2></div><Link className="text-link" to="/historias">Ver todas<ArrowRight size={15} /></Link></div>
-      {!data && !error ? <Loading /> : data?.patients.length ? <PatientList patients={data.patients} /> : !error && <div className="empty-state"><Users size={30} /><h3>Empezá con tu primer paciente</h3><p>Su ficha inicial y cada evolución quedarán guardadas en el consultorio.</p>{canCreateClinical(membership)&&<Link className="primary-button" to="/historias/nueva"><Plus size={16} />Crear historia clínica</Link>}</div>}
+      {!data && !error ? <Loading /> : data?.patients.length ? <PatientList patients={data.patients} /> : !error && <div className="empty-state"><Users size={30} /><h3>Empezá con tu primer paciente</h3><p>Su ficha inicial y cada evolución quedarán guardadas en el consultorio.</p>{available.length>0&&<Link className="primary-button" to={creationUrl}><Plus size={16} />Crear historia clínica</Link>}</div>}
     </section>
     {templates && <Modal title="Planillas para imprimir" onClose={() => setTemplates(false)}><p>Descargá la ficha inicial o la tabla de evolución sin completar. Para exportar datos de un paciente, abrí su historia.</p><PdfActions record={blank} clinic={membership.clinic} /></Modal>}
   </>

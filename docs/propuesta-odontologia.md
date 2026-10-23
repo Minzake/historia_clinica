@@ -1,6 +1,6 @@
 # Propuesta: ficha odontológica por paciente
 
-Estado: propuesta funcional y técnica, con maqueta navegable. No instala todavía una segunda especialidad ni cambia fichas, permisos o bases del sistema. Fecha: 23/10/2026. Rama de trabajo: develop.
+Estado: propuesta implementada en `develop`. Consultar [Odontología integrada](odontologia.md) para habilitación, persistencia y permisos. Este documento y su maqueta conservan la referencia del diseño inicial. Fecha: 23/10/2026.
 
 ## Alcance acordado
 

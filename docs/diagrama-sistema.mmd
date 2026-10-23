@@ -1,5 +1,5 @@
 %% Diagrama funcional del sistema implementado en develop.
-%% Podología es la única especialidad clínica instalada.
+%% Podología y odontología están instaladas; acceso independiente por especialidad.
 %% Las líneas punteadas enlazan módulos relacionados; las sólidas representan continuidad.
 flowchart TB
     SISTEMA(["Entrada al sistema"])
@@ -66,7 +66,7 @@ flowchart TB
         pacientes_ficha_alt["Continuar con datos administrativos y agenda, sin acceder a<br/>información clínica."]
         pacientes_ficha -->|No| pacientes_ficha_alt
         pacientes_ficha_alt --> agenda_abrir
-        pacientes_abrirficha(["Abrir / Crear ficha de podología — Reutilizar la misma identidad<br/>del paciente para su ficha autorizada."])
+        pacientes_abrirficha(["Abrir / Crear ficha de podología u odontología — Reutilizar la misma<br/>identidad del paciente para cada ficha autorizada."])
         pacientes_directorio --> pacientes_existe
         pacientes_existe -->|Sí| pacientes_editar
         pacientes_editar --> pacientes_datos
@@ -100,11 +100,26 @@ flowchart TB
         historias_buscar --> historias_modulo
         historias_modulo -->|Sí| historias_cargar
         historias_cargar --> historias_escribir
-        historias_escribir -->|Sí| historias_hojauno
+        historias_escribir -->|Podología| historias_hojauno
+        historias_escribir -->|Odontología| dental_antecedentes
         historias_hojauno --> historias_hojados
         historias_hojados --> historias_validar
         historias_validar -->|Sí| historias_version
         historias_version -->|Sí| historias_guardada
+    end
+    subgraph ODONTOLOGIA["04b · Ficha odontológica de adultos y niños"]
+        dental_antecedentes["Ficha inicial: motivo, alergias, medicación y antecedentes"]
+        dental_control["Nuevo control fechado: elegir dentición permanente, temporal o mixta"]
+        dental_pintar["Elegir pieza y pintar caras: rojo/caries, azul/resina, negro/amalgama.<br/>Leyenda, símbolos, detalle, borrar por cara y deshacer"]
+        dental_plan["Plan: pendiente, en curso o realizado; evoluciones fechadas"]
+        dental_guardar["Validar y guardar con autor del servidor y versión concurrente"]
+        dental_lectura["Control guardado en lectura: consultar o agregar otro control,<br/>sin alterar el anterior"]
+        dental_pdf["Revalidar autorización: PDF actual o versión anterior,<br/>con colores, leyenda, controles, plan y evoluciones"]
+        dental_antecedentes --> dental_control --> dental_pintar --> dental_plan --> dental_guardar
+        dental_guardar --> historias_validar
+        historias_guardada -.-> dental_lectura
+        dental_lectura --> dental_control
+        dental_lectura --> dental_pdf
     end
     subgraph DOCUMENTOS["05 · PDF, planillas y versiones"]
         direction TB
@@ -338,4 +353,4 @@ flowchart TB
 %% controles_cola: Correo de turnos: Resend cuando está configurado. No se presupone que haya un cron activo.
 %% controles: Si falla la red, mostrar el error y permitir reintentar sin afirmar que se guardó. Los formularios que implementan protección de cambios pendientes piden confirmación al salir, cambiar de consultorio o cerrar sesión.
 %% controles: Entorno local: Supabase en Docker y correo de Auth en Mailpit; los avisos externos de turnos están deshabilitados. Local y producción no sincronizan automáticamente datos, contraseñas ni permisos.
-%% controles: Estado actual: solo el módulo clínico de podología está instalado. La base permite separar consultorios, especialidades, prestaciones y fichas; otras especialidades necesitan su módulo antes de funcionar.
+%% controles: Podología y odontología están instaladas. Habilitación, permisos y perfiles de atención independientes. Otras especialidades requieren su propio módulo.

@@ -5,7 +5,7 @@ import type { MemberRole, SpecialtyAccess } from '../core/types'
 export const defaultTimezone='America/Argentina/Buenos_Aires'
 export type ClientProfile={user_id:string;full_name:string;dni:string;phone:string;email:string}
 export type Practitioner={user_id:string;email:string;role:MemberRole;display_name?:string;specialty_ids?:string[]}
-export type TeamMember=Practitioner&{active:boolean;confirmed:boolean;is_self:boolean;specialties?:SpecialtyAccess[];practitioner?:boolean;license?:string}
+export type TeamMember=Practitioner&{active:boolean;confirmed:boolean;is_self:boolean;specialties?:SpecialtyAccess[];practitioner?:boolean;license?:string;practitioner_specialties?:{specialty_id:string;active:boolean;license:string}[]}
 export type OpeningHours={weekday:number;opens:string;closes:string}
 export type BookingSettings={clinic_id:string;slug:string;enabled:boolean;provider_id:string|null;provider_name:string;timezone:string;advance_days:number;lead_minutes:number;cancel_hours:number;version:number;page_id?:string;service_id?:string;duration_minutes?:number}
 export type Service={id:string;clinic_id:string;specialty_id:string;name:string;duration_minutes:number;active:boolean;version:number;legacy_default?:boolean}

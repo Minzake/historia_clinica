@@ -7,8 +7,10 @@ import { canCreateClinical,canReadClinical } from '../src/core/access'
 import type { Membership } from '../src/core/types'
 
 describe('specialty module boundary',()=>{
-  it('installs only podology and refuses unimplemented specialties and schema versions',()=>{
+  it('installs podology and dentistry and refuses unknown specialties and schema versions',()=>{
     expect(resolveSpecialty().id).toBe('podologia')
+    expect(resolveSpecialty('odontologia').id).toBe('odontologia')
+    expect(()=>resolveSpecialty('odontologia',2)).toThrow('UNSUPPORTED_CLINICAL_SCHEMA')
     expect(()=>resolveSpecialty('otra')).toThrow('UNSUPPORTED_CLINICAL_SCHEMA')
     expect(()=>resolveSpecialty('podologia',2)).toThrow('UNSUPPORTED_CLINICAL_SCHEMA')
   })
@@ -32,6 +34,7 @@ describe('specialty module boundary',()=>{
   it('separates administrator role from explicit clinical capabilities',()=>{
     const member:Membership={clinicId:'clinic',role:'owner',clinic:blankClinic(),version:1,specialties:[]}
     expect(canReadClinical(member)).toBe(false);expect(canCreateClinical(member)).toBe(false)
+    expect(canCreateClinical({...member,specialties:undefined},'odontologia')).toBe(false)
     expect(canReadClinical({...member,specialties:[{specialtyId:'podologia',name:'Podología',canRead:true,canWrite:false,canExport:false,scope:'assigned'}]})).toBe(true)
   })
 })
