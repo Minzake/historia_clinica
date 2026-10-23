@@ -25,7 +25,7 @@ Para probar en esta computadora con base y usuarios locales: **`npm run local`**
 
 La [Preview de develop](https://historia-clinica-git-develop-minzakes-projects.vercel.app) usa una base Supabase independiente con las migraciones 001–005 instaladas. Ver [acceso y operación del entorno de pruebas](docs/entorno-develop.md). Crear únicamente pacientes ficticios allí.
 
-Las etapas 1–3 del [plan de reutilización por especialidad y policonsultorio](docs/plan-multiespecialidad.md) están aplicadas en `develop`: módulo de podología separado, identidad administrativa, fichas/permisos por especialidad, recepción, múltiples membresías y agendas por prestación. **Solo está instalada podología.** La [guía de implementación y migración](docs/implementacion-multiespecialidad.md) explica la puesta en marcha, compatibilidad y límites pendientes. Estos cambios requieren las migraciones 004 y 005 además del nuevo frontend/API.
+Las etapas 1–3 del [plan de reutilización por especialidad y policonsultorio](docs/plan-multiespecialidad.md) están aplicadas en `develop`: módulo de podología separado, identidad administrativa, fichas/permisos por especialidad, recepción, múltiples membresías y agendas por prestación. Están instaladas **podología y odontología**, con fichas y permisos independientes. Ver [uso del odontograma y seguimiento](docs/odontologia.md). La [guía de implementación y migración](docs/implementacion-multiespecialidad.md) explica la puesta en marcha, compatibilidad y límites pendientes. Estos cambios requieren las migraciones 004, 005 y 006 además del nuevo frontend/API.
 
 ## Formularios y uso desde el celular
 
@@ -38,7 +38,7 @@ En celular, la navegación principal muestra todas las secciones, los campos tie
 ## 1. Crear y configurar Supabase
 
 1. Creá un proyecto de Supabase. Elegí la región de almacenamiento adecuada antes de cargar datos reales.
-2. En **SQL Editor**, ejecutá una sola vez y en orden los cinco archivos de `supabase/migrations/`, desde `202610210001_consultorio.sql` hasta `202610210005_service_agendas.sql`. El comando `npm run db:migrate` controla versiones y aplica las pendientes sin reinstalar la primera. Si el proyecto ya tiene historias, nunca borres tablas para actualizarlo. Antes de actualizar datos reales, seguí la guía de migración enlazada arriba.
+2. En **SQL Editor**, ejecutá una sola vez y en orden los seis archivos de `supabase/migrations/`, desde `202610210001_consultorio.sql` hasta `202610230006_odontology.sql`. El comando `npm run db:migrate` controla versiones y aplica las pendientes sin reinstalar la primera. Si el proyecto ya tiene historias, nunca borres tablas para actualizarlo. Antes de actualizar datos reales, seguí la guía de migración enlazada arriba.
 3. En **Authentication → Providers / Sign In**, habilitá correo y contraseña y el registro de pacientes. **Exigí confirmación de email** y configurá los límites de intentos/envío. Las nuevas cuentas no reciben ninguna membresía de consultorio ni acceso clínico. No confíes en campos `role` del metadata de registro. Verificá SMTP antes de abrir el registro al público.
 4. En **Authentication → Users**, creá la cuenta del titular con un correo válido y una contraseña fuerte (mínimo recomendado: 12 caracteres). Si la creás manualmente y está verificada por vos, confirmá su correo desde el panel.
 5. Asigná la cuenta al consultorio ejecutando este bloque en SQL Editor. **Reemplazá el correo antes de ejecutar.** Solo debe ejecutarse una vez para el primer titular:
