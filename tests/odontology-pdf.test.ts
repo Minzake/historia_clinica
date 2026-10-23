@@ -15,6 +15,29 @@ function record():SavedDentalRecord {
   return result
 }
 describe('dental PDF',()=>{
+  it.each(['permanent','temporary','mixed'] as const)('prints only the selected %s dentition, with matching marks and legend',async(view)=>{
+    const value=record()
+    value.clinical.odontograms[0].view=view
+    const before=structuredClone(value),pdf=(await buildDentalPdf(value,blankClinic())).output()
+    if(view!=='temporary'){
+      expect(pdf).toContain('(18)');expect(pdf).toContain('(36)');expect(pdf).toContain('Caries')
+    }else{
+      expect(pdf).not.toContain('(18)');expect(pdf).not.toContain('(36)');expect(pdf).not.toContain('Caries');expect(pdf).not.toContain('Resina')
+    }
+    if(view!=='permanent'){
+      expect(pdf).toContain('(55)');expect(pdf).toContain('(85)');expect(pdf).toContain('Amalgama')
+    }else{
+      expect(pdf).not.toContain('(55)');expect(pdf).not.toContain('(85)');expect(pdf).not.toContain('Amalgama')
+    }
+    expect(value).toEqual(before)
+  })
+  it('uses a display override without changing the saved control or the default historical export',async()=>{
+    const value=record(),id=value.clinical.odontograms[0].id,before=structuredClone(value)
+    const filtered=(await buildDentalPdf(value,blankClinic(),{[id]:'permanent'})).output()
+    expect(filtered).not.toContain('(55)')
+    expect(value).toEqual(before)
+    expect((await buildDentalPdf(value,blankClinic())).output()).toContain('(55)')
+  })
   it('includes only the legend entries actually recorded instead of the full condition catalogue',async()=>{
     const value=record(),before=structuredClone(value)
     const pdf=(await buildDentalPdf(value,blankClinic())).output()

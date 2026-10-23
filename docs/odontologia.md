@@ -11,6 +11,8 @@ Disponible en `develop` con la migración `202610230006_odontology.sql`. Reutili
 5. Guardar la historia. Cada control conserva fecha, autor y leyenda; queda en modo lectura. Para otra evaluación, agregar un nuevo control. El borrador permite borrar por cara y deshacer.
 6. Registrar indicaciones en el plan y su estado pendiente, en curso o realizado; agregar evoluciones fechadas. **Versiones y PDF** permite exportar la historia actual o un snapshot anterior con autorización vigente.
 
+El PDF respeta la dentición permanente, temporal o mixta de cada control, junto con sus marcas y leyenda correspondientes. En la descarga actual, cambiar **Dentición visible** también cambia la vista de impresión de ese control, sin modificar el registro guardado. Las versiones anteriores conservan su propia selección de dentición. Las marcas ocultas permanecen guardadas y se pueden consultar o imprimir volviendo a la vista mixta.
+
 Las prestaciones también permiten elegir especialidad. Las agendas y horarios se configuran expresamente, sin abrir reservas por instalar el módulo.
 
 ## Datos y permisos

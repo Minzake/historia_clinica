@@ -28,10 +28,11 @@ export function Tooth({tooth,marks,large=false,onPaint}:{tooth:number;marks:Mark
   </svg>
 }
 
-export function OdontogramBoard({value,onChange,birthDate='',disabled=false}:{value:Odontogram;onChange?:(value:Odontogram)=>void;birthDate?:string;disabled?:boolean}) {
-  const [selected,setSelected]=useState(value.view==='temporary'?55:36),[condition,setCondition]=useState<Condition>('caries')
+export function OdontogramBoard({value,onChange,displayView,onViewChange,birthDate='',disabled=false}:{value:Odontogram;onChange?:(value:Odontogram)=>void;displayView?:DentitionView;onViewChange?:(view:DentitionView)=>void;birthDate?:string;disabled?:boolean}) {
+  const [selected,setSelected]=useState((displayView??value.view)==='temporary'?55:36),[condition,setCondition]=useState<Condition>('caries')
   const [eraser,setEraser]=useState(false),[error,setError]=useState(''),[undo,setUndo]=useState<Mark[][]>([])
-  const [view,setView]=useState(value.view)
+  const [localView,setView]=useState(value.view)
+  const view=displayView??localView
   const heading=useRef<HTMLHeadingElement>(null),readonly=!onChange||disabled,c=conditionInfo(condition)
   const selectedMarks=value.marks.filter(m=>m.tooth===selected)
   const visible=quadrants.filter(q=>view==='mixed'||(view==='permanent'?q.n<5:q.n>4))
@@ -46,7 +47,7 @@ export function OdontogramBoard({value,onChange,birthDate='',disabled=false}:{va
   function choose(id:Condition){setCondition(id);setEraser(false);setError('')}
   function selectTooth(tooth:number) { setSelected(tooth);setError('');if(heading.current){heading.current.focus({preventScroll:true});if(heading.current.getBoundingClientRect().top>window.innerHeight-150)heading.current.scrollIntoView({behavior:'smooth',block:'start'})} }
   return <div className="dental-board">
-    <div className="field-grid settings-contact-grid"><Field label="Fecha del odontograma" type="date" min={birthDate||undefined} max={today()} required value={value.date} disabled={readonly} onChange={date=>onChange?.({...value,date})}/><SelectField label="Dentición visible" value={view} disabled={disabled} onChange={e=>{const view=e.target.value as DentitionView;setView(view);const allowed=quadrants.filter(q=>view==='mixed'||(view==='permanent'?q.n<5:q.n>4)).flatMap(q=>q.ids);if(!allowed.includes(selected))setSelected(allowed[0]);if(onChange)onChange({...value,view})}}><option value="mixed">Mixta · permanentes y temporales</option><option value="permanent">Permanente · 32 piezas</option><option value="temporary">Temporal · 20 piezas</option></SelectField></div>
+    <div className="field-grid settings-contact-grid"><Field label="Fecha del odontograma" type="date" min={birthDate||undefined} max={today()} required value={value.date} disabled={readonly} onChange={date=>onChange?.({...value,date})}/><SelectField label="Dentición visible" value={view} disabled={disabled} onChange={e=>{const view=e.target.value as DentitionView;setView(view);onViewChange?.(view);const allowed=quadrants.filter(q=>view==='mixed'||(view==='permanent'?q.n<5:q.n>4)).flatMap(q=>q.ids);if(!allowed.includes(selected))setSelected(allowed[0]);if(onChange)onChange({...value,view})}}><option value="mixed">Mixta · permanentes y temporales</option><option value="permanent">Permanente · 32 piezas</option><option value="temporary">Temporal · 20 piezas</option></SelectField></div>
     <p className="section-subtitle">Derecha del paciente a la izquierda del mapa. Una pieza sin marcas está sin evaluar.</p>
     <div className="dental-quadrants">{visible.map(q=><section className="dental-quadrant" key={q.n} aria-label={q.name}><h3>{q.name}</h3><div className={`dental-teeth ${q.n>4?'temporary':''}`}>{q.ids.map(tooth=>{
       const marks=value.marks.filter(m=>m.tooth===tooth)

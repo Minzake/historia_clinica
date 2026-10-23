@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable'
 import type { UserOptions } from 'jspdf-autotable'
 import type { Clinic } from '../../core/types'
 import { conditionInfo,conditions,expandFaces,faceLabel,quadrants,surfacePositions,validateDentalRecord } from './model'
-import type { Mark,SavedDentalRecord } from './model'
+import type { DentitionView,Mark,SavedDentalRecord } from './model'
 
 function tooth(doc:jsPDF,id:number,marks:Mark[],x:number,y:number) {
   const scale=.17,positions=surfacePositions(id)
@@ -29,7 +29,7 @@ function tooth(doc:jsPDF,id:number,marks:Mark[],x:number,y:number) {
     else {doc.setFontSize(5);doc.text(c.symbol,x,y+.7,{align:'center'})}
   }
 }
-export async function buildDentalPdf(record:SavedDentalRecord,context:Clinic) {
+export async function buildDentalPdf(record:SavedDentalRecord,context:Clinic,views:Readonly<Record<string,DentitionView>>={}) {
   if(record.canExport===false)throw new Error('EXPORT_NOT_ALLOWED')
   if(record.specialtyId!=='odontologia'||record.schemaVersion!==1)throw new Error('UNSUPPORTED_CLINICAL_SCHEMA')
   const invalid=validateDentalRecord(record);if(invalid)throw new Error(invalid)
@@ -40,22 +40,25 @@ export async function buildDentalPdf(record:SavedDentalRecord,context:Clinic) {
   table({startY:initialY,head:[['Ficha inicial','Datos registrados']],body:[['Apertura',record.patient.date],['Nacimiento',record.patient.birthDate||'No informado'],['Contacto',[record.patient.mobile,record.patient.phone].filter(Boolean).join(' · ')],['Motivo de consulta',record.patient.reason],['Alergias',record.patient.allergies],['Medicación',record.patient.medication],['Antecedentes de salud',record.patient.medicalNotes],['Antecedentes odontológicos',record.patient.dentalNotes]],styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[47,110,84]},columnStyles:{0:{cellWidth:46}}})
   for(const control of record.clinical.odontograms){
     doc.addPage();const baseY=header(`Odontograma · ${control.date}`);doc.setFontSize(8);const author=doc.splitTextToSize(`Registrado por: ${control.authorName||'Sin autor informado'} · Leyenda ${control.legendVersion}. Sin marca: sin evaluar.`,180);doc.text(author,14,baseY)
-    const rows=[[quadrants[0],quadrants[1]],[quadrants[2],quadrants[3]],[quadrants[4],quadrants[5]],[quadrants[6],quadrants[7]]]
+    const view=views[control.id]||control.view
+    const rows=[[quadrants[0],quadrants[1]],[quadrants[2],quadrants[3]],[quadrants[4],quadrants[5]],[quadrants[6],quadrants[7]]].filter(row=>view==='mixed'||(view==='permanent'?row[0].n<5:row[0].n>4))
+    const visibleTeeth=new Set(rows.flatMap(row=>row.flatMap(quadrant=>quadrant.ids)))
+    const marks=control.marks.filter(mark=>visibleTeeth.has(mark.tooth))
     let y=baseY+author.length*4+17
     for(const row of rows){
       const ids=row.flatMap(q=>q.ids)
       const start=105-(ids.length-1)*5.5
       doc.setFontSize(7);doc.setTextColor('#555555');doc.text(row[0].name.replace(' derecha',' / izquierda'),14,y-10)
-      ids.forEach((id,i)=>tooth(doc,id,control.marks.filter(m=>m.tooth===id),start+i*11,y));y+=23
+      ids.forEach((id,i)=>tooth(doc,id,marks.filter(m=>m.tooth===id),start+i*11,y));y+=23
     }
     let detailsY=y-7
-    const usedConditions=new Set(control.marks.map(mark=>mark.condition))
+    const usedConditions=new Set(marks.map(mark=>mark.condition))
     const legend=conditions.filter(condition=>usedConditions.has(condition.id))
     if(legend.length){
       table({startY:detailsY,head:[['Leyenda 1','Significado']],body:legend.map(c=>[c.id==='healthy'?'OK':c.id==='absent'?'AUS':c.symbol,c.label]),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[47,110,84]},columnStyles:{0:{cellWidth:25}},didParseCell:data=>{if(data.section==='body'&&data.column.index===0)data.cell.styles.textColor=legend[data.row.index].color}})
       detailsY=(doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable.finalY+6
     }
-    table({startY:detailsY,head:[['Pieza','Registro','Caras','Detalle']],body:control.marks.map(m=>[String(m.tooth),conditionInfo(m.condition).label,m.faces.map(f=>faceLabel(f,m.tooth)).join(', '),m.note]),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[47,110,84]}})
+    table({startY:detailsY,head:[['Pieza','Registro','Caras','Detalle']],body:marks.map(m=>[String(m.tooth),conditionInfo(m.condition).label,m.faces.map(f=>faceLabel(f,m.tooth)).join(', '),m.note]),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[47,110,84]}})
     if(control.notes)table({startY:((doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable?.finalY||y)+5,body:[['Observaciones',control.notes]],styles:{fontSize:9,cellPadding:3},columnStyles:{0:{cellWidth:30}}})
   }
   if(record.clinical.treatmentPlan.length){doc.addPage();const y=header('Plan de tratamiento');table({startY:y,head:[['Indicación','Pieza','Procedimiento','Estado','Realización']],body:record.clinical.treatmentPlan.map(t=>[t.date,t.tooth?String(t.tooth):'General',t.description,{pending:'Pendiente',in_progress:'En curso',completed:'Realizado'}[t.status],t.completedDate]),styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[47,110,84]}})}
@@ -64,4 +67,4 @@ export async function buildDentalPdf(record:SavedDentalRecord,context:Clinic) {
   for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor('#666666');doc.text(`${record.patient.historyNumber||'Odontología'} · Versión ${record.version} · ${p} / ${pages}`,14,289);doc.text('Firma y sello del profesional: ____________________',115,289)}
   return doc
 }
-export async function downloadDentalPdf(record:SavedDentalRecord,clinic:Clinic) { const doc=await buildDentalPdf(record,clinic);doc.save(`Odontologia-${record.patient.historyNumber||record.id}-v${record.version}.pdf`) }
+export async function downloadDentalPdf(record:SavedDentalRecord,clinic:Clinic,views:Readonly<Record<string,DentitionView>>={}) { const doc=await buildDentalPdf(record,clinic,views);doc.save(`Odontologia-${record.patient.historyNumber||record.id}-v${record.version}.pdf`) }

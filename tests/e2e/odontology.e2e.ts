@@ -1,7 +1,8 @@
 import { expect,test } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 import type { Page } from '@playwright/test'
 import { blankClinic } from '../../src/core/clinic'
-import { blankDentalRecord } from '../../src/modules/odontologia/model'
+import { blankDentalRecord,blankOdontogram,paintMark } from '../../src/modules/odontologia/model'
 import type { SavedDentalRecord } from '../../src/modules/odontologia/model'
 
 const clinic='20000000-0000-4000-8000-000000000001',userId='10000000-0000-4000-8000-000000000001',patientId='30000000-0000-4000-8000-000000000001'
@@ -158,6 +159,29 @@ test('whole-tooth symbols are painted on the graphic without manual face selecti
   const marks=state.record!.clinical.odontograms[0].marks
   expect(marks.find(m=>m.tooth===37)).toMatchObject({condition:'absent',faces:['all']})
   expect(marks.find(m=>m.tooth===36)).toMatchObject({condition:'caries',faces:['center']})
+})
+
+test('PDF respects the visible dentition of a saved control without rewriting it',async({page},testInfo)=>{
+  const state=await backend(page,'write',true),control=blankOdontogram()
+  control.marks=paintMark(paintMark([],36,'caries',['center']),55,'amalgam',['center'])
+  state.record!.clinical.odontograms=[control]
+  const before=structuredClone(state.record)
+  await login(page);await page.goto(`/historias/${patientId}?especialidad=odontologia&seccion=odontograma`)
+  for(const view of ['permanent','temporary'] as const){
+    await page.getByLabel('Dentición visible').selectOption(view)
+    await page.getByRole('tab',{name:'Ficha y antecedentes',exact:true}).click()
+    await page.getByRole('tab',{name:'Odontograma',exact:true}).click()
+    await expect(page.getByLabel('Dentición visible')).toHaveValue(view)
+    const download=page.waitForEvent('download')
+    await page.getByRole('button',{name:'Descargar ficha odontológica',exact:true}).click()
+    const path=testInfo.outputPath(`denticion-${view}.pdf`)
+    await (await download).saveAs(path)
+    const pdf=(await readFile(path)).toString('latin1')
+    expect(pdf).toContain(view==='permanent'?'(36)':'(55)')
+    expect(pdf).not.toContain(view==='permanent'?'(55)':'(36)')
+  }
+  expect(state.record).toEqual(before)
+  expect(state.requests.some(request=>request.name==='save_clinical_chart')).toBe(false)
 })
 
 test('read-only and reception accounts cannot write or export dentistry',async({page})=>{
