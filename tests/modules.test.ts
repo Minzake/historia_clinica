@@ -5,8 +5,14 @@ import { splitPodologyRecord,joinPodologyRecord } from '../src/modules/podologia
 import { buildPdf } from '../src/lib/pdf'
 import { canCreateClinical,canReadClinical } from '../src/core/access'
 import type { Membership } from '../src/core/types'
+import { newChartUrl } from '../src/core/specialties'
 
 describe('specialty module boundary',()=>{
+  it('always includes the chosen specialty in the new chart URL',()=>{
+    expect(newChartUrl()).toBe('/historias/nueva?especialidad=podologia')
+    expect(newChartUrl('podologia')).toBe('/historias/nueva?especialidad=podologia')
+    expect(newChartUrl('odontologia')).toBe('/historias/nueva?especialidad=odontologia')
+  })
   it('installs podology and dentistry and refuses unknown specialties and schema versions',()=>{
     expect(resolveSpecialty().id).toBe('podologia')
     expect(resolveSpecialty('odontologia').id).toBe('odontologia')

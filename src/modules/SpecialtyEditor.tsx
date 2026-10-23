@@ -10,7 +10,7 @@ const OdontologyEditor = lazy(() => import('./odontologia/Editor').then(module=>
 export function SpecialtyEditor() {
   const [params] = useSearchParams()
   const {membership}=useClinic()
-  const specialty=params.get('especialidad')||membership.specialties?.find(s=>s.canRead)?.specialtyId||'podologia'
+  const specialty=params.get('especialidad')||'podologia'
   if(!specialtyAccess(membership,specialty)?.canRead)return <Notice>Tu cuenta no tiene acceso a historias clínicas de esta especialidad. Podés gestionar pacientes y agenda desde la navegación principal.</Notice>
   try { resolveSpecialty(specialty) }
   catch { return <Notice>Esta especialidad o versión de ficha todavía no está disponible en esta aplicación.</Notice> }

@@ -23,7 +23,7 @@ async function backend(page:Page,mode:'write'|'read'|'reception'='write',existin
       requests.push({name,args})
       const links=mode==='reception'?[]:[{specialtyId:'odontologia',name:'Odontología',action:record?'open':'create'}]
       const identity={id:patientId,version:1,full_name:'Ana Paciente',dni:'22334455',history_number:'HC-000001',details:{birthDate:'2016-05-12',address:'',phone:'',mobile:'',insurance:'',occupation:'',emergencyContact:'',emergencyPhone:''},chart_links:links}
-      if(name==='list_my_memberships')data=[{clinicId:clinic,role:mode==='reception'?'reception':'owner',clinic:clinicData,version:1,specialties:mode==='reception'?[]:(bothSpecialties?[{specialtyId:'podologia',name:'Podología'},{specialtyId:'odontologia',name:'Odontología'}]:[{specialtyId:'odontologia',name:'Odontología'}]).map(s=>({...s,canRead:true,canWrite:mode==='write',canExport:mode==='write',scope:'all'}))}]
+      if(name==='list_my_memberships')data=[{clinicId:clinic,role:mode==='reception'?'reception':'owner',clinic:clinicData,version:1,specialties:mode==='reception'?[]:(bothSpecialties?[{specialtyId:'odontologia',name:'Odontología'},{specialtyId:'podologia',name:'Podología'}]:[{specialtyId:'odontologia',name:'Odontología'}]).map(s=>({...s,canRead:true,canWrite:mode==='write',canExport:mode==='write',scope:'all'}))}]
       else if(name==='get_clinic_dashboard'||name==='list_clinical_patients')data={patients:record?[{id:patientId,full_name:record.patient.fullName,dni:record.patient.dni,history_number:record.patient.historyNumber,updated_at:record.updatedAt,chart_links:links}]:[],count:record?1:0,evolutions:record?.evolutions.length||0}
       else if(name==='list_patient_identities')data={patients:[identity],count:1}
       else if(name==='get_patient_identity')data=identity
@@ -50,13 +50,24 @@ test('specialty choices work with keyboard and touch on dashboard and clinical d
   await login(page)
   const choices=page.getByRole('group',{name:'Especialidad de la nueva ficha'})
   await expect(choices.getByRole('radio',{name:'Podología',exact:true})).toBeChecked()
+  await page.getByRole('link',{name:'Nueva ficha',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Nueva ficha de podología',exact:true})).toBeVisible()
+  await page.goto('/historias/nueva')
+  await expect(page.getByRole('heading',{name:'Nueva ficha de podología',exact:true})).toBeVisible()
+  await page.goto('/')
   await choices.getByRole('radio',{name:'Podología',exact:true}).focus()
   await page.keyboard.press('ArrowRight')
   await expect(choices.getByRole('radio',{name:'Odontología',exact:true})).toBeChecked()
   await expect(page.getByRole('link',{name:'Nueva ficha',exact:true})).toHaveAttribute('href','/historias/nueva?especialidad=odontologia')
   await page.screenshot({path:testInfo.outputPath('especialidades-desktop.png'),fullPage:true})
+  await page.getByRole('link',{name:'Nueva ficha',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Nueva ficha odontológica',exact:true})).toBeVisible()
   await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('link',{name:'Historias clínicas',exact:true}).click()
   await page.setViewportSize({width:375,height:812})
+  await expect(choices.getByRole('radio',{name:'Podología',exact:true})).toBeChecked()
+  await page.getByRole('link',{name:'Nueva ficha',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Nueva ficha de podología',exact:true})).toBeVisible()
+  await page.goto('/historias')
   await choices.getByText('Odontología',{exact:true}).click()
   await expect(choices.getByRole('radio',{name:'Odontología',exact:true})).toBeChecked()
   await expect(page.getByRole('link',{name:'Crear historia',exact:true})).toHaveAttribute('href','/historias/nueva?especialidad=odontologia')
