@@ -1,4 +1,4 @@
-import { ageAt, formatDate, today } from '../../core/format'
+import { ageAt, formatDate, formatDateTime, today } from '../../core/format'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
@@ -218,5 +218,5 @@ function RecordHistory({ patientId, onClose }: { patientId: string; onClose: () 
     catch (err) { setError(errorMessage(err)) }
     finally { setBusyId(null) }
   }
-  return <Modal title="Versiones guardadas" onClose={onClose}><p>Cada guardado conserva una copia completa de la ficha. Se muestran las últimas 30 versiones, solo para consulta y descarga.</p>{error && <Notice>{error}</Notice>}{loading ? <Loading /> : <ul className="revision-list">{revisions.map((revision) => <li key={revision.id}><div><strong>Versión {revision.version}</strong><span>{new Date(revision.recorded_at).toLocaleString('es-AR')}</span></div><button className="secondary-button" type="button" disabled={busyId !== null} onClick={() => download(revision.id)}><Download size={14} />{busyId === revision.id ? 'Generando…' : 'PDF'}</button></li>)}</ul>}</Modal>
+  return <Modal title="Versiones guardadas" onClose={onClose}><p>Cada guardado conserva una copia completa de la ficha. Se muestran las últimas 30 versiones, solo para consulta y descarga.</p>{error && <Notice>{error}</Notice>}{loading ? <Loading /> : <ul className="revision-list">{revisions.map((revision) => <li key={revision.id}><div><strong>Versión {revision.version}</strong><span>{formatDateTime(revision.recorded_at)}</span></div><button className="secondary-button" type="button" disabled={busyId !== null} onClick={() => download(revision.id)}><Download size={14} />{busyId === revision.id ? 'Generando…' : 'PDF'}</button></li>)}</ul>}</Modal>
 }

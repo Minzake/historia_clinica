@@ -49,6 +49,7 @@ describe('appointment email outbox',()=>{
   })
   it('only includes logistical details, not DNI or clinical notes',()=>{
     const message=notificationEmail(payload,'https://example.com')
+    expect(message.text).toContain('24/10/2026 09:00')
     expect(message.text).toContain('09:00');expect(message.text).not.toContain('SECRET_DNI');expect(message.text).not.toContain('SECRET_CLINICAL_NOTES')
   })
   it('claims jobs for the authenticated actor and uses a stable provider idempotency key',async()=>{

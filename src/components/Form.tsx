@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useId, useRef, useState } from 'r
 import type { FormHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { phoneError, validEmail } from '../lib/validation'
+import { DateInput } from './DateInput'
 
 type Control = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
 const FormErrors = createContext<Record<string, string>>({})
@@ -50,6 +51,7 @@ export function Form({ children, onSubmit, validateFields = true, ...props }: Fo
     const next: Record<string, string> = {}
     Array.from(form.current?.elements || []).forEach((element, index) => {
       if (!isControl(element)) return
+      if(element instanceof HTMLInputElement&&element.dataset.calendarPicker)return
       const error = controlError(element)
       if (!element.id) element.id = `${prefix}-${index}`
       if (error) next[element.id] = error
@@ -121,7 +123,7 @@ export function Field({ label, value, onChange, maxLength, hint, error, validati
   const limit = maxLength ?? (type === 'email' ? 254 : type === 'tel' ? 40 : 200)
   const input = <input {...props} id={fieldId} ref={ref} data-value-kind={type} type={type === 'password' && visible ? 'text' : type} maxLength={limit} value={value} onChange={event => onChange?.(event.target.value)} aria-invalid={message ? true : undefined} aria-describedby={[hint && `${fieldId}-hint`, message && `${fieldId}-error`, props['aria-describedby']].filter(Boolean).join(' ') || undefined} />
   const passwordLabel = label === 'Repetí la contraseña' ? 'confirmación de contraseña' : label.toLocaleLowerCase('es')
-  return <FieldFrame label={label} id={fieldId} hint={hint} message={message}>{type === 'password' ? <div className="password-control">{input}<button type="button" className="password-toggle" aria-label={`${visible ? 'Ocultar' : 'Mostrar'} ${passwordLabel}`} aria-controls={fieldId} aria-pressed={visible} disabled={props.disabled} onClick={() => setVisible(current => !current)}>{visible ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div> : input}</FieldFrame>
+  return <FieldFrame label={label} id={fieldId} hint={hint} message={message}>{type==='date'||type==='datetime-local'?<DateInput {...props} id={fieldId} label={label} type={type==='date'?'date':'datetime-local'} value={value} onChange={onChange} validationMessage={validationMessage} aria-invalid={message?true:undefined} aria-describedby={[hint&&`${fieldId}-hint`,message&&`${fieldId}-error`,props['aria-describedby']].filter(Boolean).join(' ')||undefined}/>:type === 'password' ? <div className="password-control">{input}<button type="button" className="password-toggle" aria-label={`${visible ? 'Ocultar' : 'Mostrar'} ${passwordLabel}`} aria-controls={fieldId} aria-pressed={visible} disabled={props.disabled} onClick={() => setVisible(current => !current)}>{visible ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div> : input}</FieldFrame>
 }
 
 export function SelectField({ label, hint, error, validationMessage = '', id, children, ...props }: SelectHTMLAttributes<HTMLSelectElement> & Shared) {

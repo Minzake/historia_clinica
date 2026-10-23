@@ -1,3 +1,4 @@
+import { formatDate } from '../core/format'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
@@ -123,7 +124,7 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
         </>}
         {conflictMessage && <Notice>{conflictMessage}</Notice>}
         {block && <Field label="Motivo del bloqueo (interno)" value={name} onChange={setName}/>}
-        {end && <div className="appointment-summary" aria-live="polite"><strong>{block ? 'Bloqueo' : 'Turno'} de {displayTime(start, timezone)} a {displayTime(end, timezone)}</strong><span>{new Date(start).toLocaleDateString('es-AR', {timeZone:timezone,day:'numeric',month:'long',year:'numeric'})} · {minutes} minutos</span></div>}
+        {end && <div className="appointment-summary" aria-live="polite"><strong>{block ? 'Bloqueo' : 'Turno'} de {displayTime(start, timezone)} a {displayTime(end, timezone)}</strong><span>{formatDate(start,timezone)} · {minutes} minutos</span></div>}
         <p className="section-subtitle">Hora del consultorio ({timezone.replace(/_/g,' ')}).</p>
       </section>
       {!block && <section className="appointment-form-section"><button type="button" className="text-button" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Ocultar contacto y observaciones' : 'Agregar contacto u observaciones (opcional)'}</button>{more && <div className="settings-fields"><div className="field-grid settings-contact-grid"><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone} readOnly={useAccount}/><Field label="Email para avisos (opcional)" type="email" maxLength={254} value={email} onChange={setEmail} readOnly={useAccount}/></div>{canManageNotes && <TextAreaField label="Observación interna · no se envía al paciente" rows={2} maxLength={2000} value={notes} onChange={e => setNotes(e.target.value)}/>}</div>}</section>}

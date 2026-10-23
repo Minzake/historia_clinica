@@ -1,3 +1,4 @@
+import { formatDate } from '../core/format'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -27,7 +28,7 @@ function ClinicalDashboard() {
   const [attempt, setAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [templates, setTemplates] = useState(false)
-  const [dateLabel] = useState(() => new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }).toLocaleUpperCase('es'))
+  const [dateLabel] = useState(() => formatDate(new Date().toISOString()))
   const [blank] = useState(() => { const value = resolveSpecialty().blank(); value.patient.date = ''; return value })
   const navigate = useNavigate()
   useEffect(() => {

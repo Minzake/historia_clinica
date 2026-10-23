@@ -1,7 +1,8 @@
 export function notificationEmail(payload,appUrl) {
   const event={confirmed:'Turno confirmado',rescheduled:'Turno reprogramado',cancelled:'Turno cancelado'}[payload.event]||'Información de tu turno'
   const date=new Date(payload.starts_at)
-  const formatted=date.toLocaleString('es-AR',{timeZone:payload.timezone||'America/Argentina/Buenos_Aires',dateStyle:'full',timeStyle:'short',hourCycle:'h23'})
+  const timeZone=payload.timezone||'America/Argentina/Buenos_Aires'
+  const formatted=`${date.toLocaleDateString('es-AR',{timeZone,day:'2-digit',month:'2-digit',year:'numeric'})} ${date.toLocaleTimeString('es-AR',{timeZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'})}`
   const text=[`Hola ${payload.name || ''},`,`${event} en ${payload.clinic || 'el consultorio'}.`,
     `Fecha y hora: ${formatted}.`,payload.address&&`Dirección: ${payload.address}.`,payload.phone&&`Consultas: ${payload.phone}.`,
     `Podés consultar tus turnos en ${appUrl}/mis-turnos.`, 'Este mensaje no contiene información clínica.'].filter(Boolean).join('\n\n')

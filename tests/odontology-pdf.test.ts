@@ -15,6 +15,16 @@ function record():SavedDentalRecord {
   return result
 }
 describe('dental PDF',()=>{
+  it('formats dates throughout initial data, controls, treatments and encounters as DD/MM/YYYY',async()=>{
+    const value=record()
+    value.patient.date='2026-01-02';value.patient.birthDate='2016-02-03'
+    value.clinical.odontograms[0].date='2026-03-04'
+    value.clinical.treatmentPlan=[{id:crypto.randomUUID(),tooth:36,date:'2026-04-05',description:'Treatment',status:'completed',completedDate:'2026-05-06'}]
+    value.evolutions=[{id:crypto.randomUUID(),date:'2026-06-07',procedure:'Encounter'}]
+    const pdf=(await buildDentalPdf(value,blankClinic())).output()
+    for(const date of ['02/01/2026','03/02/2016','04/03/2026','05/04/2026','06/05/2026','07/06/2026'])expect(pdf).toContain(date)
+    expect(pdf).not.toMatch(/\d{4}-\d{2}-\d{2}/)
+  })
   it.each(['permanent','temporary','mixed'] as const)('prints only the selected %s dentition, with matching marks and legend',async(view)=>{
     const value=record()
     value.clinical.odontograms[0].view=view

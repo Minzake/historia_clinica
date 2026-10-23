@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Field, Notice, SelectField, TextAreaField } from '../../components/ui'
-import { today } from '../../core/format'
+import { today,formatDateTime } from '../../core/format'
 import { conditions, conditionInfo, expandFaces, faceLabel, paintMark, quadrants, removeFaces, surfacePositions } from './model'
 import type { Condition, DentitionView, Face, Mark, Odontogram } from './model'
 
@@ -58,6 +58,6 @@ export function OdontogramBoard({value,onChange,displayView,onViewChange,birthDa
     <details className="dental-legend"><summary>{readonly?'Leyenda de símbolos':'Más símbolos y tratamientos'}</summary><div>{conditions.map(item=><button type="button" disabled={readonly} key={item.id} aria-pressed={readonly?undefined:!eraser&&condition===item.id} onClick={()=>{choose(item.id);heading.current?.focus({preventScroll:true});heading.current?.scrollIntoView({behavior:'smooth',block:'nearest'})}}><span style={{color:item.color}}>{item.symbol}</span>{item.label}</button>)}</div><p className="section-subtitle">El registro conserva el significado, la pieza y las caras, además del color. Las indicaciones pendientes se distinguen de tratamientos existentes.</p></details>
     <div className="dental-marks">{value.marks.map(mark=><article key={mark.id}><span style={{color:conditionInfo(mark.condition).color}}>{conditionInfo(mark.condition).symbol}</span><div><strong>Pieza {mark.tooth} · {conditionInfo(mark.condition).label}</strong><p>{mark.faces.map(f=>faceLabel(f,mark.tooth)).join(', ')} · {conditionInfo(mark.condition).kind}</p>{mark.note&&<p>{mark.note}</p>}</div>{!readonly&&<button type="button" className="text-button" aria-label={`Quitar ${conditionInfo(mark.condition).label} de la pieza ${mark.tooth}`} onClick={()=>changeMarks(value.marks.filter(m=>m.id!==mark.id))}>Quitar</button>}</article>)}</div>
     <TextAreaField label="Observaciones del odontograma" rows={3} maxLength={2000} value={value.notes} disabled={readonly} onChange={e=>onChange?.({...value,notes:e.target.value})}/>
-    {value.authorName&&<p className="section-subtitle">Registrado por {value.authorName}{value.recordedAt?` · ${new Date(value.recordedAt).toLocaleString('es-AR')}`:''} · Leyenda {value.legendVersion}</p>}
+    {value.authorName&&<p className="section-subtitle">Registrado por {value.authorName}{value.recordedAt?` · ${formatDateTime(value.recordedAt)}`:''} · Leyenda {value.legendVersion}</p>}
   </div>
 }
