@@ -33,14 +33,11 @@ export async function buildDentalPdf(record:SavedDentalRecord,context:Clinic) {
   if(record.canExport===false)throw new Error('EXPORT_NOT_ALLOWED')
   if(record.specialtyId!=='odontologia'||record.schemaVersion!==1)throw new Error('UNSUPPORTED_CLINICAL_SCHEMA')
   const invalid=validateDentalRecord(record);if(invalid)throw new Error(invalid)
-  const usedConditions=new Set(record.clinical.odontograms.flatMap(control=>control.marks.map(mark=>mark.condition)))
-  const legend=conditions.filter(condition=>usedConditions.has(condition.id))
   const clinic=record.exportContext||context,doc=new jsPDF()
   const table=(options:UserOptions)=>autoTable(doc,{margin:{top:16,bottom:22,left:14,right:14},...options})
   const header=(title:string)=>{doc.setTextColor('#244b35');doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(title,14,18);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor('#333333');let y=25;for(const line of [clinic.name||'Consultorio',[clinic.address,clinic.phone].filter(Boolean).join(' · '),`${record.patient.fullName} · DNI ${record.patient.dni||'no informado'} · ${record.patient.historyNumber}`]){if(!line)continue;const lines=doc.splitTextToSize(line,180);doc.text(lines,14,y);y+=lines.length*4.5+2}return y+3}
   const initialY=header('Historia odontológica')
   table({startY:initialY,head:[['Ficha inicial','Datos registrados']],body:[['Apertura',record.patient.date],['Nacimiento',record.patient.birthDate||'No informado'],['Contacto',[record.patient.mobile,record.patient.phone].filter(Boolean).join(' · ')],['Motivo de consulta',record.patient.reason],['Alergias',record.patient.allergies],['Medicación',record.patient.medication],['Antecedentes de salud',record.patient.medicalNotes],['Antecedentes odontológicos',record.patient.dentalNotes]],styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[47,110,84]},columnStyles:{0:{cellWidth:46}}})
-  if(legend.length)table({startY:(doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable.finalY+7,head:[['Leyenda 1','Significado']],body:legend.map(c=>[c.id==='healthy'?'OK':c.id==='absent'?'AUS':c.symbol,c.label]),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[47,110,84]},columnStyles:{0:{cellWidth:25}},didParseCell:data=>{if(data.section==='body'&&data.column.index===0)data.cell.styles.textColor=legend[data.row.index].color}})
   for(const control of record.clinical.odontograms){
     doc.addPage();const baseY=header(`Odontograma · ${control.date}`);doc.setFontSize(8);const author=doc.splitTextToSize(`Registrado por: ${control.authorName||'Sin autor informado'} · Leyenda ${control.legendVersion}. Sin marca: sin evaluar.`,180);doc.text(author,14,baseY)
     const rows=[[quadrants[0],quadrants[1]],[quadrants[2],quadrants[3]],[quadrants[4],quadrants[5]],[quadrants[6],quadrants[7]]]
@@ -51,7 +48,14 @@ export async function buildDentalPdf(record:SavedDentalRecord,context:Clinic) {
       doc.setFontSize(7);doc.setTextColor('#555555');doc.text(row[0].name.replace(' derecha',' / izquierda'),14,y-10)
       ids.forEach((id,i)=>tooth(doc,id,control.marks.filter(m=>m.tooth===id),start+i*11,y));y+=23
     }
-    table({startY:y-7,head:[['Pieza','Registro','Caras','Detalle']],body:control.marks.map(m=>[String(m.tooth),conditionInfo(m.condition).label,m.faces.map(f=>faceLabel(f,m.tooth)).join(', '),m.note]),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[47,110,84]}})
+    let detailsY=y-7
+    const usedConditions=new Set(control.marks.map(mark=>mark.condition))
+    const legend=conditions.filter(condition=>usedConditions.has(condition.id))
+    if(legend.length){
+      table({startY:detailsY,head:[['Leyenda 1','Significado']],body:legend.map(c=>[c.id==='healthy'?'OK':c.id==='absent'?'AUS':c.symbol,c.label]),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[47,110,84]},columnStyles:{0:{cellWidth:25}},didParseCell:data=>{if(data.section==='body'&&data.column.index===0)data.cell.styles.textColor=legend[data.row.index].color}})
+      detailsY=(doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable.finalY+6
+    }
+    table({startY:detailsY,head:[['Pieza','Registro','Caras','Detalle']],body:control.marks.map(m=>[String(m.tooth),conditionInfo(m.condition).label,m.faces.map(f=>faceLabel(f,m.tooth)).join(', '),m.note]),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[47,110,84]}})
     if(control.notes)table({startY:((doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable?.finalY||y)+5,body:[['Observaciones',control.notes]],styles:{fontSize:9,cellPadding:3},columnStyles:{0:{cellWidth:30}}})
   }
   if(record.clinical.treatmentPlan.length){doc.addPage();const y=header('Plan de tratamiento');table({startY:y,head:[['Indicación','Pieza','Procedimiento','Estado','Realización']],body:record.clinical.treatmentPlan.map(t=>[t.date,t.tooth?String(t.tooth):'General',t.description,{pending:'Pendiente',in_progress:'En curso',completed:'Realizado'}[t.status],t.completedDate]),styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[47,110,84]}})}

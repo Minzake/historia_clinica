@@ -22,16 +22,22 @@ describe('dental PDF',()=>{
     for(const label of ['evaluado sin hallazgos','Corona adaptada','Corona desadaptada','Sellante','Con endodoncia','Necrosis pulpar','Clínicamente ausente'])expect(pdf).not.toContain(label)
     expect(value).toEqual(before)
   })
-  it('keeps symbols used in earlier controls and deduplicates repeated legend entries',async()=>{
+  it('places each control legend below its graphic, before the mark details, and only lists its own symbols',async()=>{
     const value=record(),next=blankOdontogram()
-    next.marks=paintMark(paintMark([],37,'crown_fit',['all']),36,'caries',['center'])
+    next.marks=paintMark(paintMark(paintMark([],37,'crown_fit',['all']),36,'caries',['center']),35,'caries',['center'])
     value.clinical.odontograms.push(next)
     const doc=await buildDentalPdf(value,blankClinic())
-    doc.setPage(1)
-    const page=doc.internal.pages[1].join('\n')
-    for(const label of ['Caries','Resina','Amalgama','Corona adaptada'])expect(page).toContain(label)
-    expect(page.match(/\(Caries\)/g)).toHaveLength(1)
-    expect(page).not.toContain('Corona desadaptada')
+    expect(doc.internal.pages[1].join('\n')).not.toContain('(Leyenda 1)')
+    for(const [pageNumber,labels,excluded] of [[2,['Caries','Resina','Amalgama'],['Corona adaptada']],[3,['Caries','Corona adaptada'],['Resina','Amalgama']]] as const){
+      const page=doc.internal.pages[pageNumber].join('\n')
+      const legendStart=page.indexOf('(Leyenda 1)'),detailsStart=page.indexOf('(Pieza)')
+      expect(legendStart).toBeGreaterThan(page.indexOf('(38)'))
+      expect(detailsStart).toBeGreaterThan(legendStart)
+      const legend=page.slice(legendStart,detailsStart)
+      for(const label of labels)expect(legend).toContain(label)
+      for(const label of excluded)expect(legend).not.toContain(label)
+      expect(legend.match(/\(Caries\)/g)).toHaveLength(1)
+    }
   })
   it('omits the legend when the chart has no marks, including controls containing only observations',async()=>{
     const value=record()
