@@ -8,6 +8,7 @@ import { resolveSpecialty } from '../modules/registry'
 import { errorMessage } from '../lib/supabase'
 import { Loading, Modal, Notice, PdfActions } from '../components/ui'
 import { PatientList } from '../components/PatientList'
+import { NewChartActions } from '../components/NewChartActions'
 import { specialtyAccess,canReadClinical } from '../core/access'
 import { newChartUrl,writableSpecialties } from '../core/specialties'
 
@@ -18,7 +19,8 @@ export function Dashboard() {
 function ClinicalDashboard() {
   const { membership } = useClinic()
   const available=writableSpecialties(membership)
-  const [specialty,setSpecialty]=useState(available[0]?.id||'podologia')
+  const [selectedSpecialty,setSpecialty]=useState<string>(available[0]?.id||'podologia')
+  const specialty=available.find(item=>item.id===selectedSpecialty)?.id||available[0]?.id||'podologia'
   const creationUrl=newChartUrl(specialty)
   const [data, setData] = useState<Awaited<ReturnType<typeof getDashboard>> | null>(null)
   const [error, setError] = useState('')
@@ -36,7 +38,7 @@ function ClinicalDashboard() {
   }, [membership.clinicId, attempt])
   function search(event: FormEvent) { event.preventDefault(); navigate(`/historias?q=${encodeURIComponent(query.trim())}`) }
   return <>
-    <div className="page-heading"><div><p className="eyebrow">{dateLabel}</p><h1>Tu consultorio, al día.</h1><p className="page-description">Un espacio para acompañar a cada paciente.</p></div>{available.length>0&&<div className="button-row">{available.length>1&&<label className="field"><span>Especialidad de la nueva ficha</span><select value={specialty} onChange={e=>setSpecialty(e.target.value as typeof specialty)}>{available.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}<Link className="primary-button" to={creationUrl}><Plus size={17} />Nuevo paciente</Link></div>}</div>
+    <div className="page-heading"><div><p className="eyebrow">{dateLabel}</p><h1>Tu consultorio, al día.</h1><p className="page-description">Un espacio para acompañar a cada paciente.</p></div><NewChartActions specialties={available} value={specialty} onChange={setSpecialty}/></div>
     {!membership.clinic.name && !membership.clinic.professional && <Notice kind="info">Antes de imprimir, completá los datos del profesional en <Link to="/consultorio">Consultorio</Link>.</Notice>}
     <form className="dashboard-search" role="search" onSubmit={search}><Search size={21} aria-hidden="true" /><label className="sr-only" htmlFor="dashboard-query">Buscar paciente por nombre, DNI o historia clínica</label><input id="dashboard-query" type="search" value={query} onChange={(event) => setQuery(event.target.value)} maxLength={100} placeholder="Buscá un paciente por nombre, DNI o n.º de historia…" /><button className="primary-button" type="submit">Buscar<ArrowRight size={15} /></button></form>
     <div className="dashboard-shortcuts"><Link to="/agenda"><CalendarDays size={18}/><span>Agenda y turnos</span><ArrowRight size={15}/></Link>{membership.role==='owner'&&<><Link to="/agenda/configuracion"><Clock size={18}/><span>Horarios de reserva web</span><ArrowRight size={15}/></Link><Link to="/equipo"><Users size={18}/><span>Usuarios y equipo</span><ArrowRight size={15}/></Link></>}</div>

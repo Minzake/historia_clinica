@@ -34,6 +34,25 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .text-button, .text-link { display: inline-flex; align-items: center; gap: 6px; padding: 0; color: #246f5c; border: 0; background: transparent; text-decoration: none; font: 600 12px var(--sans); cursor: pointer; }
 .text-button:hover, .text-link:hover { text-decoration: underline; }
 .button-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.new-chart-actions { display:flex; align-items:flex-end; gap:12px; flex-shrink:0; }
+.specialty-choice { min-width:0; margin:0; padding:0; border:0; }
+.specialty-choice legend { margin-bottom:7px; padding:0; color:#60766c; font-size:11px; font-weight:600; }
+.specialty-options { display:flex; gap:3px; padding:4px; border:1px solid #d7e2db; border-radius:9px; background:#eaf0ec; }
+.specialty-option { position:relative; flex:1; cursor:pointer; }
+.specialty-option > span { display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:0 12px; border:1px solid transparent; border-radius:6px; color:#5b7065; font-size:12px; font-weight:600; white-space:nowrap; transition:background .15s,color .15s,box-shadow .15s; }
+.specialty-option svg { flex-shrink:0; visibility:hidden; }
+.specialty-option:hover > span { color:#1c6551; background:#f4f8f5; }
+.specialty-option input:checked + span { color:#1c6551; background:#fff; border-color:#cdded4; box-shadow:0 1px 3px #1e4a3610; }
+.specialty-option input:checked + span svg { visibility:visible; }
+.specialty-option input:focus-visible + span { outline:2px solid #246f5c; outline-offset:2px; }
+.new-chart-actions > .primary-button { min-height:46px; border-radius:7px; }
+@media (max-width:900px) {
+  .page-heading:has(.new-chart-actions) { flex-wrap:wrap; }
+}
+@media (max-width:600px) {
+  .new-chart-actions { width:100%; flex-direction:column; align-items:stretch; gap:10px; }
+  .specialty-option > span { min-height:42px; padding-inline:10px; font-size:13px; }
+}
 .notice { margin: 12px 0; padding: 12px 15px; border: 1px solid #e9c8bf; border-left: 3px solid #ad5941; border-radius: 3px; color: #7f3a27; background: #fff7f3; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .notice-success { border-color: #c9dfd0; border-left-color: #438761; color: #235d3d; background: #f2f9f3; }
 .notice-info { border-color: #cdded9; border-left-color: #648f81; color: #3e6659; background: #f7fbf8; }

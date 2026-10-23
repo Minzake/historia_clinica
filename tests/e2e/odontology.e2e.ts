@@ -5,7 +5,7 @@ import { blankDentalRecord } from '../../src/modules/odontologia/model'
 import type { SavedDentalRecord } from '../../src/modules/odontologia/model'
 
 const clinic='20000000-0000-4000-8000-000000000001',userId='10000000-0000-4000-8000-000000000001',patientId='30000000-0000-4000-8000-000000000001'
-async function backend(page:Page,mode:'write'|'read'|'reception'='write',existing=false){
+async function backend(page:Page,mode:'write'|'read'|'reception'='write',existing=false,bothSpecialties=false){
   const clinicData={...blankClinic(),name:'Consultorio dental de prueba'}
   const user={id:userId,email:'dentista@example.test',email_confirmed_at:new Date().toISOString(),aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{},created_at:new Date().toISOString()}
   const token=`eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({sub:userId,role:'authenticated',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')}.testing-signature`
@@ -22,7 +22,7 @@ async function backend(page:Page,mode:'write'|'read'|'reception'='write',existin
       requests.push({name,args})
       const links=mode==='reception'?[]:[{specialtyId:'odontologia',name:'Odontología',action:record?'open':'create'}]
       const identity={id:patientId,version:1,full_name:'Ana Paciente',dni:'22334455',history_number:'HC-000001',details:{birthDate:'2016-05-12',address:'',phone:'',mobile:'',insurance:'',occupation:'',emergencyContact:'',emergencyPhone:''},chart_links:links}
-      if(name==='list_my_memberships')data=[{clinicId:clinic,role:mode==='reception'?'reception':'owner',clinic:clinicData,version:1,specialties:mode==='reception'?[]:[{specialtyId:'odontologia',name:'Odontología',canRead:true,canWrite:mode==='write',canExport:mode==='write',scope:'all'}]}]
+      if(name==='list_my_memberships')data=[{clinicId:clinic,role:mode==='reception'?'reception':'owner',clinic:clinicData,version:1,specialties:mode==='reception'?[]:(bothSpecialties?[{specialtyId:'podologia',name:'Podología'},{specialtyId:'odontologia',name:'Odontología'}]:[{specialtyId:'odontologia',name:'Odontología'}]).map(s=>({...s,canRead:true,canWrite:mode==='write',canExport:mode==='write',scope:'all'}))}]
       else if(name==='get_clinic_dashboard'||name==='list_clinical_patients')data={patients:record?[{id:patientId,full_name:record.patient.fullName,dni:record.patient.dni,history_number:record.patient.historyNumber,updated_at:record.updatedAt,chart_links:links}]:[],count:record?1:0,evolutions:record?.evolutions.length||0}
       else if(name==='list_patient_identities')data={patients:[identity],count:1}
       else if(name==='get_patient_identity')data=identity
@@ -42,6 +42,28 @@ async function backend(page:Page,mode:'write'|'read'|'reception'='write',existin
 async function login(page:Page){await page.goto('/');await page.getByLabel('Correo electrónico').fill('dentista@example.test');await page.getByLabel('Contraseña',{exact:true}).fill('test-password-long');await page.getByRole('button',{name:'Iniciar sesión',exact:true}).click();await expect(page.getByRole('heading',{name:'Tu consultorio, al día.'})).toBeVisible()}
 const face=(page:Page,tooth:number,name:string)=>page.getByRole('group',{name:`Caras de la pieza ${tooth}`,exact:true}).getByRole('button',{name:new RegExp(`^${name} de la pieza ${tooth}:`)})
 async function brush(page:Page,name:string){await page.getByRole('group',{name:'Pinceles y borrador'}).getByRole('button',{name,exact:true}).click()}
+
+test('specialty choices work with keyboard and touch on dashboard and clinical directory',async({page},testInfo)=>{
+  await backend(page,'write',false,true)
+  await page.setViewportSize({width:1280,height:900})
+  await login(page)
+  const choices=page.getByRole('group',{name:'Especialidad de la nueva ficha'})
+  await expect(choices.getByRole('radio',{name:'Podología',exact:true})).toBeChecked()
+  await choices.getByRole('radio',{name:'Podología',exact:true}).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(choices.getByRole('radio',{name:'Odontología',exact:true})).toBeChecked()
+  await expect(page.getByRole('link',{name:'Nuevo paciente',exact:true})).toHaveAttribute('href','/historias/nueva?especialidad=odontologia')
+  await page.screenshot({path:testInfo.outputPath('especialidades-desktop.png'),fullPage:true})
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('link',{name:'Historias clínicas',exact:true}).click()
+  await page.setViewportSize({width:375,height:812})
+  await choices.getByText('Odontología',{exact:true}).click()
+  await expect(choices.getByRole('radio',{name:'Odontología',exact:true})).toBeChecked()
+  await expect(page.getByRole('link',{name:'Crear historia',exact:true})).toHaveAttribute('href','/historias/nueva?especialidad=odontologia')
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  await page.screenshot({path:testInfo.outputPath('especialidades-mobile.png'),fullPage:true})
+  await page.getByRole('link',{name:'Nuevo paciente',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Nueva ficha odontológica',exact:true})).toBeVisible()
+})
 
 test('creates dentistry on an existing patient, preserves painted permanent and primary teeth, plans, encounters and PDF',async({page},testInfo)=>{
   const state=await backend(page)
