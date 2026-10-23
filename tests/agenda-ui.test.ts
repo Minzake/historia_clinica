@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appointmentOverlap, eligiblePractitioners, initialAppointmentTime, isGeneratedBookingSlug, suggestedAppointmentTimes, suggestBookingSlug } from '../src/lib/agenda-ui'
+import { appointmentOverlap, eligiblePractitioners, initialAppointmentService, initialAppointmentTime, isGeneratedBookingSlug, suggestedAppointmentTimes, suggestBookingSlug } from '../src/lib/agenda-ui'
 import type { Appointment, Practitioner, Service } from '../src/lib/booking'
 
 const timezone = 'America/Argentina/Buenos_Aires'
@@ -23,6 +23,14 @@ describe('readable public links', () => {
 })
 
 describe('staff appointment availability', () => {
+  it('chooses a service for the selected or signed-in professional instead of defaulting to an incompatible specialty',()=>{
+    const services=[{id:'pod',active:true,specialty_id:'podologia'},{id:'dental',active:true,specialty_id:'odontologia'}] as Service[]
+    const practitioners=[{user_id:'p',specialty_ids:['podologia']},{user_id:'d',specialty_ids:['odontologia']}] as Practitioner[]
+    expect(initialAppointmentService(services,practitioners,'pod','d')).toBe('dental')
+    expect(initialAppointmentService(services,practitioners,'pod','','d',true)).toBe('dental')
+    expect(initialAppointmentService(services,practitioners,'pod')).toBe('pod')
+    expect(initialAppointmentService(services,practitioners,'pod','','unknown',true)).toBe('')
+  })
   it('removes overlaps for the selected professional, including blocks, and allows adjacent turns', () => {
     const items = [appointment(), appointment({id:'bloqueo',kind:'block',starts_at:'2026-10-26T14:00:00Z',ends_at:'2026-10-26T15:00:00Z'})]
     const times = suggestedAppointmentTimes('2026-10-26', timezone, 45, 'profesional', items, undefined, now)

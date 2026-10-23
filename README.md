@@ -97,6 +97,8 @@ Si necesitás ejecutar ese seeder desde un despliegue de Vercel, autorizalo solo
 
 ## Agenda: puesta en marcha
 
+La [guía de agenda y asignación de turnos](docs/agenda.md) describe el formulario simplificado, la selección de pacientes y las opciones secundarias.
+
 La agenda web empieza **cerrada, sin profesional ni franjas inventadas**. La dueña debe habilitar los perfiles de atención desde **Usuarios → Acceso clínico** y entrar en **Agenda → Horarios**:
 
 1. Seleccionar su propia cuenta como profesional (no la cuenta administrativa técnica).

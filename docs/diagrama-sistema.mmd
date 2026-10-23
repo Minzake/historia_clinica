@@ -146,12 +146,12 @@ flowchart TB
         direction TB
         agenda_abrir(["Abrir Agenda — Elegir día o semana, filtrar profesional si hay<br/>varias y consultar los turnos."])
         agenda_accion{"¿Quiere bloquear un horario?"}
-        agenda_accion_alt["Bloquear horario → profesional, Desde, Hasta y motivo opcional.<br/>Validar duración y superposiciones; guardar bloqueo."]
+        agenda_accion_alt["Opciones → Bloquear horario → profesional, Desde, Hasta y motivo.<br/>Validar duración y superposiciones; guardar bloqueo."]
         agenda_accion -->|Sí| agenda_accion_alt
         agenda_accion_alt --> agenda_bloqueado
         agenda_nuevo["Nuevo turno / Agregar turno desde un día — La fecha del día<br/>elegido queda cargada. Si hay una sola profesional elegible, se<br/>selecciona automáticamente."]
         agenda_paciente["Identificar al paciente — Buscar un paciente administrativo o<br/>completar nombre y DNI. Opcional: seleccionar expresamente una<br/>cuenta verificada del portal."]
-        agenda_horario["Elegir prestación, profesional, día y duración — Seleccionar un<br/>horario sugerido o escribir otra hora. Revisar el horario de<br/>finalización. Contacto y notas opcionales."]
+        agenda_horario["Elegir día y horario disponible — Profesional único automático.<br/>Cambiar duración o Ingresar otra hora si hace falta.<br/>Más opciones: contacto, notas y cuenta del portal."]
         agenda_validar{"¿Datos válidos y horario libre?"}
         agenda_validar_alt["Corregir campos, duración, superposición o el límite de un turno<br/>futuro por paciente/profesional."]
         agenda_validar -->|No| agenda_validar_alt

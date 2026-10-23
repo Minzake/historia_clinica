@@ -44,3 +44,10 @@ export function initialAppointmentTime(day: string, timezone: string, now = Date
   const rounded = new Date(Math.ceil((now + 60000) / 900000) * 900000).toISOString()
   return dateInZone(rounded, timezone) === day ? localDateTime(rounded, timezone).slice(11) : '23:59'
 }
+
+export function initialAppointmentService(services:Service[],practitioners:Practitioner[],preferredService='',preferredProvider='',userId?:string,ownOnly=false) {
+  const available=services.filter(service=>service.active&&eligiblePractitioners(practitioners,service,userId,ownOnly).length)
+  const matching=preferredProvider?available.filter(service=>eligiblePractitioners(practitioners,service,userId,ownOnly).some(p=>p.user_id===preferredProvider)):available
+  const choices=matching.length?matching:available
+  return (choices.find(service=>service.id===preferredService)||choices[0])?.id||''
+}

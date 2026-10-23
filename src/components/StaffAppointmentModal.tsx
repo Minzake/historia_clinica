@@ -5,10 +5,10 @@ import { Link } from 'react-router-dom'
 import { useClinic } from '../context'
 import { bookingError, displayTime, getAgenda, localDateTime, plusDays, saveStaffAppointment, searchRegisteredPatients, zonedInstant } from '../lib/booking'
 import type { Appointment, AppointmentStatus, BookingSettings, OpeningHours, Practitioner, Service, StaffAppointmentInput } from '../lib/booking'
-import { appointmentOverlap, eligiblePractitioners, initialAppointmentTime, suggestedAppointmentTimes } from '../lib/agenda-ui'
+import { appointmentOverlap, eligiblePractitioners, initialAppointmentService, initialAppointmentTime, suggestedAppointmentTimes } from '../lib/agenda-ui'
 import { useRemote } from '../hooks/useRemote'
 import { useNow } from '../hooks/useNow'
-import { Field, Form, Loading, Modal, Notice, SelectField, TextAreaField } from './ui'
+import { Field, Form, Modal, Notice, SelectField, TextAreaField } from './ui'
 import { UnsavedChanges } from './UnsavedChanges'
 import { canReadClinical, specialtyAccess } from '../core/access'
 import { dniError, normalizeDni } from '../lib/validation'
@@ -28,10 +28,11 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   const { membership, userId } = useClinic()
   const now = useNow()
   const block = kind === 'block'
-  const initialService = initial?.service_id || (services.find(s => s.id === settings.service_id && s.active) || services.find(s => s.active))?.id || ''
+  const availableServices=services.filter(service=>service.id===initial?.service_id||service.active&&eligiblePractitioners(practitioners,service,userId||undefined,membership.role==='professional').length)
+  const initialService = initial?.service_id || initialAppointmentService(services,practitioners,settings.service_id,defaultProvider,userId||undefined,membership.role==='professional')
   const [service, setService] = useState(initialService)
   const selectedService = services.find(s => s.id === service)
-  const eligible = eligiblePractitioners(practitioners, block ? undefined : selectedService, userId || undefined, membership.role === 'professional')
+  const eligible = !block&&services.length&&!selectedService?[]:eligiblePractitioners(practitioners, block ? undefined : selectedService, userId || undefined, membership.role === 'professional')
   const [provider, setProvider] = useState(() => initial?.provider_id || (eligible.some(p => p.user_id === defaultProvider) ? defaultProvider : eligible.length === 1 ? eligible[0].user_id : ''))
   const [dateTime, setDateTime] = useState(initial ? localDateTime(initial.starts_at, timezone) : `${day}T${initialAppointmentTime(day, timezone)}`)
   const date = dateTime.slice(0, 10), time = dateTime.slice(11)
@@ -42,12 +43,13 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   const [manualContact, setManualContact] = useState({name,dni,email,phone})
   const [useAccount, setUseAccount] = useState(Boolean(initial?.client_user_id)), [accountId, setAccountId] = useState(initial?.client_user_id || '')
   const [accountQuery, setAccountQuery] = useState(''), [submittedQuery, setSubmittedQuery] = useState('')
-  const [findPatient, setFindPatient] = useState(false), [patientQuery, setPatientQuery] = useState(''), [patientSearch, setPatientSearch] = useState('')
+  const [findPatient, setFindPatient] = useState(!initial), [patientQuery, setPatientQuery] = useState(''), [patientSearch, setPatientSearch] = useState('')
+  const [compactPatient,setCompactPatient]=useState(Boolean(initial?.contact_dni))
   const patients = useRemote(`appointment-patients:${membership.clinicId}:${patientSearch}`, () => patientSearch.length >= 2 ? listPatientIdentities(membership.clinicId, patientSearch) : Promise.resolve({patients:[],count:0}))
   const accounts = useRemote(`registered:${membership.clinicId}:${useAccount}:${submittedQuery}`, () => useAccount && !initial?.client_user_id ? searchRegisteredPatients(membership.clinicId, submittedQuery) : Promise.resolve([]))
   const [status, setStatus] = useState<AppointmentStatus>(initial?.status || 'confirmed')
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [allTimes, setAllTimes] = useState(false)
-  const [more, setMore] = useState(Boolean(initial?.contact_email || initial?.contact_phone || initial?.private_notes))
+  const [more, setMore] = useState(false),[manualTime,setManualTime]=useState(Boolean(initial)),[durationOpen,setDurationOpen]=useState(false)
   const [baseline, setBaseline] = useState(() => JSON.stringify({ provider, dateTime, service, duration, until, name, dni, email, phone, notes, accountId, status }))
   const autoSelected = useRef(Boolean(initial))
   const dirty = baseline !== JSON.stringify({ provider, dateTime, service, duration, until, name, dni, email, phone, notes, accountId, status })
@@ -67,6 +69,7 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   const configuredHours = provider === settings.provider_id && service === settings.service_id && hours.length ? hours : undefined
   const times = start ? suggestedAppointmentTimes(date, timezone, minutes, provider, occupancy.data || [], configuredHours, now, initial?.id) : []
   const firstTime = times[0] || ''
+  useEffect(()=>{if(!findPatient)return;const timer=setTimeout(()=>setPatientSearch(patientQuery.trim()),300);return ()=>clearTimeout(timer)},[patientQuery,findPatient])
   useEffect(() => {
     if (block || autoSelected.current || occupancy.loading || occupancy.error || !provider || !firstTime) return
     autoSelected.current = true
@@ -75,6 +78,7 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   }, [block, occupancy.loading, occupancy.error, provider, firstTime, date])
   const end = start && Number.isFinite(minutes) && minutes > 0 && minutes <= 44640 ? new Date(Date.parse(start) + minutes * 60000).toISOString() : ''
   function changeService(id: string) {
+    autoSelected.current=Boolean(initial);setAllTimes(false)
     setService(id)
     const next = services.find(s => s.id === id)
     if (!initial) setDuration(String(next?.duration_minutes || 30))
@@ -89,13 +93,16 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   function searchPatients() { if (patientQuery.trim().length >= 2) { setPatientSearch(patientQuery.trim()); patients.reload() } }
   function searchAccounts() { setAccountId(''); setSubmittedQuery(accountQuery.trim()); accounts.reload() }
   function toggleAccount() {
+    setFindPatient(false);setCompactPatient(false)
     setUseAccount(!useAccount); setAccountId('')
     if (useAccount) { setName(manualContact.name); setDni(manualContact.dni); setEmail(manualContact.email); setPhone(manualContact.phone) }
     else { setManualContact({name,dni,email,phone}); setName(''); setDni(''); setEmail(''); setPhone('') }
   }
   async function submit(event: FormEvent) {
     event.preventDefault(); setError('')
+    if(!block&&!useAccount&&findPatient){setError('Elegí un paciente de la lista o cargá sus datos para continuar.');return}
     if (useAccount && !accountId) { setError('Seleccioná una cuenta verificada o elegí cargar los datos manualmente.'); return }
+    if(!block&&(!Number.isInteger(minutes)||minutes<15||minutes>480||minutes%15!==0)){setDurationOpen(true);setError('La duración debe ser de 15 a 480 minutos, en intervalos de 15.');return}
     if (conflictMessage) { setError(conflictMessage); return }
     setBusy(true)
     try {
@@ -105,33 +112,83 @@ export function StaffAppointmentModal({ initial, kind, day, timezone, practition
   }
   return <Modal title={block ? initial ? 'Editar bloqueo' : 'Bloquear horario' : initial ? 'Editar turno' : 'Nuevo turno'} onClose={close}>
     <UnsavedChanges dirty={dirty} saving={busy}/>
-    <Form className="staff-appointment-form" onSubmit={submit}><fieldset disabled={busy} className="settings-fields">
-      {!block && <section className="appointment-form-section"><h3>1. Paciente</h3>
-        {!useAccount && !initial && <><button type="button" className="text-button" aria-expanded={findPatient} onClick={() => setFindPatient(!findPatient)}>Buscar un paciente existente</button>{findPatient && <div className="registered-account-picker"><div className="account-search"><Field label="Buscar paciente por nombre o DNI" value={patientQuery} onChange={setPatientQuery} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); searchPatients() } }}/><button type="button" className="secondary-button" disabled={patientQuery.trim().length < 2} onClick={searchPatients}>Buscar paciente</button></div>{patientSearch && (patients.loading ? <Loading label="Buscando pacientes…"/> : patients.error ? <Notice>{bookingError(patients.error)}</Notice> : <div className="patient-appointment-results">{patients.data?.patients.map(p => <button type="button" className="secondary-button" key={p.id} onClick={() => { setName(p.full_name); setDni(p.dni); setPhone(p.details.mobile || p.details.phone || ''); setEmail(''); setFindPatient(false) }}>{p.full_name} · DNI {p.dni}</button>)}{!patients.data?.patients.length && <p className="section-subtitle">No encontramos pacientes. Podés completar los datos abajo.</p>}</div>)}</div>}</>}
-        {!initial?.client_user_id && <button type="button" className="text-button" aria-expanded={useAccount} onClick={toggleAccount}>{useAccount ? 'Cargar los datos manualmente' : 'Usar una cuenta del portal de pacientes'}</button>}
-        {useAccount && !initial?.client_user_id && <div className="registered-account-picker"><div className="account-search"><Field label="Buscar cuenta por nombre, DNI o email" value={accountQuery} onChange={setAccountQuery} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); searchAccounts() } }}/><button type="button" className="secondary-button" onClick={searchAccounts}>Buscar</button></div>{accounts.loading ? <Loading label="Buscando cuentas…"/> : accounts.error ? <Notice>{bookingError(accounts.error)}</Notice> : <SelectField label="Cuenta de paciente" required value={accountId} onChange={e => selectAccount(e.target.value)}><option value="">Seleccionar cuenta verificada</option>{accounts.data?.map(a => <option key={a.user_id} value={a.user_id}>{a.full_name} · DNI {a.dni} · {a.email}</option>)}</SelectField>}<p className="section-subtitle">Comprobá la identidad antes de vincular. El turno aparecerá en su portal.</p></div>}
-        <div className="field-grid patient-appointment-fields"><Field label="Nombre y apellido del paciente" required minLength={2} value={name} onChange={setName} readOnly={useAccount}/><Field label="DNI" hint="Podés escribirlo con puntos." validationMessage={dniError(dni, future && status === 'confirmed' && !useAccount)} inputMode="numeric" maxLength={16} required={future && status === 'confirmed' && !useAccount} value={dni} onChange={setDni} readOnly={useAccount}/></div>
-        {useAccount && <p className="section-subtitle">Datos de su cuenta verificada. La historia clínica no se vincula automáticamente.</p>}
-      </section>}
-      <section className="appointment-form-section"><h3>{block ? 'Horario a bloquear' : '2. Día y horario'}</h3>
-        {!block && services.length > 1 && <SelectField label="Prestación del turno" required value={service} onChange={e => changeService(e.target.value)}>{services.filter(s => s.active || s.id === initial?.service_id).map(s => <option key={s.id} value={s.id}>{s.name} · {s.duration_minutes} min</option>)}</SelectField>}
-        <SelectField label="Profesional" required value={provider} onChange={e => setProvider(e.target.value)}><option value="">Seleccionar profesional</option>{eligible.map(p => <option key={p.user_id} value={p.user_id}>{p.display_name || p.email}</option>)}</SelectField>
-        {!eligible.length && <Notice>No hay profesionales habilitados para esta prestación. Revisá sus permisos en Usuarios.</Notice>}
-        {block ? <div className="field-grid settings-contact-grid"><Field label="Desde" type="datetime-local" required value={dateTime} onChange={setDateTime}/><Field label="Hasta" type="datetime-local" required validationMessage={until && dateTime && until <= dateTime ? 'El final del bloqueo debe ser posterior al inicio.' : conflictMessage} value={until} onChange={setUntil}/></div> : <>
-          <div className="field-grid settings-contact-grid"><Field label="Día del turno" type="date" required min="0001-01-01" max="9999-12-30" value={date} onChange={value => { autoSelected.current=true; setDateTime(`${value}T${time}`); setAllTimes(false) }}/><Field label="Hora de inicio" type="time" required value={time} validationMessage={conflictMessage} onChange={value => { autoSelected.current=true; setDateTime(`${date}T${value}`) }}/></div>
-          <div className="appointment-duration"><Field label="Duración (minutos)" type="number" min={15} max={480} step={15} required value={duration} onChange={setDuration}/><div className="button-row" role="group" aria-label="Duraciones frecuentes">{[30,45,60,90].map(value => <button className="secondary-button" type="button" key={value} aria-pressed={duration === String(value)} onClick={() => setDuration(String(value))}>{value} min</button>)}</div></div>
-          {provider && <div className="appointment-time-picker"><strong>Horarios sugeridos</strong><p className="section-subtitle">{configuredHours ? 'Según la disponibilidad de esta agenda.' : 'Entre las 9 y las 18 h.'} También podés escribir otra hora de inicio.</p>{occupancy.loading ? <Loading label="Consultando horarios ocupados…"/> : occupancy.error ? <Notice>No pudimos consultar la disponibilidad. Podés reintentar antes de guardar. <button className="text-button" type="button" onClick={occupancy.reload}>Reintentar</button></Notice> : <><div className="appointment-times">{(allTimes ? times : times.slice(0,12)).map(value => <button type="button" className="secondary-button" aria-pressed={time === value} key={value} onClick={() => { autoSelected.current=true; setDateTime(`${date}T${value}`) }}>{value}</button>)}</div>{!times.length && <p className="section-subtitle">No hay sugerencias disponibles para este día y duración. Probá otro día o ingresá un horario manualmente.</p>}{times.length > 12 && <button type="button" className="text-button" aria-expanded={allTimes} onClick={() => setAllTimes(!allTimes)}>{allTimes ? 'Ver menos horarios' : 'Ver más horarios'}</button>}</>}</div>}
-        </>}
-        {conflictMessage && <Notice>{conflictMessage}</Notice>}
-        {block && <Field label="Motivo del bloqueo (interno)" value={name} onChange={setName}/>}
-        {end && <div className="appointment-summary" aria-live="polite"><strong>{block ? 'Bloqueo' : 'Turno'} de {displayTime(start, timezone)} a {displayTime(end, timezone)}</strong><span>{formatDate(start,timezone)} · {minutes} minutos</span></div>}
-        <p className="section-subtitle">Hora del consultorio ({timezone.replace(/_/g,' ')}).</p>
-      </section>
-      {!block && <section className="appointment-form-section"><button type="button" className="text-button" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Ocultar contacto y observaciones' : 'Agregar contacto u observaciones (opcional)'}</button>{more && <div className="settings-fields"><div className="field-grid settings-contact-grid"><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone} readOnly={useAccount}/><Field label="Email para avisos (opcional)" type="email" maxLength={254} value={email} onChange={setEmail} readOnly={useAccount}/></div>{canManageNotes && <TextAreaField label="Observación interna · no se envía al paciente" rows={2} maxLength={2000} value={notes} onChange={e => setNotes(e.target.value)}/>}</div>}</section>}
-      {initial && <SelectField label="Estado" value={status} onChange={e => setStatus(e.target.value as AppointmentStatus)}><option value="confirmed">Confirmado</option><option value="cancelled">Cancelado · liberar horario</option>{!block && <><option value="completed" disabled={future}>Atendido</option><option value="no_show" disabled={future}>Ausente</option></>}</SelectField>}
-    </fieldset>
-      {initial?.contact_dni && !block && canReadClinical(membership) && <p className="section-subtitle"><Link to={`/historias?q=${encodeURIComponent(initial.contact_dni)}`}>Buscar su ficha clínica por DNI</Link></p>}
-      {error && <Notice>{error}</Notice>}<div className="dialog-actions"><button className="secondary-button" type="button" disabled={busy} onClick={close}>Cancelar</button><button className="primary-button" type="submit" disabled={busy || !eligible.length}>{busy ? 'Guardando…' : block ? 'Guardar bloqueo' : 'Guardar turno'}</button></div>
+    <Form className="staff-appointment-form" onSubmit={submit}>
+      <fieldset disabled={busy} className="settings-fields">
+        {!block&&<section className="appointment-form-section">
+          <h3>Paciente</h3>
+          {findPatient&&!useAccount?<>
+            <Field label="Buscar paciente por nombre o DNI" type="search" placeholder="Escribí un nombre o DNI" value={patientQuery} onChange={setPatientQuery} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();searchPatients()}}}/>
+            {patientQuery.trim().length>=2&&((patientSearch!==patientQuery.trim()||patients.loading)?<p className="appointment-search-status" role="status">Buscando pacientes…</p>:patients.error?<Notice>{bookingError(patients.error)}</Notice>:<div className="patient-appointment-results" role="group" aria-label="Pacientes encontrados">
+              {patients.data?.patients.map(patient=><button type="button" className="secondary-button" key={patient.id} onClick={()=>{setName(patient.full_name);setDni(patient.dni);setPhone(patient.details.mobile||patient.details.phone||'');setEmail('');setCompactPatient(Boolean(patient.dni));setFindPatient(false)}}>{patient.full_name} · DNI {patient.dni||'no informado'}</button>)}
+              {!patients.data?.patients.length&&<p className="section-subtitle">No encontramos coincidencias. Podés cargar sus datos.</p>}
+            </div>)}
+            <button type="button" className="text-button" onClick={()=>{setCompactPatient(false);setFindPatient(false)}}>{name?'Volver a los datos del paciente':'Cargar un paciente nuevo'}</button>
+          </>:<>
+            {compactPatient?<div className="appointment-selected-patient"><div><strong>{name}</strong><span>DNI {dni}</span></div><button type="button" className="text-button" onClick={()=>setCompactPatient(false)}>Ver datos</button></div>:<>
+            <div className="field-grid patient-appointment-fields">
+              <Field label="Nombre y apellido del paciente" required minLength={2} value={name} onChange={setName} readOnly={useAccount}/>
+              <Field label="DNI" validationMessage={dniError(dni,future&&status==='confirmed'&&!useAccount)} inputMode="numeric" maxLength={16} required={future&&status==='confirmed'&&!useAccount} value={dni} onChange={setDni} readOnly={useAccount}/>
+            </div>
+            </>}
+            {!useAccount&&!initial&&<button type="button" className="text-button" onClick={()=>setFindPatient(true)}>Buscar otro paciente</button>}
+            {useAccount&&<p className="section-subtitle">Vinculado a su cuenta del portal de pacientes.</p>}
+          </>}
+        </section>}
+
+        <section className="appointment-form-section">
+          <h3>{block?'Horario a bloquear':'Día y horario'}</h3>
+          {!block&&availableServices.length>1&&<SelectField label="Prestación del turno" required value={service} onChange={event=>changeService(event.target.value)}>{availableServices.map(item=><option value={item.id} key={item.id}>{item.name} · {item.duration_minutes} min</option>)}</SelectField>}
+          {eligible.length>1?<SelectField label="Profesional" required value={provider} onChange={event=>{autoSelected.current=Boolean(initial);setProvider(event.target.value);setAllTimes(false)}}><option value="">Seleccionar profesional</option>{eligible.map(person=><option key={person.user_id} value={person.user_id}>{person.display_name||person.email}</option>)}</SelectField>:eligible.length===1&&<p className="appointment-assignee"><span>Profesional</span><strong>{eligible[0].display_name||eligible[0].email}</strong></p>}
+          {!eligible.length&&<Notice>No hay profesionales habilitados para esta prestación. Revisá sus permisos en Usuarios.</Notice>}
+          {block?<>
+            <div className="field-grid settings-contact-grid">
+              <Field label="Desde" type="datetime-local" required value={dateTime} onChange={setDateTime}/>
+              <Field label="Hasta" type="datetime-local" required validationMessage={until&&dateTime&&until<=dateTime?'El final del bloqueo debe ser posterior al inicio.':conflictMessage} value={until} onChange={setUntil}/>
+            </div>
+            <Field label="Motivo del bloqueo (interno)" value={name} onChange={setName}/>
+          </>:<>
+            <div className="appointment-date-duration">
+              <Field label="Día del turno" type="date" required min="0001-01-01" max="9999-12-30" value={date} onChange={value=>{autoSelected.current=Boolean(initial);setDateTime(`${value}T${time}`);setAllTimes(false)}}/>
+              <div className="appointment-duration-choice"><span>{duration||'—'} minutos{selectedService&&availableServices.length===1?` · ${selectedService.name}`:''}</span><button type="button" className="text-button" aria-expanded={durationOpen} onClick={()=>setDurationOpen(!durationOpen)}>{durationOpen?'Listo':'Cambiar duración'}</button></div>
+            </div>
+            {durationOpen&&<div className="appointment-duration">
+              <Field label="Duración (minutos)" type="number" min={15} max={480} step={15} required value={duration} onChange={setDuration}/>
+              <div className="button-row" role="group" aria-label="Duraciones frecuentes">{[30,45,60,90].map(value=><button className="secondary-button" type="button" key={value} aria-pressed={duration===String(value)} onClick={()=>setDuration(String(value))}>{value} min</button>)}</div>
+            </div>}
+            {provider&&<div className="appointment-time-picker">
+              <strong>Horarios disponibles</strong>
+              {occupancy.loading?<p className="appointment-search-status" role="status">Consultando horarios…</p>:occupancy.error?<Notice>No pudimos consultar la disponibilidad. <button className="text-button" type="button" onClick={occupancy.reload}>Reintentar</button></Notice>:<>
+                <div className="appointment-times">{(allTimes?times:times.slice(0,8)).map(value=><button type="button" className="secondary-button" aria-pressed={time===value} key={value} onClick={()=>{autoSelected.current=true;setDateTime(`${date}T${value}`)}}>{value}</button>)}</div>
+                {!times.length&&<p className="section-subtitle">No hay horarios sugeridos. Elegí otro día o ingresá una hora.</p>}
+                {times.length>8&&<button type="button" className="text-button" aria-expanded={allTimes} onClick={()=>setAllTimes(!allTimes)}>{allTimes?'Ver menos horarios':'Ver todos los horarios'}</button>}
+              </>}
+            </div>}
+            <button type="button" className="text-button" aria-expanded={manualTime} onClick={()=>setManualTime(!manualTime)}>{manualTime?'Ocultar hora manual':'Ingresar otra hora'}</button>
+            {manualTime&&<Field label="Hora de inicio" type="time" required value={time} validationMessage={conflictMessage} onChange={value=>{autoSelected.current=true;setDateTime(`${date}T${value}`)}}/>}
+          </>}
+          {conflictMessage&&<Notice>{conflictMessage}</Notice>}
+          {end&&<div className="appointment-summary" aria-live="polite"><strong>{block?'Bloqueo':'Turno'} de {displayTime(start,timezone)} a {displayTime(end,timezone)}</strong><span>{formatDate(start,timezone)} · {minutes} minutos</span></div>}
+        </section>
+
+        {!block&&<section className="appointment-form-section appointment-extra-options">
+          <button type="button" className="text-button" aria-expanded={more} onClick={()=>setMore(!more)}>{more?'Ocultar opciones':'Más opciones'}</button>
+          {more&&<div className="settings-fields">
+            {!initial?.client_user_id&&<button type="button" className="text-button" onClick={toggleAccount}>{useAccount?'Cargar los datos manualmente':'Usar una cuenta del portal de pacientes'}</button>}
+            {useAccount&&!initial?.client_user_id&&<div className="registered-account-picker">
+              <div className="account-search"><Field label="Buscar cuenta por nombre, DNI o email" value={accountQuery} onChange={setAccountQuery} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();searchAccounts()}}}/><button type="button" className="secondary-button" onClick={searchAccounts}>Buscar</button></div>
+              {accounts.loading?<p className="appointment-search-status">Buscando cuentas…</p>:accounts.error?<Notice>{bookingError(accounts.error)}</Notice>:<SelectField label="Cuenta de paciente" required value={accountId} onChange={event=>selectAccount(event.target.value)}><option value="">Seleccionar cuenta verificada</option>{accounts.data?.map(account=><option key={account.user_id} value={account.user_id}>{account.full_name} · DNI {account.dni} · {account.email}</option>)}</SelectField>}
+              <p className="section-subtitle">Comprobá la identidad antes de vincular. El turno aparecerá en su portal.</p>
+            </div>}
+            <div className="field-grid settings-contact-grid"><Field label="Celular (opcional)" type="tel" maxLength={40} value={phone} onChange={setPhone} readOnly={useAccount}/><Field label="Email para avisos (opcional)" type="email" maxLength={254} value={email} onChange={setEmail} readOnly={useAccount}/></div>
+            {initial?.contact_email&&<p className="section-subtitle">Aviso por email: {initial.notification_state==='sent'?'enviado':'pendiente'}.</p>}
+            {canManageNotes&&<TextAreaField label="Observación interna · no se envía al paciente" rows={2} maxLength={2000} value={notes} onChange={event=>setNotes(event.target.value)}/>}
+          </div>}
+        </section>}
+        {initial&&<SelectField label="Estado" value={status} onChange={event=>setStatus(event.target.value as AppointmentStatus)}><option value="confirmed">Confirmado</option><option value="cancelled">Cancelado · liberar horario</option>{!block&&<><option value="completed" disabled={future}>Atendido</option><option value="no_show" disabled={future}>Ausente</option></>}</SelectField>}
+      </fieldset>
+      {initial?.contact_dni&&!block&&canReadClinical(membership)&&<p className="section-subtitle"><Link to={`/historias?q=${encodeURIComponent(initial.contact_dni)}`}>Buscar su ficha clínica por DNI</Link></p>}
+      {error&&<Notice>{error}</Notice>}
+      <div className="dialog-actions"><button className="secondary-button" type="button" disabled={busy} onClick={close}>Cancelar</button><button className="primary-button" type="submit" disabled={busy||!eligible.length||occupancy.loading}>{busy?'Guardando…':block?'Guardar bloqueo':'Guardar turno'}</button></div>
     </Form>
   </Modal>
 }
